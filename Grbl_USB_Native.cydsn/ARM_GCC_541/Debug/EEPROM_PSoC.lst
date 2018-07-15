@@ -1,0 +1,2961 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"EEPROM_PSoC.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.EEPROM_PSoC_Enable,"ax",%progbits
+  20              		.align	2
+  21              		.global	EEPROM_PSoC_Enable
+  22              		.thumb
+  23              		.thumb_func
+  24              		.type	EEPROM_PSoC_Enable, %function
+  25              	EEPROM_PSoC_Enable:
+  26              	.LFB0:
+  27              		.file 1 "Generated_Source\\PSoC5\\EEPROM_PSoC.c"
+   1:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+   2:Generated_Source\PSoC5/EEPROM_PSoC.c **** * File Name: EEPROM_PSoC.c
+   3:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Version 3.0
+   4:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+   5:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Description:
+   6:Generated_Source\PSoC5/EEPROM_PSoC.c **** *   Provides the source code to the API for the EEPROM component.
+   7:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+   8:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+   9:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
+  10:Generated_Source\PSoC5/EEPROM_PSoC.c **** * You may use this file only in accordance with the license, terms, conditions,
+  11:Generated_Source\PSoC5/EEPROM_PSoC.c **** * disclaimers, and limitations in the end user license agreement accompanying
+  12:Generated_Source\PSoC5/EEPROM_PSoC.c **** * the software package with which this file was provided.
+  13:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+  14:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  15:Generated_Source\PSoC5/EEPROM_PSoC.c **** #include "EEPROM_PSoC.h"
+  16:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  17:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  18:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+  19:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_Enable
+  20:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+  21:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  22:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+  23:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Enable the EEPROM block. Also reads the temperature and stores it for
+  24:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  future writes.
+  25:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  26:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+  27:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+  28:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  29:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+  30:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 2
+
+
+  31:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  32:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+  33:Generated_Source\PSoC5/EEPROM_PSoC.c **** void EEPROM_PSoC_Enable(void) 
+  34:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+  28              		.loc 1 34 0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 1, uses_anonymous_args = 0
+  32 0000 80B5     		push	{r7, lr}
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 7, -8
+  35              		.cfi_offset 14, -4
+  36 0002 00AF     		add	r7, sp, #0
+  37              		.cfi_def_cfa_register 7
+  35:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Read temperature value */
+  36:Generated_Source\PSoC5/EEPROM_PSoC.c ****     (void)CySetTemp();
+  38              		.loc 1 36 0
+  39 0004 FFF7FEFF 		bl	CySetTemp
+  37:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  38:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Start EEPROM block */
+  39:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CyEEPROM_Start();
+  40              		.loc 1 39 0
+  41 0008 FFF7FEFF 		bl	CyEEPROM_Start
+  40:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+  42              		.loc 1 40 0
+  43 000c 00BF     		nop
+  44 000e 80BD     		pop	{r7, pc}
+  45              		.cfi_endproc
+  46              	.LFE0:
+  47              		.size	EEPROM_PSoC_Enable, .-EEPROM_PSoC_Enable
+  48              		.section	.text.EEPROM_PSoC_Start,"ax",%progbits
+  49              		.align	2
+  50              		.global	EEPROM_PSoC_Start
+  51              		.thumb
+  52              		.thumb_func
+  53              		.type	EEPROM_PSoC_Start, %function
+  54              	EEPROM_PSoC_Start:
+  55              	.LFB1:
+  41:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  42:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  43:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+  44:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_Start
+  45:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+  46:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  47:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+  48:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Starts EEPROM.
+  49:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  50:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+  51:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+  52:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  53:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+  54:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+  55:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  56:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+  57:Generated_Source\PSoC5/EEPROM_PSoC.c **** void EEPROM_PSoC_Start(void) 
+  58:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+  56              		.loc 1 58 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 3
+
+
+  57              		.cfi_startproc
+  58              		@ args = 0, pretend = 0, frame = 0
+  59              		@ frame_needed = 1, uses_anonymous_args = 0
+  60 0000 80B5     		push	{r7, lr}
+  61              		.cfi_def_cfa_offset 8
+  62              		.cfi_offset 7, -8
+  63              		.cfi_offset 14, -4
+  64 0002 00AF     		add	r7, sp, #0
+  65              		.cfi_def_cfa_register 7
+  59:Generated_Source\PSoC5/EEPROM_PSoC.c ****     EEPROM_PSoC_Enable();
+  66              		.loc 1 59 0
+  67 0004 FFF7FEFF 		bl	EEPROM_PSoC_Enable
+  60:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+  68              		.loc 1 60 0
+  69 0008 00BF     		nop
+  70 000a 80BD     		pop	{r7, pc}
+  71              		.cfi_endproc
+  72              	.LFE1:
+  73              		.size	EEPROM_PSoC_Start, .-EEPROM_PSoC_Start
+  74              		.section	.text.EEPROM_PSoC_Stop,"ax",%progbits
+  75              		.align	2
+  76              		.global	EEPROM_PSoC_Stop
+  77              		.thumb
+  78              		.thumb_func
+  79              		.type	EEPROM_PSoC_Stop, %function
+  80              	EEPROM_PSoC_Stop:
+  81              	.LFB2:
+  61:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  62:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  63:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+  64:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_Stop
+  65:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+  66:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  67:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+  68:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Stops and powers down EEPROM.
+  69:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  70:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+  71:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+  72:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  73:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+  74:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+  75:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  76:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+  77:Generated_Source\PSoC5/EEPROM_PSoC.c **** void EEPROM_PSoC_Stop (void) 
+  78:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+  82              		.loc 1 78 0
+  83              		.cfi_startproc
+  84              		@ args = 0, pretend = 0, frame = 0
+  85              		@ frame_needed = 1, uses_anonymous_args = 0
+  86 0000 80B5     		push	{r7, lr}
+  87              		.cfi_def_cfa_offset 8
+  88              		.cfi_offset 7, -8
+  89              		.cfi_offset 14, -4
+  90 0002 00AF     		add	r7, sp, #0
+  91              		.cfi_def_cfa_register 7
+  79:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Stop and power down EEPROM block */
+  80:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CyEEPROM_Stop();
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 4
+
+
+  92              		.loc 1 80 0
+  93 0004 FFF7FEFF 		bl	CyEEPROM_Stop
+  81:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+  94              		.loc 1 81 0
+  95 0008 00BF     		nop
+  96 000a 80BD     		pop	{r7, pc}
+  97              		.cfi_endproc
+  98              	.LFE2:
+  99              		.size	EEPROM_PSoC_Stop, .-EEPROM_PSoC_Stop
+ 100              		.section	.text.EEPROM_PSoC_WriteByte,"ax",%progbits
+ 101              		.align	2
+ 102              		.global	EEPROM_PSoC_WriteByte
+ 103              		.thumb
+ 104              		.thumb_func
+ 105              		.type	EEPROM_PSoC_WriteByte, %function
+ 106              	EEPROM_PSoC_WriteByte:
+ 107              	.LFB3:
+  82:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  83:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+  84:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+  85:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_WriteByte
+  86:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+  87:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  88:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+  89:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Writes a byte of data to the EEPROM. This function blocks until
+  90:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the function is complete. For a reliable write procedure to occur you should
+  91:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  call EEPROM_PSoC_UpdateTemperature() function if the temperature of the
+  92:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  silicon has been changed for more than 10C since the component was started.
+  93:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  94:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+  95:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  dataByte:  The byte of data to write to the EEPROM
+  96:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  address:   The address of data to be written. The maximum address is dependent
+  97:Generated_Source\PSoC5/EEPROM_PSoC.c **** *             on the EEPROM size.
+  98:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+  99:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 100:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_SUCCESS, if the operation was successful.
+ 101:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter sectorNumber is out of range.
+ 102:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 103:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 104:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 105:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 106:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_WriteByte(uint8 dataByte, uint16 address) 
+ 107:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 108              		.loc 1 107 0
+ 109              		.cfi_startproc
+ 110              		@ args = 0, pretend = 0, frame = 16
+ 111              		@ frame_needed = 1, uses_anonymous_args = 0
+ 112 0000 80B5     		push	{r7, lr}
+ 113              		.cfi_def_cfa_offset 8
+ 114              		.cfi_offset 7, -8
+ 115              		.cfi_offset 14, -4
+ 116 0002 84B0     		sub	sp, sp, #16
+ 117              		.cfi_def_cfa_offset 24
+ 118 0004 00AF     		add	r7, sp, #0
+ 119              		.cfi_def_cfa_register 7
+ 120 0006 0346     		mov	r3, r0
+ 121 0008 0A46     		mov	r2, r1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 5
+
+
+ 122 000a FB71     		strb	r3, [r7, #7]
+ 123 000c 1346     		mov	r3, r2	@ movhi
+ 124 000e BB80     		strh	r3, [r7, #4]	@ movhi
+ 108:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 109:Generated_Source\PSoC5/EEPROM_PSoC.c ****     uint16 rowNumber;
+ 110:Generated_Source\PSoC5/EEPROM_PSoC.c ****     uint16 byteNumber;
+ 111:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 112:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 125              		.loc 1 112 0
+ 126 0010 FFF7FEFF 		bl	CySpcStart
+ 113:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 114:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if (address < CY_EEPROM_SIZE)
+ 127              		.loc 1 114 0
+ 128 0014 BB88     		ldrh	r3, [r7, #4]
+ 129 0016 B3F5006F 		cmp	r3, #2048
+ 130 001a 70D2     		bcs	.L5
+ 115:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 116:Generated_Source\PSoC5/EEPROM_PSoC.c ****         rowNumber = address/(uint16)CY_EEPROM_SIZEOF_ROW;
+ 131              		.loc 1 116 0
+ 132 001c BB88     		ldrh	r3, [r7, #4]
+ 133 001e 1B09     		lsrs	r3, r3, #4
+ 134 0020 7B81     		strh	r3, [r7, #10]	@ movhi
+ 117:Generated_Source\PSoC5/EEPROM_PSoC.c ****         byteNumber = address - (rowNumber * ((uint16)CY_EEPROM_SIZEOF_ROW));
+ 135              		.loc 1 117 0
+ 136 0022 7B89     		ldrh	r3, [r7, #10]	@ movhi
+ 137 0024 1B01     		lsls	r3, r3, #4
+ 138 0026 9BB2     		uxth	r3, r3
+ 139 0028 BA88     		ldrh	r2, [r7, #4]	@ movhi
+ 140 002a D31A     		subs	r3, r2, r3
+ 141 002c 3B81     		strh	r3, [r7, #8]	@ movhi
+ 118:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CYRET_SUCCESS == CySpcLock())
+ 142              		.loc 1 118 0
+ 143 002e FFF7FEFF 		bl	CySpcLock
+ 144 0032 0346     		mov	r3, r0
+ 145 0034 002B     		cmp	r3, #0
+ 146 0036 5FD1     		bne	.L6
+ 119:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 120:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CySpcLoadMultiByte(CY_SPC_FIRST_EE_ARRAYID, byteNumber, &dataByte, \
+ 147              		.loc 1 120 0
+ 148 0038 FA1D     		adds	r2, r7, #7
+ 149 003a 3989     		ldrh	r1, [r7, #8]
+ 150 003c 0123     		movs	r3, #1
+ 151 003e 4020     		movs	r0, #64
+ 152 0040 FFF7FEFF 		bl	CySpcLoadMultiByte
+ 153 0044 F860     		str	r0, [r7, #12]
+ 121:Generated_Source\PSoC5/EEPROM_PSoC.c ****                                                                     EEPROM_PSoC_SPC_BYTE_WRITE_SIZE
+ 122:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if (CYRET_STARTED == status)
+ 154              		.loc 1 122 0
+ 155 0046 FB68     		ldr	r3, [r7, #12]
+ 156 0048 072B     		cmp	r3, #7
+ 157 004a 4CD1     		bne	.L7
+ 123:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 124:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Plan for failure */
+ 125:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 status = CYRET_UNKNOWN;
+ 158              		.loc 1 125 0
+ 159 004c 4FF0FF33 		mov	r3, #-1
+ 160 0050 FB60     		str	r3, [r7, #12]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 6
+
+
+ 126:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 127:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 while(CY_SPC_BUSY)
+ 161              		.loc 1 127 0
+ 162 0052 00BF     		nop
+ 163              	.L8:
+ 164              		.loc 1 127 0 is_stmt 0 discriminator 1
+ 165 0054 2D4B     		ldr	r3, .L20
+ 166 0056 1B78     		ldrb	r3, [r3]
+ 167 0058 DBB2     		uxtb	r3, r3
+ 168 005a 03F00203 		and	r3, r3, #2
+ 169 005e 002B     		cmp	r3, #0
+ 170 0060 F8D0     		beq	.L8
+ 128:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 129:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     /* Wait until SPC becomes idle */
+ 130:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 131:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 132:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 171              		.loc 1 132 0 is_stmt 1
+ 172 0062 2A4B     		ldr	r3, .L20
+ 173 0064 1B78     		ldrb	r3, [r3]
+ 174 0066 DBB2     		uxtb	r3, r3
+ 175 0068 03F00203 		and	r3, r3, #2
+ 176 006c 002B     		cmp	r3, #0
+ 177 006e 08D0     		beq	.L9
+ 178              		.loc 1 132 0 is_stmt 0 discriminator 1
+ 179 0070 264B     		ldr	r3, .L20
+ 180 0072 1B78     		ldrb	r3, [r3]
+ 181 0074 DBB2     		uxtb	r3, r3
+ 182 0076 9B08     		lsrs	r3, r3, #2
+ 183 0078 DBB2     		uxtb	r3, r3
+ 184 007a 002B     		cmp	r3, #0
+ 185 007c 01D1     		bne	.L9
+ 133:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 134:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_SUCCESS;
+ 186              		.loc 1 134 0 is_stmt 1
+ 187 007e 0023     		movs	r3, #0
+ 188 0080 FB60     		str	r3, [r7, #12]
+ 189              	.L9:
+ 135:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 136:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Command to erase and program the row. */
+ 137:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CYRET_SUCCESS == status)
+ 190              		.loc 1 137 0
+ 191 0082 FB68     		ldr	r3, [r7, #12]
+ 192 0084 002B     		cmp	r3, #0
+ 193 0086 2AD1     		bne	.L10
+ 138:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 139:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     if(CySpcWriteRow(CY_SPC_FIRST_EE_ARRAYID, (uint16)rowNumber, dieTemperature[0u]
+ 194              		.loc 1 139 0
+ 195 0088 214B     		ldr	r3, .L20+4
+ 196 008a 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 197 008c 204B     		ldr	r3, .L20+4
+ 198 008e 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 199 0090 7989     		ldrh	r1, [r7, #10]
+ 200 0092 4020     		movs	r0, #64
+ 201 0094 FFF7FEFF 		bl	CySpcWriteRow
+ 202 0098 0346     		mov	r3, r0
+ 203 009a 072B     		cmp	r3, #7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 7
+
+
+ 204 009c 1BD1     		bne	.L11
+ 140:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     dieTemperature[1u]) == CYRET_STARTED)
+ 141:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 142:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* Plan for failure */
+ 143:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 205              		.loc 1 143 0
+ 206 009e 4FF0FF33 		mov	r3, #-1
+ 207 00a2 FB60     		str	r3, [r7, #12]
+ 144:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 145:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         while(CY_SPC_BUSY)
+ 208              		.loc 1 145 0
+ 209 00a4 00BF     		nop
+ 210              	.L12:
+ 211              		.loc 1 145 0 is_stmt 0 discriminator 1
+ 212 00a6 194B     		ldr	r3, .L20
+ 213 00a8 1B78     		ldrb	r3, [r3]
+ 214 00aa DBB2     		uxtb	r3, r3
+ 215 00ac 03F00203 		and	r3, r3, #2
+ 216 00b0 002B     		cmp	r3, #0
+ 217 00b2 F8D0     		beq	.L12
+ 146:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 147:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             /* Wait until SPC becomes idle */
+ 148:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 149:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 150:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* SPC is idle now */
+ 151:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 218              		.loc 1 151 0 is_stmt 1
+ 219 00b4 154B     		ldr	r3, .L20
+ 220 00b6 1B78     		ldrb	r3, [r3]
+ 221 00b8 DBB2     		uxtb	r3, r3
+ 222 00ba 03F00203 		and	r3, r3, #2
+ 223 00be 002B     		cmp	r3, #0
+ 224 00c0 17D0     		beq	.L16
+ 225              		.loc 1 151 0 is_stmt 0 discriminator 1
+ 226 00c2 124B     		ldr	r3, .L20
+ 227 00c4 1B78     		ldrb	r3, [r3]
+ 228 00c6 DBB2     		uxtb	r3, r3
+ 229 00c8 9B08     		lsrs	r3, r3, #2
+ 230 00ca DBB2     		uxtb	r3, r3
+ 231 00cc 002B     		cmp	r3, #0
+ 232 00ce 10D1     		bne	.L16
+ 152:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 153:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             status = CYRET_SUCCESS;
+ 233              		.loc 1 153 0 is_stmt 1
+ 234 00d0 0023     		movs	r3, #0
+ 235 00d2 FB60     		str	r3, [r7, #12]
+ 236 00d4 0DE0     		b	.L16
+ 237              	.L11:
+ 154:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 155:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 156:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     else
+ 157:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 158:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 238              		.loc 1 158 0
+ 239 00d6 4FF0FF33 		mov	r3, #-1
+ 240 00da FB60     		str	r3, [r7, #12]
+ 241 00dc 09E0     		b	.L16
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 8
+
+
+ 242              	.L10:
+ 159:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 160:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 161:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 else
+ 162:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 163:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_UNKNOWN;
+ 243              		.loc 1 163 0
+ 244 00de 4FF0FF33 		mov	r3, #-1
+ 245 00e2 FB60     		str	r3, [r7, #12]
+ 246 00e4 05E0     		b	.L16
+ 247              	.L7:
+ 164:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 165:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 166:Generated_Source\PSoC5/EEPROM_PSoC.c ****             else
+ 167:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 168:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if (CYRET_BAD_PARAM != status)
+ 248              		.loc 1 168 0
+ 249 00e6 FB68     		ldr	r3, [r7, #12]
+ 250 00e8 012B     		cmp	r3, #1
+ 251 00ea 02D0     		beq	.L16
+ 169:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 170:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_UNKNOWN;
+ 252              		.loc 1 170 0
+ 253 00ec 4FF0FF33 		mov	r3, #-1
+ 254 00f0 FB60     		str	r3, [r7, #12]
+ 255              	.L16:
+ 171:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 172:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 173:Generated_Source\PSoC5/EEPROM_PSoC.c ****             CySpcUnlock();
+ 256              		.loc 1 173 0
+ 257 00f2 FFF7FEFF 		bl	CySpcUnlock
+ 258 00f6 04E0     		b	.L18
+ 259              	.L6:
+ 174:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 175:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 176:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 177:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 260              		.loc 1 177 0
+ 261 00f8 0423     		movs	r3, #4
+ 262 00fa FB60     		str	r3, [r7, #12]
+ 263 00fc 01E0     		b	.L18
+ 264              	.L5:
+ 178:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 179:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 180:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 181:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 182:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 265              		.loc 1 182 0
+ 266 00fe 0123     		movs	r3, #1
+ 267 0100 FB60     		str	r3, [r7, #12]
+ 268              	.L18:
+ 183:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 184:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 185:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 186:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return (status);
+ 269              		.loc 1 186 0
+ 270 0102 FB68     		ldr	r3, [r7, #12]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 9
+
+
+ 187:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 271              		.loc 1 187 0
+ 272 0104 1846     		mov	r0, r3
+ 273 0106 1037     		adds	r7, r7, #16
+ 274              		.cfi_def_cfa_offset 8
+ 275 0108 BD46     		mov	sp, r7
+ 276              		.cfi_def_cfa_register 13
+ 277              		@ sp needed
+ 278 010a 80BD     		pop	{r7, pc}
+ 279              	.L21:
+ 280              		.align	2
+ 281              	.L20:
+ 282 010c 22470040 		.word	1073760034
+ 283 0110 00000000 		.word	dieTemperature
+ 284              		.cfi_endproc
+ 285              	.LFE3:
+ 286              		.size	EEPROM_PSoC_WriteByte, .-EEPROM_PSoC_WriteByte
+ 287              		.section	.text.EEPROM_PSoC_ReadByte,"ax",%progbits
+ 288              		.align	2
+ 289              		.global	EEPROM_PSoC_ReadByte
+ 290              		.thumb
+ 291              		.thumb_func
+ 292              		.type	EEPROM_PSoC_ReadByte, %function
+ 293              	EEPROM_PSoC_ReadByte:
+ 294              	.LFB4:
+ 188:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 189:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 190:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 191:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_ReadByte
+ 192:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 193:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 194:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 195:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Reads and returns a byte of data from the on-chip EEPROM memory. Although
+ 196:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the data is present in the CPU memory space, this function provides an
+ 197:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  intuitive user interface, addressing the EEPROM memory as a separate block with
+ 198:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the first EERPOM byte address equal to 0x0000.
+ 199:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 200:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 201:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  address:   The address of data to be read. The maximum address is limited by the
+ 202:Generated_Source\PSoC5/EEPROM_PSoC.c **** *             size of the EEPROM array on a specific device.
+ 203:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 204:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 205:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Data located at an address.
+ 206:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 207:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 208:Generated_Source\PSoC5/EEPROM_PSoC.c **** uint8 EEPROM_PSoC_ReadByte(uint16 address) 
+ 209:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 295              		.loc 1 209 0
+ 296              		.cfi_startproc
+ 297              		@ args = 0, pretend = 0, frame = 16
+ 298              		@ frame_needed = 1, uses_anonymous_args = 0
+ 299 0000 80B5     		push	{r7, lr}
+ 300              		.cfi_def_cfa_offset 8
+ 301              		.cfi_offset 7, -8
+ 302              		.cfi_offset 14, -4
+ 303 0002 84B0     		sub	sp, sp, #16
+ 304              		.cfi_def_cfa_offset 24
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 10
+
+
+ 305 0004 00AF     		add	r7, sp, #0
+ 306              		.cfi_def_cfa_register 7
+ 307 0006 0346     		mov	r3, r0
+ 308 0008 FB80     		strh	r3, [r7, #6]	@ movhi
+ 210:Generated_Source\PSoC5/EEPROM_PSoC.c ****     uint8 retByte;
+ 211:Generated_Source\PSoC5/EEPROM_PSoC.c ****     uint8 interruptState;
+ 212:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 213:Generated_Source\PSoC5/EEPROM_PSoC.c ****     interruptState = CyEnterCriticalSection();
+ 309              		.loc 1 213 0
+ 310 000a FFF7FEFF 		bl	CyEnterCriticalSection
+ 311 000e 0346     		mov	r3, r0
+ 312 0010 FB73     		strb	r3, [r7, #15]
+ 214:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 215:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Request access to EEPROM for reading.
+ 216:Generated_Source\PSoC5/EEPROM_PSoC.c ****     This is needed to reserve PHUB for read operation from EEPROM */
+ 217:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CyEEPROM_ReadReserve();
+ 313              		.loc 1 217 0
+ 314 0012 FFF7FEFF 		bl	CyEEPROM_ReadReserve
+ 218:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 219:Generated_Source\PSoC5/EEPROM_PSoC.c ****     retByte = *((reg8 *) (CYDEV_EE_BASE + address));
+ 315              		.loc 1 219 0
+ 316 0016 FB88     		ldrh	r3, [r7, #6]
+ 317 0018 03F18043 		add	r3, r3, #1073741824
+ 318 001c 03F50043 		add	r3, r3, #32768
+ 319 0020 1B78     		ldrb	r3, [r3]
+ 320 0022 BB73     		strb	r3, [r7, #14]
+ 220:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 221:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Release EEPROM array */
+ 222:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CyEEPROM_ReadRelease();
+ 321              		.loc 1 222 0
+ 322 0024 FFF7FEFF 		bl	CyEEPROM_ReadRelease
+ 223:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 224:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CyExitCriticalSection(interruptState);
+ 323              		.loc 1 224 0
+ 324 0028 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 325 002a 1846     		mov	r0, r3
+ 326 002c FFF7FEFF 		bl	CyExitCriticalSection
+ 225:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 226:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return (retByte);
+ 327              		.loc 1 226 0
+ 328 0030 BB7B     		ldrb	r3, [r7, #14]	@ zero_extendqisi2
+ 227:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 329              		.loc 1 227 0
+ 330 0032 1846     		mov	r0, r3
+ 331 0034 1037     		adds	r7, r7, #16
+ 332              		.cfi_def_cfa_offset 8
+ 333 0036 BD46     		mov	sp, r7
+ 334              		.cfi_def_cfa_register 13
+ 335              		@ sp needed
+ 336 0038 80BD     		pop	{r7, pc}
+ 337              		.cfi_endproc
+ 338              	.LFE4:
+ 339              		.size	EEPROM_PSoC_ReadByte, .-EEPROM_PSoC_ReadByte
+ 340 003a 00BF     		.section	.text.EEPROM_PSoC_UpdateTemperature,"ax",%progbits
+ 341              		.align	2
+ 342              		.global	EEPROM_PSoC_UpdateTemperature
+ 343              		.thumb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 11
+
+
+ 344              		.thumb_func
+ 345              		.type	EEPROM_PSoC_UpdateTemperature, %function
+ 346              	EEPROM_PSoC_UpdateTemperature:
+ 347              	.LFB5:
+ 228:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 229:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 230:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 231:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_UpdateTemperature
+ 232:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 233:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 234:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 235:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Updates and stores the temperature value. This function should be called
+ 236:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  before EEPROM writes if the temperature may have been changed by more than
+ 237:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  10 degrees Celsius.
+ 238:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 239:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 240:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+ 241:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 242:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 243:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Status of operation, 0 if operation complete, non-zero value if error
+ 244:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  was detected.
+ 245:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 246:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 247:Generated_Source\PSoC5/EEPROM_PSoC.c **** uint8 EEPROM_PSoC_UpdateTemperature(void) 
+ 248:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 348              		.loc 1 248 0
+ 349              		.cfi_startproc
+ 350              		@ args = 0, pretend = 0, frame = 0
+ 351              		@ frame_needed = 1, uses_anonymous_args = 0
+ 352 0000 80B5     		push	{r7, lr}
+ 353              		.cfi_def_cfa_offset 8
+ 354              		.cfi_offset 7, -8
+ 355              		.cfi_offset 14, -4
+ 356 0002 00AF     		add	r7, sp, #0
+ 357              		.cfi_def_cfa_register 7
+ 249:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return ((uint8)CySetTemp());
+ 358              		.loc 1 249 0
+ 359 0004 FFF7FEFF 		bl	CySetTemp
+ 360 0008 0346     		mov	r3, r0
+ 361 000a DBB2     		uxtb	r3, r3
+ 250:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 362              		.loc 1 250 0
+ 363 000c 1846     		mov	r0, r3
+ 364 000e 80BD     		pop	{r7, pc}
+ 365              		.cfi_endproc
+ 366              	.LFE5:
+ 367              		.size	EEPROM_PSoC_UpdateTemperature, .-EEPROM_PSoC_UpdateTemperature
+ 368              		.section	.text.EEPROM_PSoC_EraseSector,"ax",%progbits
+ 369              		.align	2
+ 370              		.global	EEPROM_PSoC_EraseSector
+ 371              		.thumb
+ 372              		.thumb_func
+ 373              		.type	EEPROM_PSoC_EraseSector, %function
+ 374              	EEPROM_PSoC_EraseSector:
+ 375              	.LFB6:
+ 251:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 252:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 12
+
+
+ 253:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 254:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_EraseSector
+ 255:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 256:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 257:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 258:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Erase an EEPROM sector (64 rows). This function blocks until the erase
+ 259:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  operation is complete. Using this API helps to erase the EEPROM sector at
+ 260:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  a time. This is faster than using individual writes but affects a cycle
+ 261:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  recourse of the whole EEPROM row.
+ 262:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 263:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 264:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  sectorNumber:  The sector number to erase.
+ 265:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 266:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 267:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_SUCCESS, if the operation was successful.
+ 268:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter sectorNumber is out of range.
+ 269:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 270:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 271:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 272:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 273:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_EraseSector(uint8 sectorNumber) 
+ 274:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 376              		.loc 1 274 0
+ 377              		.cfi_startproc
+ 378              		@ args = 0, pretend = 0, frame = 16
+ 379              		@ frame_needed = 1, uses_anonymous_args = 0
+ 380 0000 80B5     		push	{r7, lr}
+ 381              		.cfi_def_cfa_offset 8
+ 382              		.cfi_offset 7, -8
+ 383              		.cfi_offset 14, -4
+ 384 0002 84B0     		sub	sp, sp, #16
+ 385              		.cfi_def_cfa_offset 24
+ 386 0004 00AF     		add	r7, sp, #0
+ 387              		.cfi_def_cfa_register 7
+ 388 0006 0346     		mov	r3, r0
+ 389 0008 FB71     		strb	r3, [r7, #7]
+ 275:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 276:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 277:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 390              		.loc 1 277 0
+ 391 000a FFF7FEFF 		bl	CySpcStart
+ 278:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 279:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if(sectorNumber < (uint8) EEPROM_PSoC_SECTORS_NUMBER)
+ 392              		.loc 1 279 0
+ 393 000e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 394 0010 012B     		cmp	r3, #1
+ 395 0012 31D8     		bhi	.L27
+ 280:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 281:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* See if we can get SPC. */
+ 282:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CySpcLock() == CYRET_SUCCESS)
+ 396              		.loc 1 282 0
+ 397 0014 FFF7FEFF 		bl	CySpcLock
+ 398 0018 0346     		mov	r3, r0
+ 399 001a 002B     		cmp	r3, #0
+ 400 001c 29D1     		bne	.L28
+ 283:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 284:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if(CySpcEraseSector(CY_SPC_FIRST_EE_ARRAYID, sectorNumber) == CYRET_STARTED)
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 13
+
+
+ 401              		.loc 1 284 0
+ 402 001e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 403 0020 1946     		mov	r1, r3
+ 404 0022 4020     		movs	r0, #64
+ 405 0024 FFF7FEFF 		bl	CySpcEraseSector
+ 406 0028 0346     		mov	r3, r0
+ 407 002a 072B     		cmp	r3, #7
+ 408 002c 1BD1     		bne	.L29
+ 285:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 286:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Plan for failure */
+ 287:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 status = CYRET_UNKNOWN;
+ 409              		.loc 1 287 0
+ 410 002e 4FF0FF33 		mov	r3, #-1
+ 411 0032 FB60     		str	r3, [r7, #12]
+ 288:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 289:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 while(CY_SPC_BUSY)
+ 412              		.loc 1 289 0
+ 413 0034 00BF     		nop
+ 414              	.L30:
+ 415              		.loc 1 289 0 is_stmt 0 discriminator 1
+ 416 0036 144B     		ldr	r3, .L36
+ 417 0038 1B78     		ldrb	r3, [r3]
+ 418 003a DBB2     		uxtb	r3, r3
+ 419 003c 03F00203 		and	r3, r3, #2
+ 420 0040 002B     		cmp	r3, #0
+ 421 0042 F8D0     		beq	.L30
+ 290:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 291:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     /* Wait until SPC becomes idle */
+ 292:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 293:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 294:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* SPC is idle now */
+ 295:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 422              		.loc 1 295 0 is_stmt 1
+ 423 0044 104B     		ldr	r3, .L36
+ 424 0046 1B78     		ldrb	r3, [r3]
+ 425 0048 DBB2     		uxtb	r3, r3
+ 426 004a 03F00203 		and	r3, r3, #2
+ 427 004e 002B     		cmp	r3, #0
+ 428 0050 0CD0     		beq	.L32
+ 429              		.loc 1 295 0 is_stmt 0 discriminator 1
+ 430 0052 0D4B     		ldr	r3, .L36
+ 431 0054 1B78     		ldrb	r3, [r3]
+ 432 0056 DBB2     		uxtb	r3, r3
+ 433 0058 9B08     		lsrs	r3, r3, #2
+ 434 005a DBB2     		uxtb	r3, r3
+ 435 005c 002B     		cmp	r3, #0
+ 436 005e 05D1     		bne	.L32
+ 296:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 297:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_SUCCESS;
+ 437              		.loc 1 297 0 is_stmt 1
+ 438 0060 0023     		movs	r3, #0
+ 439 0062 FB60     		str	r3, [r7, #12]
+ 440 0064 02E0     		b	.L32
+ 441              	.L29:
+ 298:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 299:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 300:Generated_Source\PSoC5/EEPROM_PSoC.c ****             else
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 14
+
+
+ 301:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 302:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 status = CYRET_UNKNOWN;
+ 442              		.loc 1 302 0
+ 443 0066 4FF0FF33 		mov	r3, #-1
+ 444 006a FB60     		str	r3, [r7, #12]
+ 445              	.L32:
+ 303:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 304:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 305:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Unlock SPC so that someone else can use it. */
+ 306:Generated_Source\PSoC5/EEPROM_PSoC.c ****             CySpcUnlock();
+ 446              		.loc 1 306 0
+ 447 006c FFF7FEFF 		bl	CySpcUnlock
+ 448 0070 04E0     		b	.L34
+ 449              	.L28:
+ 307:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 308:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 309:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 310:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 450              		.loc 1 310 0
+ 451 0072 0423     		movs	r3, #4
+ 452 0074 FB60     		str	r3, [r7, #12]
+ 453 0076 01E0     		b	.L34
+ 454              	.L27:
+ 311:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 312:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 313:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 314:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 315:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 455              		.loc 1 315 0
+ 456 0078 0123     		movs	r3, #1
+ 457 007a FB60     		str	r3, [r7, #12]
+ 458              	.L34:
+ 316:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 317:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 318:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 459              		.loc 1 318 0
+ 460 007c FB68     		ldr	r3, [r7, #12]
+ 319:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 461              		.loc 1 319 0
+ 462 007e 1846     		mov	r0, r3
+ 463 0080 1037     		adds	r7, r7, #16
+ 464              		.cfi_def_cfa_offset 8
+ 465 0082 BD46     		mov	sp, r7
+ 466              		.cfi_def_cfa_register 13
+ 467              		@ sp needed
+ 468 0084 80BD     		pop	{r7, pc}
+ 469              	.L37:
+ 470 0086 00BF     		.align	2
+ 471              	.L36:
+ 472 0088 22470040 		.word	1073760034
+ 473              		.cfi_endproc
+ 474              	.LFE6:
+ 475              		.size	EEPROM_PSoC_EraseSector, .-EEPROM_PSoC_EraseSector
+ 476              		.section	.text.EEPROM_PSoC_Write,"ax",%progbits
+ 477              		.align	2
+ 478              		.global	EEPROM_PSoC_Write
+ 479              		.thumb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 15
+
+
+ 480              		.thumb_func
+ 481              		.type	EEPROM_PSoC_Write, %function
+ 482              	EEPROM_PSoC_Write:
+ 483              	.LFB7:
+ 320:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 321:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 322:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 323:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_Write
+ 324:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 325:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 326:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 327:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Writes a row (16 bytes) of data to the EEPROM. This function blocks until
+ 328:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the write operation is complete. Compared to functions that write one byte,
+ 329:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  this function allows writing a whole row (16 bytes) at a time. For
+ 330:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  a reliable write procedure to occur you should call the
+ 331:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  EEPROM_PSoC_UpdateTemperature() function if the temperature of the
+ 332:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  silicon has changed for more than 10C since component was started.
+ 333:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 334:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 335:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  rowData:    The address of the data to write to the EEPROM.
+ 336:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  rowNumber:  The row number to write.
+ 337:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 338:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 339:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_SUCCESS, if the operation was successful.
+ 340:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter rowNumber is out of range.
+ 341:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 342:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 343:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 344:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 345:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_Write(const uint8 * rowData, uint8 rowNumber) 
+ 346:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 484              		.loc 1 346 0
+ 485              		.cfi_startproc
+ 486              		@ args = 0, pretend = 0, frame = 16
+ 487              		@ frame_needed = 1, uses_anonymous_args = 0
+ 488 0000 80B5     		push	{r7, lr}
+ 489              		.cfi_def_cfa_offset 8
+ 490              		.cfi_offset 7, -8
+ 491              		.cfi_offset 14, -4
+ 492 0002 84B0     		sub	sp, sp, #16
+ 493              		.cfi_def_cfa_offset 24
+ 494 0004 00AF     		add	r7, sp, #0
+ 495              		.cfi_def_cfa_register 7
+ 496 0006 7860     		str	r0, [r7, #4]
+ 497 0008 0B46     		mov	r3, r1
+ 498 000a FB70     		strb	r3, [r7, #3]
+ 347:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 348:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 349:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 499              		.loc 1 349 0
+ 500 000c FFF7FEFF 		bl	CySpcStart
+ 350:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 351:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if(rowNumber < (uint8) CY_EEPROM_NUMBER_ROWS)
+ 501              		.loc 1 351 0
+ 502 0010 97F90330 		ldrsb	r3, [r7, #3]
+ 503 0014 002B     		cmp	r3, #0
+ 504 0016 5FDB     		blt	.L39
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 16
+
+
+ 352:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 353:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* See if we can get SPC. */
+ 354:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CySpcLock() == CYRET_SUCCESS)
+ 505              		.loc 1 354 0
+ 506 0018 FFF7FEFF 		bl	CySpcLock
+ 507 001c 0346     		mov	r3, r0
+ 508 001e 002B     		cmp	r3, #0
+ 509 0020 57D1     		bne	.L40
+ 355:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 356:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Plan for failure */
+ 357:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_UNKNOWN;
+ 510              		.loc 1 357 0
+ 511 0022 4FF0FF33 		mov	r3, #-1
+ 512 0026 FB60     		str	r3, [r7, #12]
+ 358:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 359:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Command to load a row of data */
+ 360:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if(CySpcLoadRow(CY_SPC_FIRST_EE_ARRAYID, rowData, CYDEV_EEPROM_ROW_SIZE) == CYRET_START
+ 513              		.loc 1 360 0
+ 514 0028 1022     		movs	r2, #16
+ 515 002a 7968     		ldr	r1, [r7, #4]
+ 516 002c 4020     		movs	r0, #64
+ 517 002e FFF7FEFF 		bl	CySpcLoadRow
+ 518 0032 0346     		mov	r3, r0
+ 519 0034 072B     		cmp	r3, #7
+ 520 0036 49D1     		bne	.L41
+ 361:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 362:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 while(CY_SPC_BUSY)
+ 521              		.loc 1 362 0
+ 522 0038 00BF     		nop
+ 523              	.L42:
+ 524              		.loc 1 362 0 is_stmt 0 discriminator 1
+ 525 003a 2B4B     		ldr	r3, .L52
+ 526 003c 1B78     		ldrb	r3, [r3]
+ 527 003e DBB2     		uxtb	r3, r3
+ 528 0040 03F00203 		and	r3, r3, #2
+ 529 0044 002B     		cmp	r3, #0
+ 530 0046 F8D0     		beq	.L42
+ 363:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 364:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     /* Wait until SPC becomes idle */
+ 365:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 366:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 367:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* SPC is idle now */
+ 368:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 531              		.loc 1 368 0 is_stmt 1
+ 532 0048 274B     		ldr	r3, .L52
+ 533 004a 1B78     		ldrb	r3, [r3]
+ 534 004c DBB2     		uxtb	r3, r3
+ 535 004e 03F00203 		and	r3, r3, #2
+ 536 0052 002B     		cmp	r3, #0
+ 537 0054 08D0     		beq	.L43
+ 538              		.loc 1 368 0 is_stmt 0 discriminator 1
+ 539 0056 244B     		ldr	r3, .L52
+ 540 0058 1B78     		ldrb	r3, [r3]
+ 541 005a DBB2     		uxtb	r3, r3
+ 542 005c 9B08     		lsrs	r3, r3, #2
+ 543 005e DBB2     		uxtb	r3, r3
+ 544 0060 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 17
+
+
+ 545 0062 01D1     		bne	.L43
+ 369:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 370:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_SUCCESS;
+ 546              		.loc 1 370 0 is_stmt 1
+ 547 0064 0023     		movs	r3, #0
+ 548 0066 FB60     		str	r3, [r7, #12]
+ 549              	.L43:
+ 371:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 372:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 373:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Command to erase and program the row. */
+ 374:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(status == CYRET_SUCCESS)
+ 550              		.loc 1 374 0
+ 551 0068 FB68     		ldr	r3, [r7, #12]
+ 552 006a 002B     		cmp	r3, #0
+ 553 006c 2BD1     		bne	.L44
+ 375:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 376:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     if(CySpcWriteRow(CY_SPC_FIRST_EE_ARRAYID, (uint16)rowNumber, dieTemperature[0u]
+ 554              		.loc 1 376 0
+ 555 006e FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 556 0070 99B2     		uxth	r1, r3
+ 557 0072 1E4B     		ldr	r3, .L52+4
+ 558 0074 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 559 0076 1D4B     		ldr	r3, .L52+4
+ 560 0078 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 561 007a 4020     		movs	r0, #64
+ 562 007c FFF7FEFF 		bl	CySpcWriteRow
+ 563 0080 0346     		mov	r3, r0
+ 564 0082 072B     		cmp	r3, #7
+ 565 0084 1BD1     		bne	.L45
+ 377:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     dieTemperature[1u]) == CYRET_STARTED)
+ 378:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 379:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* Plan for failure */
+ 380:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 566              		.loc 1 380 0
+ 567 0086 4FF0FF33 		mov	r3, #-1
+ 568 008a FB60     		str	r3, [r7, #12]
+ 381:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 382:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         while(CY_SPC_BUSY)
+ 569              		.loc 1 382 0
+ 570 008c 00BF     		nop
+ 571              	.L46:
+ 572              		.loc 1 382 0 is_stmt 0 discriminator 1
+ 573 008e 164B     		ldr	r3, .L52
+ 574 0090 1B78     		ldrb	r3, [r3]
+ 575 0092 DBB2     		uxtb	r3, r3
+ 576 0094 03F00203 		and	r3, r3, #2
+ 577 0098 002B     		cmp	r3, #0
+ 578 009a F8D0     		beq	.L46
+ 383:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 384:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             /* Wait until SPC becomes idle */
+ 385:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 386:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 387:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* SPC is idle now */
+ 388:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 579              		.loc 1 388 0 is_stmt 1
+ 580 009c 124B     		ldr	r3, .L52
+ 581 009e 1B78     		ldrb	r3, [r3]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 18
+
+
+ 582 00a0 DBB2     		uxtb	r3, r3
+ 583 00a2 03F00203 		and	r3, r3, #2
+ 584 00a6 002B     		cmp	r3, #0
+ 585 00a8 10D0     		beq	.L41
+ 586              		.loc 1 388 0 is_stmt 0 discriminator 1
+ 587 00aa 0F4B     		ldr	r3, .L52
+ 588 00ac 1B78     		ldrb	r3, [r3]
+ 589 00ae DBB2     		uxtb	r3, r3
+ 590 00b0 9B08     		lsrs	r3, r3, #2
+ 591 00b2 DBB2     		uxtb	r3, r3
+ 592 00b4 002B     		cmp	r3, #0
+ 593 00b6 09D1     		bne	.L41
+ 389:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 390:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             status = CYRET_SUCCESS;
+ 594              		.loc 1 390 0 is_stmt 1
+ 595 00b8 0023     		movs	r3, #0
+ 596 00ba FB60     		str	r3, [r7, #12]
+ 597 00bc 06E0     		b	.L41
+ 598              	.L45:
+ 391:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 392:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 393:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     else
+ 394:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 395:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 599              		.loc 1 395 0
+ 600 00be 4FF0FF33 		mov	r3, #-1
+ 601 00c2 FB60     		str	r3, [r7, #12]
+ 602 00c4 02E0     		b	.L41
+ 603              	.L44:
+ 396:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 397:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 398:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 else
+ 399:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 400:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_UNKNOWN;
+ 604              		.loc 1 400 0
+ 605 00c6 4FF0FF33 		mov	r3, #-1
+ 606 00ca FB60     		str	r3, [r7, #12]
+ 607              	.L41:
+ 401:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 402:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 403:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 404:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Unlock SPC so that someone else can use it. */
+ 405:Generated_Source\PSoC5/EEPROM_PSoC.c ****             CySpcUnlock();
+ 608              		.loc 1 405 0
+ 609 00cc FFF7FEFF 		bl	CySpcUnlock
+ 610 00d0 04E0     		b	.L50
+ 611              	.L40:
+ 406:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 407:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 408:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 409:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 612              		.loc 1 409 0
+ 613 00d2 0423     		movs	r3, #4
+ 614 00d4 FB60     		str	r3, [r7, #12]
+ 615 00d6 01E0     		b	.L50
+ 616              	.L39:
+ 410:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 19
+
+
+ 411:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 412:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 413:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 414:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 617              		.loc 1 414 0
+ 618 00d8 0123     		movs	r3, #1
+ 619 00da FB60     		str	r3, [r7, #12]
+ 620              	.L50:
+ 415:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 416:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 417:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 621              		.loc 1 417 0
+ 622 00dc FB68     		ldr	r3, [r7, #12]
+ 418:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 623              		.loc 1 418 0
+ 624 00de 1846     		mov	r0, r3
+ 625 00e0 1037     		adds	r7, r7, #16
+ 626              		.cfi_def_cfa_offset 8
+ 627 00e2 BD46     		mov	sp, r7
+ 628              		.cfi_def_cfa_register 13
+ 629              		@ sp needed
+ 630 00e4 80BD     		pop	{r7, pc}
+ 631              	.L53:
+ 632 00e6 00BF     		.align	2
+ 633              	.L52:
+ 634 00e8 22470040 		.word	1073760034
+ 635 00ec 00000000 		.word	dieTemperature
+ 636              		.cfi_endproc
+ 637              	.LFE7:
+ 638              		.size	EEPROM_PSoC_Write, .-EEPROM_PSoC_Write
+ 639              		.section	.text.EEPROM_PSoC_StartWrite,"ax",%progbits
+ 640              		.align	2
+ 641              		.global	EEPROM_PSoC_StartWrite
+ 642              		.thumb
+ 643              		.thumb_func
+ 644              		.type	EEPROM_PSoC_StartWrite, %function
+ 645              	EEPROM_PSoC_StartWrite:
+ 646              	.LFB8:
+ 419:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 420:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 421:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 422:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_StartWrite
+ 423:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 424:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 425:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 426:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Starts a write of a row (16 bytes) of data to the EEPROM.
+ 427:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  This function does not block. The function returns once the SPC has begun
+ 428:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  writing the data. This function must be used in combination with
+ 429:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  EEPROM_PSoC_Query(). EEPROM_PSoC_Query() must be called
+ 430:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  until it returns a status other than CYRET_STARTED. That indicates that the
+ 431:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  write has completed. Until EEPROM_PSoC_Query() detects that
+ 432:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the write is complete, the SPC is marked as locked to prevent another
+ 433:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  SPC operation from being performed. For a reliable write procedure to occur
+ 434:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  you should call EEPROM_PSoC_UpdateTemperature() API if the temperature
+ 435:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  of the silicon has changed for more than 10C since component was started.
+ 436:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 437:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 20
+
+
+ 438:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  rowData:    The address of the data to write to the EEPROM.
+ 439:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  rowNumber:  The row number to write.
+ 440:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 441:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 442:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_STARTED, if the SPC command to write was successfully started.
+ 443:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter rowNumber is out of range.
+ 444:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 445:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 446:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 447:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Side effects:
+ 448:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  After calling this API, the device should not be powered down, reset or switched
+ 449:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  to low power modes until EEPROM operation is complete. 
+ 450:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Ignoring this recommendation may lead to data corruption or silicon
+ 451:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  unexpected behavior.
+ 452:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 453:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 454:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_StartWrite(const uint8 * rowData, uint8 rowNumber) \
+ 455:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 456:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 647              		.loc 1 456 0
+ 648              		.cfi_startproc
+ 649              		@ args = 0, pretend = 0, frame = 16
+ 650              		@ frame_needed = 1, uses_anonymous_args = 0
+ 651 0000 80B5     		push	{r7, lr}
+ 652              		.cfi_def_cfa_offset 8
+ 653              		.cfi_offset 7, -8
+ 654              		.cfi_offset 14, -4
+ 655 0002 84B0     		sub	sp, sp, #16
+ 656              		.cfi_def_cfa_offset 24
+ 657 0004 00AF     		add	r7, sp, #0
+ 658              		.cfi_def_cfa_register 7
+ 659 0006 7860     		str	r0, [r7, #4]
+ 660 0008 0B46     		mov	r3, r1
+ 661 000a FB70     		strb	r3, [r7, #3]
+ 457:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 458:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 459:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 662              		.loc 1 459 0
+ 663 000c FFF7FEFF 		bl	CySpcStart
+ 460:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 461:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if(rowNumber < (uint8) CY_EEPROM_NUMBER_ROWS)
+ 664              		.loc 1 461 0
+ 665 0010 97F90330 		ldrsb	r3, [r7, #3]
+ 666 0014 002B     		cmp	r3, #0
+ 667 0016 44DB     		blt	.L55
+ 462:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 463:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* See if we can get SPC. */
+ 464:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CySpcLock() == CYRET_SUCCESS)
+ 668              		.loc 1 464 0
+ 669 0018 FFF7FEFF 		bl	CySpcLock
+ 670 001c 0346     		mov	r3, r0
+ 671 001e 002B     		cmp	r3, #0
+ 672 0020 3CD1     		bne	.L56
+ 465:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 466:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Plan for failure */
+ 467:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_UNKNOWN;
+ 673              		.loc 1 467 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 21
+
+
+ 674 0022 4FF0FF33 		mov	r3, #-1
+ 675 0026 FB60     		str	r3, [r7, #12]
+ 468:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 469:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Command to load a row of data */
+ 470:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if(CySpcLoadRow(CY_SPC_FIRST_EE_ARRAYID, rowData, CYDEV_EEPROM_ROW_SIZE) == CYRET_START
+ 676              		.loc 1 470 0
+ 677 0028 1022     		movs	r2, #16
+ 678 002a 7968     		ldr	r1, [r7, #4]
+ 679 002c 4020     		movs	r0, #64
+ 680 002e FFF7FEFF 		bl	CySpcLoadRow
+ 681 0032 0346     		mov	r3, r0
+ 682 0034 072B     		cmp	r3, #7
+ 683 0036 36D1     		bne	.L64
+ 471:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 472:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 while(CY_SPC_BUSY)
+ 684              		.loc 1 472 0
+ 685 0038 00BF     		nop
+ 686              	.L58:
+ 687              		.loc 1 472 0 is_stmt 0 discriminator 1
+ 688 003a 1D4B     		ldr	r3, .L66
+ 689 003c 1B78     		ldrb	r3, [r3]
+ 690 003e DBB2     		uxtb	r3, r3
+ 691 0040 03F00203 		and	r3, r3, #2
+ 692 0044 002B     		cmp	r3, #0
+ 693 0046 F8D0     		beq	.L58
+ 473:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 474:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     /* Wait until SPC becomes idle */
+ 475:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 476:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 477:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* SPC is idle now */
+ 478:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 694              		.loc 1 478 0 is_stmt 1
+ 695 0048 194B     		ldr	r3, .L66
+ 696 004a 1B78     		ldrb	r3, [r3]
+ 697 004c DBB2     		uxtb	r3, r3
+ 698 004e 03F00203 		and	r3, r3, #2
+ 699 0052 002B     		cmp	r3, #0
+ 700 0054 08D0     		beq	.L59
+ 701              		.loc 1 478 0 is_stmt 0 discriminator 1
+ 702 0056 164B     		ldr	r3, .L66
+ 703 0058 1B78     		ldrb	r3, [r3]
+ 704 005a DBB2     		uxtb	r3, r3
+ 705 005c 9B08     		lsrs	r3, r3, #2
+ 706 005e DBB2     		uxtb	r3, r3
+ 707 0060 002B     		cmp	r3, #0
+ 708 0062 01D1     		bne	.L59
+ 479:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 480:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_SUCCESS;
+ 709              		.loc 1 480 0 is_stmt 1
+ 710 0064 0023     		movs	r3, #0
+ 711 0066 FB60     		str	r3, [r7, #12]
+ 712              	.L59:
+ 481:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 482:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 483:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Command to erase and program the row. */
+ 484:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(status == CYRET_SUCCESS)
+ 713              		.loc 1 484 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 22
+
+
+ 714 0068 FB68     		ldr	r3, [r7, #12]
+ 715 006a 002B     		cmp	r3, #0
+ 716 006c 12D1     		bne	.L60
+ 485:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 486:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     if(CySpcWriteRow(CY_SPC_FIRST_EE_ARRAYID, (uint16)rowNumber, dieTemperature[0u]
+ 717              		.loc 1 486 0
+ 718 006e FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 719 0070 99B2     		uxth	r1, r3
+ 720 0072 104B     		ldr	r3, .L66+4
+ 721 0074 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 722 0076 0F4B     		ldr	r3, .L66+4
+ 723 0078 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 724 007a 4020     		movs	r0, #64
+ 725 007c FFF7FEFF 		bl	CySpcWriteRow
+ 726 0080 0346     		mov	r3, r0
+ 727 0082 072B     		cmp	r3, #7
+ 728 0084 02D1     		bne	.L61
+ 487:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     dieTemperature[1u]) == CYRET_STARTED)
+ 488:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 489:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_STARTED;
+ 729              		.loc 1 489 0
+ 730 0086 0723     		movs	r3, #7
+ 731 0088 FB60     		str	r3, [r7, #12]
+ 732 008a 0CE0     		b	.L64
+ 733              	.L61:
+ 490:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 491:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     else
+ 492:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 493:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 734              		.loc 1 493 0
+ 735 008c 4FF0FF33 		mov	r3, #-1
+ 736 0090 FB60     		str	r3, [r7, #12]
+ 737 0092 08E0     		b	.L64
+ 738              	.L60:
+ 494:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 495:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 496:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 else
+ 497:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 498:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_UNKNOWN;
+ 739              		.loc 1 498 0
+ 740 0094 4FF0FF33 		mov	r3, #-1
+ 741 0098 FB60     		str	r3, [r7, #12]
+ 742 009a 04E0     		b	.L64
+ 743              	.L56:
+ 499:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 500:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 501:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 502:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 503:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 504:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 744              		.loc 1 504 0
+ 745 009c 0423     		movs	r3, #4
+ 746 009e FB60     		str	r3, [r7, #12]
+ 747 00a0 01E0     		b	.L64
+ 748              	.L55:
+ 505:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 506:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 23
+
+
+ 507:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 508:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 509:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 749              		.loc 1 509 0
+ 750 00a2 0123     		movs	r3, #1
+ 751 00a4 FB60     		str	r3, [r7, #12]
+ 752              	.L64:
+ 510:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 511:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 512:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 753              		.loc 1 512 0
+ 754 00a6 FB68     		ldr	r3, [r7, #12]
+ 513:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 755              		.loc 1 513 0
+ 756 00a8 1846     		mov	r0, r3
+ 757 00aa 1037     		adds	r7, r7, #16
+ 758              		.cfi_def_cfa_offset 8
+ 759 00ac BD46     		mov	sp, r7
+ 760              		.cfi_def_cfa_register 13
+ 761              		@ sp needed
+ 762 00ae 80BD     		pop	{r7, pc}
+ 763              	.L67:
+ 764              		.align	2
+ 765              	.L66:
+ 766 00b0 22470040 		.word	1073760034
+ 767 00b4 00000000 		.word	dieTemperature
+ 768              		.cfi_endproc
+ 769              	.LFE8:
+ 770              		.size	EEPROM_PSoC_StartWrite, .-EEPROM_PSoC_StartWrite
+ 771              		.section	.text.EEPROM_PSoC_StartErase,"ax",%progbits
+ 772              		.align	2
+ 773              		.global	EEPROM_PSoC_StartErase
+ 774              		.thumb
+ 775              		.thumb_func
+ 776              		.type	EEPROM_PSoC_StartErase, %function
+ 777              	EEPROM_PSoC_StartErase:
+ 778              	.LFB9:
+ 514:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 515:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 516:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 517:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_StartErase
+ 518:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 519:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 520:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 521:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Starts the EEPROM sector erase. This function does not block.
+ 522:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  The function returns once the SPC has begun writing the data. This function
+ 523:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  must be used in combination with EEPROM_PSoC_Query().
+ 524:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  EEPROM_PSoC_Query() must be called until it returns a status
+ 525:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  other than CYRET_STARTED. That indicates the erase has been completed.
+ 526:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Until EEPROM_PSoC_Query() detects that the erase is
+ 527:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  complete, the SPC is marked as locked to prevent another SPC operation
+ 528:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  from being performed.
+ 529:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 530:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 531:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  sectorNumber:  The sector number to erase.
+ 532:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 533:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 24
+
+
+ 534:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_STARTED, if the SPC command to erase was successfully started.
+ 535:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter sectorNumber is out of range.
+ 536:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 537:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 538:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 539:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Side effects:
+ 540:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  After calling this API, the device should not be powered down, reset or switched
+ 541:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  to low power modes until EEPROM operation is complete.
+ 542:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Ignoring this recommendation may lead to data corruption or silicon
+ 543:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  unexpected behavior.
+ 544:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 545:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 546:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_StartErase(uint8 sectorNumber) 
+ 547:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 779              		.loc 1 547 0
+ 780              		.cfi_startproc
+ 781              		@ args = 0, pretend = 0, frame = 16
+ 782              		@ frame_needed = 1, uses_anonymous_args = 0
+ 783 0000 80B5     		push	{r7, lr}
+ 784              		.cfi_def_cfa_offset 8
+ 785              		.cfi_offset 7, -8
+ 786              		.cfi_offset 14, -4
+ 787 0002 84B0     		sub	sp, sp, #16
+ 788              		.cfi_def_cfa_offset 24
+ 789 0004 00AF     		add	r7, sp, #0
+ 790              		.cfi_def_cfa_register 7
+ 791 0006 0346     		mov	r3, r0
+ 792 0008 FB71     		strb	r3, [r7, #7]
+ 548:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 549:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 550:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 793              		.loc 1 550 0
+ 794 000a FFF7FEFF 		bl	CySpcStart
+ 551:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 552:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if(sectorNumber < (uint8) CY_EEPROM_NUMBER_ARRAYS)
+ 795              		.loc 1 552 0
+ 796 000e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 797 0010 002B     		cmp	r3, #0
+ 798 0012 15D1     		bne	.L69
+ 553:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 554:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* See if we can get SPC. */
+ 555:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CySpcLock() == CYRET_SUCCESS)
+ 799              		.loc 1 555 0
+ 800 0014 FFF7FEFF 		bl	CySpcLock
+ 801 0018 0346     		mov	r3, r0
+ 802 001a 002B     		cmp	r3, #0
+ 803 001c 0DD1     		bne	.L70
+ 556:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 557:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Plan for failure */
+ 558:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_UNKNOWN;
+ 804              		.loc 1 558 0
+ 805 001e 4FF0FF33 		mov	r3, #-1
+ 806 0022 FB60     		str	r3, [r7, #12]
+ 559:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 560:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Command to load a row of data */
+ 561:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if(CySpcEraseSector(CY_SPC_FIRST_EE_ARRAYID, sectorNumber) == CYRET_STARTED)
+ 807              		.loc 1 561 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 25
+
+
+ 808 0024 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 809 0026 1946     		mov	r1, r3
+ 810 0028 4020     		movs	r0, #64
+ 811 002a FFF7FEFF 		bl	CySpcEraseSector
+ 812 002e 0346     		mov	r3, r0
+ 813 0030 072B     		cmp	r3, #7
+ 814 0032 07D1     		bne	.L73
+ 562:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 563:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 status = CYRET_SUCCESS;
+ 815              		.loc 1 563 0
+ 816 0034 0023     		movs	r3, #0
+ 817 0036 FB60     		str	r3, [r7, #12]
+ 818 0038 04E0     		b	.L73
+ 819              	.L70:
+ 564:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 565:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 566:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 567:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 568:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 820              		.loc 1 568 0
+ 821 003a 0423     		movs	r3, #4
+ 822 003c FB60     		str	r3, [r7, #12]
+ 823 003e 01E0     		b	.L73
+ 824              	.L69:
+ 569:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 570:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 571:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 572:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 573:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 825              		.loc 1 573 0
+ 826 0040 0123     		movs	r3, #1
+ 827 0042 FB60     		str	r3, [r7, #12]
+ 828              	.L73:
+ 574:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 575:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 576:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 829              		.loc 1 576 0
+ 830 0044 FB68     		ldr	r3, [r7, #12]
+ 577:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 831              		.loc 1 577 0
+ 832 0046 1846     		mov	r0, r3
+ 833 0048 1037     		adds	r7, r7, #16
+ 834              		.cfi_def_cfa_offset 8
+ 835 004a BD46     		mov	sp, r7
+ 836              		.cfi_def_cfa_register 13
+ 837              		@ sp needed
+ 838 004c 80BD     		pop	{r7, pc}
+ 839              		.cfi_endproc
+ 840              	.LFE9:
+ 841              		.size	EEPROM_PSoC_StartErase, .-EEPROM_PSoC_StartErase
+ 842 004e 00BF     		.section	.text.EEPROM_PSoC_Query,"ax",%progbits
+ 843              		.align	2
+ 844              		.global	EEPROM_PSoC_Query
+ 845              		.thumb
+ 846              		.thumb_func
+ 847              		.type	EEPROM_PSoC_Query, %function
+ 848              	EEPROM_PSoC_Query:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 26
+
+
+ 849              	.LFB10:
+ 578:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 579:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 580:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 581:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_Query
+ 582:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 583:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 584:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 585:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Checks the status of an earlier call to EEPROM_PSoC_StartWrite() or
+ 586:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  EEPROM_PSoC_StartErase().
+ 587:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  This function must be called until it returns a value other than
+ 588:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_STARTED. Once that occurs, the write or erase has been completed and
+ 589:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  the SPC is unlocked.
+ 590:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 591:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 592:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  None
+ 593:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 594:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 595:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_STARTED, if the SPC command is still processing.
+ 596:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_SUCCESS, if the operation was completed successfully.
+ 597:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 598:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 599:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 600:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_Query(void) 
+ 601:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 850              		.loc 1 601 0
+ 851              		.cfi_startproc
+ 852              		@ args = 0, pretend = 0, frame = 8
+ 853              		@ frame_needed = 1, uses_anonymous_args = 0
+ 854 0000 80B5     		push	{r7, lr}
+ 855              		.cfi_def_cfa_offset 8
+ 856              		.cfi_offset 7, -8
+ 857              		.cfi_offset 14, -4
+ 858 0002 82B0     		sub	sp, sp, #8
+ 859              		.cfi_def_cfa_offset 16
+ 860 0004 00AF     		add	r7, sp, #0
+ 861              		.cfi_def_cfa_register 7
+ 602:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 603:Generated_Source\PSoC5/EEPROM_PSoC.c ****     
+ 604:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 862              		.loc 1 604 0
+ 863 0006 FFF7FEFF 		bl	CySpcStart
+ 605:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 606:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Check if SPC is idle */
+ 607:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if(CY_SPC_IDLE)
+ 864              		.loc 1 607 0
+ 865 000a 124B     		ldr	r3, .L81
+ 866 000c 1B78     		ldrb	r3, [r3]
+ 867 000e DBB2     		uxtb	r3, r3
+ 868 0010 03F00203 		and	r3, r3, #2
+ 869 0014 002B     		cmp	r3, #0
+ 870 0016 16D0     		beq	.L76
+ 608:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 609:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* SPC is idle now */
+ 610:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 871              		.loc 1 610 0
+ 872 0018 0E4B     		ldr	r3, .L81
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 27
+
+
+ 873 001a 1B78     		ldrb	r3, [r3]
+ 874 001c DBB2     		uxtb	r3, r3
+ 875 001e 03F00203 		and	r3, r3, #2
+ 876 0022 002B     		cmp	r3, #0
+ 877 0024 09D0     		beq	.L77
+ 878              		.loc 1 610 0 is_stmt 0 discriminator 1
+ 879 0026 0B4B     		ldr	r3, .L81
+ 880 0028 1B78     		ldrb	r3, [r3]
+ 881 002a DBB2     		uxtb	r3, r3
+ 882 002c 9B08     		lsrs	r3, r3, #2
+ 883 002e DBB2     		uxtb	r3, r3
+ 884 0030 002B     		cmp	r3, #0
+ 885 0032 02D1     		bne	.L77
+ 611:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 612:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_SUCCESS;
+ 886              		.loc 1 612 0 is_stmt 1
+ 887 0034 0023     		movs	r3, #0
+ 888 0036 7B60     		str	r3, [r7, #4]
+ 889 0038 02E0     		b	.L78
+ 890              	.L77:
+ 613:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 614:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 615:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 616:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_UNKNOWN;
+ 891              		.loc 1 616 0
+ 892 003a 4FF0FF33 		mov	r3, #-1
+ 893 003e 7B60     		str	r3, [r7, #4]
+ 894              	.L78:
+ 617:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 618:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 619:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* Unlock SPC so that someone else can use it. */
+ 620:Generated_Source\PSoC5/EEPROM_PSoC.c ****         CySpcUnlock();
+ 895              		.loc 1 620 0
+ 896 0040 FFF7FEFF 		bl	CySpcUnlock
+ 897 0044 01E0     		b	.L79
+ 898              	.L76:
+ 621:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 622:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 623:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 624:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_STARTED;
+ 899              		.loc 1 624 0
+ 900 0046 0723     		movs	r3, #7
+ 901 0048 7B60     		str	r3, [r7, #4]
+ 902              	.L79:
+ 625:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 626:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 627:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 903              		.loc 1 627 0
+ 904 004a 7B68     		ldr	r3, [r7, #4]
+ 628:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 905              		.loc 1 628 0
+ 906 004c 1846     		mov	r0, r3
+ 907 004e 0837     		adds	r7, r7, #8
+ 908              		.cfi_def_cfa_offset 8
+ 909 0050 BD46     		mov	sp, r7
+ 910              		.cfi_def_cfa_register 13
+ 911              		@ sp needed
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 28
+
+
+ 912 0052 80BD     		pop	{r7, pc}
+ 913              	.L82:
+ 914              		.align	2
+ 915              	.L81:
+ 916 0054 22470040 		.word	1073760034
+ 917              		.cfi_endproc
+ 918              	.LFE10:
+ 919              		.size	EEPROM_PSoC_Query, .-EEPROM_PSoC_Query
+ 920              		.section	.text.EEPROM_PSoC_ByteWritePos,"ax",%progbits
+ 921              		.align	2
+ 922              		.global	EEPROM_PSoC_ByteWritePos
+ 923              		.thumb
+ 924              		.thumb_func
+ 925              		.type	EEPROM_PSoC_ByteWritePos, %function
+ 926              	EEPROM_PSoC_ByteWritePos:
+ 927              	.LFB11:
+ 629:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 630:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 631:Generated_Source\PSoC5/EEPROM_PSoC.c **** /*******************************************************************************
+ 632:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Function Name: EEPROM_PSoC_ByteWritePos
+ 633:Generated_Source\PSoC5/EEPROM_PSoC.c **** ********************************************************************************
+ 634:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 635:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Summary:
+ 636:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  Writes a byte of data to the EEPROM. This is a blocking call. It will not
+ 637:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  return until the write operation succeeds or fails.
+ 638:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 639:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Parameters:
+ 640:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  dataByte:   The byte of data to write to the EEPROM.
+ 641:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  rowNumber:  The EEPROM row number to program.
+ 642:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  byteNumber: The byte number within the row to program.
+ 643:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 644:Generated_Source\PSoC5/EEPROM_PSoC.c **** * Return:
+ 645:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_SUCCESS, if the operation was successful.
+ 646:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_BAD_PARAM, if the parameter rowNumber or byteNumber is out of range.
+ 647:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_LOCKED, if the SPC is being used.
+ 648:Generated_Source\PSoC5/EEPROM_PSoC.c **** *  CYRET_UNKNOWN, if there was an SPC error.
+ 649:Generated_Source\PSoC5/EEPROM_PSoC.c **** *
+ 650:Generated_Source\PSoC5/EEPROM_PSoC.c **** *******************************************************************************/
+ 651:Generated_Source\PSoC5/EEPROM_PSoC.c **** cystatus EEPROM_PSoC_ByteWritePos(uint8 dataByte, uint8 rowNumber, uint8 byteNumber) \
+ 652:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 653:Generated_Source\PSoC5/EEPROM_PSoC.c **** {
+ 928              		.loc 1 653 0
+ 929              		.cfi_startproc
+ 930              		@ args = 0, pretend = 0, frame = 16
+ 931              		@ frame_needed = 1, uses_anonymous_args = 0
+ 932 0000 80B5     		push	{r7, lr}
+ 933              		.cfi_def_cfa_offset 8
+ 934              		.cfi_offset 7, -8
+ 935              		.cfi_offset 14, -4
+ 936 0002 84B0     		sub	sp, sp, #16
+ 937              		.cfi_def_cfa_offset 24
+ 938 0004 00AF     		add	r7, sp, #0
+ 939              		.cfi_def_cfa_register 7
+ 940 0006 0346     		mov	r3, r0
+ 941 0008 FB71     		strb	r3, [r7, #7]
+ 942 000a 0B46     		mov	r3, r1
+ 943 000c BB71     		strb	r3, [r7, #6]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 29
+
+
+ 944 000e 1346     		mov	r3, r2
+ 945 0010 7B71     		strb	r3, [r7, #5]
+ 654:Generated_Source\PSoC5/EEPROM_PSoC.c ****     cystatus status;
+ 655:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 656:Generated_Source\PSoC5/EEPROM_PSoC.c ****     /* Start SPC */
+ 657:Generated_Source\PSoC5/EEPROM_PSoC.c ****     CySpcStart();
+ 946              		.loc 1 657 0
+ 947 0012 FFF7FEFF 		bl	CySpcStart
+ 658:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 659:Generated_Source\PSoC5/EEPROM_PSoC.c ****     if((rowNumber < (uint8) CY_EEPROM_NUMBER_ROWS) && (byteNumber < (uint8) SIZEOF_EEPROM_ROW))
+ 948              		.loc 1 659 0
+ 949 0016 97F90630 		ldrsb	r3, [r7, #6]
+ 950 001a 002B     		cmp	r3, #0
+ 951 001c 64DB     		blt	.L84
+ 952              		.loc 1 659 0 is_stmt 0 discriminator 1
+ 953 001e 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 954 0020 0F2B     		cmp	r3, #15
+ 955 0022 61D8     		bhi	.L84
+ 660:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 661:Generated_Source\PSoC5/EEPROM_PSoC.c ****         /* See if we can get SPC. */
+ 662:Generated_Source\PSoC5/EEPROM_PSoC.c ****         if(CySpcLock() == CYRET_SUCCESS)
+ 956              		.loc 1 662 0 is_stmt 1
+ 957 0024 FFF7FEFF 		bl	CySpcLock
+ 958 0028 0346     		mov	r3, r0
+ 959 002a 002B     		cmp	r3, #0
+ 960 002c 59D1     		bne	.L85
+ 663:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 664:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Plan for failure */
+ 665:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_UNKNOWN;
+ 961              		.loc 1 665 0
+ 962 002e 4FF0FF33 		mov	r3, #-1
+ 963 0032 FB60     		str	r3, [r7, #12]
+ 666:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 667:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Command to load byte of data */
+ 668:Generated_Source\PSoC5/EEPROM_PSoC.c ****             if(CySpcLoadMultiByte(CY_SPC_FIRST_EE_ARRAYID, (uint16)byteNumber, &dataByte,\
+ 964              		.loc 1 668 0
+ 965 0034 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 966 0036 99B2     		uxth	r1, r3
+ 967 0038 FA1D     		adds	r2, r7, #7
+ 968 003a 0123     		movs	r3, #1
+ 969 003c 4020     		movs	r0, #64
+ 970 003e FFF7FEFF 		bl	CySpcLoadMultiByte
+ 971 0042 0346     		mov	r3, r0
+ 972 0044 072B     		cmp	r3, #7
+ 973 0046 49D1     		bne	.L86
+ 669:Generated_Source\PSoC5/EEPROM_PSoC.c ****                                                                 EEPROM_PSoC_SPC_BYTE_WRITE_SIZE) ==
+ 670:Generated_Source\PSoC5/EEPROM_PSoC.c ****             {
+ 671:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 while(CY_SPC_BUSY)
+ 974              		.loc 1 671 0
+ 975 0048 00BF     		nop
+ 976              	.L87:
+ 977              		.loc 1 671 0 is_stmt 0 discriminator 1
+ 978 004a 2B4B     		ldr	r3, .L97
+ 979 004c 1B78     		ldrb	r3, [r3]
+ 980 004e DBB2     		uxtb	r3, r3
+ 981 0050 03F00203 		and	r3, r3, #2
+ 982 0054 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 30
+
+
+ 983 0056 F8D0     		beq	.L87
+ 672:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 673:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     /* Wait until SPC becomes idle */
+ 674:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 675:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 676:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* SPC is idle now */
+ 677:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 984              		.loc 1 677 0 is_stmt 1
+ 985 0058 274B     		ldr	r3, .L97
+ 986 005a 1B78     		ldrb	r3, [r3]
+ 987 005c DBB2     		uxtb	r3, r3
+ 988 005e 03F00203 		and	r3, r3, #2
+ 989 0062 002B     		cmp	r3, #0
+ 990 0064 08D0     		beq	.L88
+ 991              		.loc 1 677 0 is_stmt 0 discriminator 1
+ 992 0066 244B     		ldr	r3, .L97
+ 993 0068 1B78     		ldrb	r3, [r3]
+ 994 006a DBB2     		uxtb	r3, r3
+ 995 006c 9B08     		lsrs	r3, r3, #2
+ 996 006e DBB2     		uxtb	r3, r3
+ 997 0070 002B     		cmp	r3, #0
+ 998 0072 01D1     		bne	.L88
+ 678:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 679:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_SUCCESS;
+ 999              		.loc 1 679 0 is_stmt 1
+ 1000 0074 0023     		movs	r3, #0
+ 1001 0076 FB60     		str	r3, [r7, #12]
+ 1002              	.L88:
+ 680:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 681:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 682:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 /* Command to erase and program the row. */
+ 683:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 if(status == CYRET_SUCCESS)
+ 1003              		.loc 1 683 0
+ 1004 0078 FB68     		ldr	r3, [r7, #12]
+ 1005 007a 002B     		cmp	r3, #0
+ 1006 007c 2BD1     		bne	.L89
+ 684:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 685:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     if(CySpcWriteRow(CY_SPC_FIRST_EE_ARRAYID, (uint16)rowNumber, dieTemperature[0u]
+ 1007              		.loc 1 685 0
+ 1008 007e BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 1009 0080 99B2     		uxth	r1, r3
+ 1010 0082 1E4B     		ldr	r3, .L97+4
+ 1011 0084 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 1012 0086 1D4B     		ldr	r3, .L97+4
+ 1013 0088 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 1014 008a 4020     		movs	r0, #64
+ 1015 008c FFF7FEFF 		bl	CySpcWriteRow
+ 1016 0090 0346     		mov	r3, r0
+ 1017 0092 072B     		cmp	r3, #7
+ 1018 0094 1BD1     		bne	.L90
+ 686:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     dieTemperature[1u]) == CYRET_STARTED)
+ 687:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 688:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* Plan for failure */
+ 689:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 1019              		.loc 1 689 0
+ 1020 0096 4FF0FF33 		mov	r3, #-1
+ 1021 009a FB60     		str	r3, [r7, #12]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 31
+
+
+ 690:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 691:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         while(CY_SPC_BUSY)
+ 1022              		.loc 1 691 0
+ 1023 009c 00BF     		nop
+ 1024              	.L91:
+ 1025              		.loc 1 691 0 is_stmt 0 discriminator 1
+ 1026 009e 164B     		ldr	r3, .L97
+ 1027 00a0 1B78     		ldrb	r3, [r3]
+ 1028 00a2 DBB2     		uxtb	r3, r3
+ 1029 00a4 03F00203 		and	r3, r3, #2
+ 1030 00a8 002B     		cmp	r3, #0
+ 1031 00aa F8D0     		beq	.L91
+ 692:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 693:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             /* Wait until SPC becomes idle */
+ 694:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 695:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 696:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         /* SPC is idle now */
+ 697:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         if(CY_SPC_STATUS_SUCCESS == CY_SPC_READ_STATUS)
+ 1032              		.loc 1 697 0 is_stmt 1
+ 1033 00ac 124B     		ldr	r3, .L97
+ 1034 00ae 1B78     		ldrb	r3, [r3]
+ 1035 00b0 DBB2     		uxtb	r3, r3
+ 1036 00b2 03F00203 		and	r3, r3, #2
+ 1037 00b6 002B     		cmp	r3, #0
+ 1038 00b8 10D0     		beq	.L86
+ 1039              		.loc 1 697 0 is_stmt 0 discriminator 1
+ 1040 00ba 0F4B     		ldr	r3, .L97
+ 1041 00bc 1B78     		ldrb	r3, [r3]
+ 1042 00be DBB2     		uxtb	r3, r3
+ 1043 00c0 9B08     		lsrs	r3, r3, #2
+ 1044 00c2 DBB2     		uxtb	r3, r3
+ 1045 00c4 002B     		cmp	r3, #0
+ 1046 00c6 09D1     		bne	.L86
+ 698:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         {
+ 699:Generated_Source\PSoC5/EEPROM_PSoC.c ****                             status = CYRET_SUCCESS;
+ 1047              		.loc 1 699 0 is_stmt 1
+ 1048 00c8 0023     		movs	r3, #0
+ 1049 00ca FB60     		str	r3, [r7, #12]
+ 1050 00cc 06E0     		b	.L86
+ 1051              	.L90:
+ 700:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         }
+ 701:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 702:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     else
+ 703:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     {
+ 704:Generated_Source\PSoC5/EEPROM_PSoC.c ****                         status = CYRET_UNKNOWN;
+ 1052              		.loc 1 704 0
+ 1053 00ce 4FF0FF33 		mov	r3, #-1
+ 1054 00d2 FB60     		str	r3, [r7, #12]
+ 1055 00d4 02E0     		b	.L86
+ 1056              	.L89:
+ 705:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     }
+ 706:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 707:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 else
+ 708:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 {
+ 709:Generated_Source\PSoC5/EEPROM_PSoC.c ****                     status = CYRET_UNKNOWN;
+ 1057              		.loc 1 709 0
+ 1058 00d6 4FF0FF33 		mov	r3, #-1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 32
+
+
+ 1059 00da FB60     		str	r3, [r7, #12]
+ 1060              	.L86:
+ 710:Generated_Source\PSoC5/EEPROM_PSoC.c ****                 }
+ 711:Generated_Source\PSoC5/EEPROM_PSoC.c ****             }
+ 712:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 713:Generated_Source\PSoC5/EEPROM_PSoC.c ****             /* Unlock SPC so that someone else can use it. */
+ 714:Generated_Source\PSoC5/EEPROM_PSoC.c ****             CySpcUnlock();
+ 1061              		.loc 1 714 0
+ 1062 00dc FFF7FEFF 		bl	CySpcUnlock
+ 662:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 1063              		.loc 1 662 0
+ 1064 00e0 04E0     		b	.L95
+ 1065              	.L85:
+ 715:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 716:Generated_Source\PSoC5/EEPROM_PSoC.c ****         else
+ 717:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 718:Generated_Source\PSoC5/EEPROM_PSoC.c ****             status = CYRET_LOCKED;
+ 1066              		.loc 1 718 0
+ 1067 00e2 0423     		movs	r3, #4
+ 1068 00e4 FB60     		str	r3, [r7, #12]
+ 662:Generated_Source\PSoC5/EEPROM_PSoC.c ****         {
+ 1069              		.loc 1 662 0
+ 1070 00e6 01E0     		b	.L95
+ 1071              	.L84:
+ 719:Generated_Source\PSoC5/EEPROM_PSoC.c ****         }
+ 720:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 721:Generated_Source\PSoC5/EEPROM_PSoC.c ****     else
+ 722:Generated_Source\PSoC5/EEPROM_PSoC.c ****     {
+ 723:Generated_Source\PSoC5/EEPROM_PSoC.c ****         status = CYRET_BAD_PARAM;
+ 1072              		.loc 1 723 0
+ 1073 00e8 0123     		movs	r3, #1
+ 1074 00ea FB60     		str	r3, [r7, #12]
+ 1075              	.L95:
+ 724:Generated_Source\PSoC5/EEPROM_PSoC.c ****     }
+ 725:Generated_Source\PSoC5/EEPROM_PSoC.c **** 
+ 726:Generated_Source\PSoC5/EEPROM_PSoC.c ****     return(status);
+ 1076              		.loc 1 726 0
+ 1077 00ec FB68     		ldr	r3, [r7, #12]
+ 727:Generated_Source\PSoC5/EEPROM_PSoC.c **** }
+ 1078              		.loc 1 727 0
+ 1079 00ee 1846     		mov	r0, r3
+ 1080 00f0 1037     		adds	r7, r7, #16
+ 1081              		.cfi_def_cfa_offset 8
+ 1082 00f2 BD46     		mov	sp, r7
+ 1083              		.cfi_def_cfa_register 13
+ 1084              		@ sp needed
+ 1085 00f4 80BD     		pop	{r7, pc}
+ 1086              	.L98:
+ 1087 00f6 00BF     		.align	2
+ 1088              	.L97:
+ 1089 00f8 22470040 		.word	1073760034
+ 1090 00fc 00000000 		.word	dieTemperature
+ 1091              		.cfi_endproc
+ 1092              	.LFE11:
+ 1093              		.size	EEPROM_PSoC_ByteWritePos, .-EEPROM_PSoC_ByteWritePos
+ 1094              		.text
+ 1095              	.Letext0:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 33
+
+
+ 1096              		.file 2 "Generated_Source\\PSoC5\\cytypes.h"
+ 1097              		.file 3 "Generated_Source\\PSoC5\\CyFlash.h"
+ 1098              		.section	.debug_info,"",%progbits
+ 1099              	.Ldebug_info0:
+ 1100 0000 55030000 		.4byte	0x355
+ 1101 0004 0400     		.2byte	0x4
+ 1102 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1103 000a 04       		.byte	0x4
+ 1104 000b 01       		.uleb128 0x1
+ 1105 000c 20000000 		.4byte	.LASF38
+ 1106 0010 0C       		.byte	0xc
+ 1107 0011 F8020000 		.4byte	.LASF39
+ 1108 0015 48020000 		.4byte	.LASF40
+ 1109 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1110 001d 00000000 		.4byte	0
+ 1111 0021 00000000 		.4byte	.Ldebug_line0
+ 1112 0025 02       		.uleb128 0x2
+ 1113 0026 01       		.byte	0x1
+ 1114 0027 06       		.byte	0x6
+ 1115 0028 EC020000 		.4byte	.LASF0
+ 1116 002c 02       		.uleb128 0x2
+ 1117 002d 01       		.byte	0x1
+ 1118 002e 08       		.byte	0x8
+ 1119 002f 69010000 		.4byte	.LASF1
+ 1120 0033 02       		.uleb128 0x2
+ 1121 0034 02       		.byte	0x2
+ 1122 0035 05       		.byte	0x5
+ 1123 0036 A0020000 		.4byte	.LASF2
+ 1124 003a 02       		.uleb128 0x2
+ 1125 003b 02       		.byte	0x2
+ 1126 003c 07       		.byte	0x7
+ 1127 003d B4000000 		.4byte	.LASF3
+ 1128 0041 02       		.uleb128 0x2
+ 1129 0042 04       		.byte	0x4
+ 1130 0043 05       		.byte	0x5
+ 1131 0044 CD020000 		.4byte	.LASF4
+ 1132 0048 02       		.uleb128 0x2
+ 1133 0049 04       		.byte	0x4
+ 1134 004a 07       		.byte	0x7
+ 1135 004b 39010000 		.4byte	.LASF5
+ 1136 004f 02       		.uleb128 0x2
+ 1137 0050 08       		.byte	0x8
+ 1138 0051 05       		.byte	0x5
+ 1139 0052 3A020000 		.4byte	.LASF6
+ 1140 0056 02       		.uleb128 0x2
+ 1141 0057 08       		.byte	0x8
+ 1142 0058 07       		.byte	0x7
+ 1143 0059 E2010000 		.4byte	.LASF7
+ 1144 005d 03       		.uleb128 0x3
+ 1145 005e 04       		.byte	0x4
+ 1146 005f 05       		.byte	0x5
+ 1147 0060 696E7400 		.ascii	"int\000"
+ 1148 0064 02       		.uleb128 0x2
+ 1149 0065 04       		.byte	0x4
+ 1150 0066 07       		.byte	0x7
+ 1151 0067 CD010000 		.4byte	.LASF8
+ 1152 006b 04       		.uleb128 0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 34
+
+
+ 1153 006c 4B010000 		.4byte	.LASF9
+ 1154 0070 02       		.byte	0x2
+ 1155 0071 9201     		.2byte	0x192
+ 1156 0073 2C000000 		.4byte	0x2c
+ 1157 0077 04       		.uleb128 0x4
+ 1158 0078 AE010000 		.4byte	.LASF10
+ 1159 007c 02       		.byte	0x2
+ 1160 007d 9301     		.2byte	0x193
+ 1161 007f 3A000000 		.4byte	0x3a
+ 1162 0083 02       		.uleb128 0x2
+ 1163 0084 04       		.byte	0x4
+ 1164 0085 04       		.byte	0x4
+ 1165 0086 AE000000 		.4byte	.LASF11
+ 1166 008a 02       		.uleb128 0x2
+ 1167 008b 08       		.byte	0x8
+ 1168 008c 04       		.byte	0x4
+ 1169 008d 77010000 		.4byte	.LASF12
+ 1170 0091 02       		.uleb128 0x2
+ 1171 0092 01       		.byte	0x1
+ 1172 0093 08       		.byte	0x8
+ 1173 0094 8A020000 		.4byte	.LASF13
+ 1174 0098 04       		.uleb128 0x4
+ 1175 0099 17000000 		.4byte	.LASF14
+ 1176 009d 02       		.byte	0x2
+ 1177 009e 3402     		.2byte	0x234
+ 1178 00a0 48000000 		.4byte	0x48
+ 1179 00a4 04       		.uleb128 0x4
+ 1180 00a5 22010000 		.4byte	.LASF15
+ 1181 00a9 02       		.byte	0x2
+ 1182 00aa 3C02     		.2byte	0x23c
+ 1183 00ac B0000000 		.4byte	0xb0
+ 1184 00b0 05       		.uleb128 0x5
+ 1185 00b1 6B000000 		.4byte	0x6b
+ 1186 00b5 02       		.uleb128 0x2
+ 1187 00b6 08       		.byte	0x8
+ 1188 00b7 04       		.byte	0x4
+ 1189 00b8 E0020000 		.4byte	.LASF16
+ 1190 00bc 02       		.uleb128 0x2
+ 1191 00bd 04       		.byte	0x4
+ 1192 00be 07       		.byte	0x7
+ 1193 00bf 1A020000 		.4byte	.LASF17
+ 1194 00c3 06       		.uleb128 0x6
+ 1195 00c4 F2000000 		.4byte	.LASF18
+ 1196 00c8 01       		.byte	0x1
+ 1197 00c9 21       		.byte	0x21
+ 1198 00ca 00000000 		.4byte	.LFB0
+ 1199 00ce 10000000 		.4byte	.LFE0-.LFB0
+ 1200 00d2 01       		.uleb128 0x1
+ 1201 00d3 9C       		.byte	0x9c
+ 1202 00d4 06       		.uleb128 0x6
+ 1203 00d5 27010000 		.4byte	.LASF19
+ 1204 00d9 01       		.byte	0x1
+ 1205 00da 39       		.byte	0x39
+ 1206 00db 00000000 		.4byte	.LFB1
+ 1207 00df 0C000000 		.4byte	.LFE1-.LFB1
+ 1208 00e3 01       		.uleb128 0x1
+ 1209 00e4 9C       		.byte	0x9c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 35
+
+
+ 1210 00e5 06       		.uleb128 0x6
+ 1211 00e6 8F020000 		.4byte	.LASF20
+ 1212 00ea 01       		.byte	0x1
+ 1213 00eb 4D       		.byte	0x4d
+ 1214 00ec 00000000 		.4byte	.LFB2
+ 1215 00f0 0C000000 		.4byte	.LFE2-.LFB2
+ 1216 00f4 01       		.uleb128 0x1
+ 1217 00f5 9C       		.byte	0x9c
+ 1218 00f6 07       		.uleb128 0x7
+ 1219 00f7 B7020000 		.4byte	.LASF26
+ 1220 00fb 01       		.byte	0x1
+ 1221 00fc 6A       		.byte	0x6a
+ 1222 00fd 98000000 		.4byte	0x98
+ 1223 0101 00000000 		.4byte	.LFB3
+ 1224 0105 14010000 		.4byte	.LFE3-.LFB3
+ 1225 0109 01       		.uleb128 0x1
+ 1226 010a 9C       		.byte	0x9c
+ 1227 010b 56010000 		.4byte	0x156
+ 1228 010f 08       		.uleb128 0x8
+ 1229 0110 60010000 		.4byte	.LASF21
+ 1230 0114 01       		.byte	0x1
+ 1231 0115 6A       		.byte	0x6a
+ 1232 0116 6B000000 		.4byte	0x6b
+ 1233 011a 02       		.uleb128 0x2
+ 1234 011b 91       		.byte	0x91
+ 1235 011c 6F       		.sleb128 -17
+ 1236 011d 08       		.uleb128 0x8
+ 1237 011e DA010000 		.4byte	.LASF22
+ 1238 0122 01       		.byte	0x1
+ 1239 0123 6A       		.byte	0x6a
+ 1240 0124 77000000 		.4byte	0x77
+ 1241 0128 02       		.uleb128 0x2
+ 1242 0129 91       		.byte	0x91
+ 1243 012a 6C       		.sleb128 -20
+ 1244 012b 09       		.uleb128 0x9
+ 1245 012c C7000000 		.4byte	.LASF23
+ 1246 0130 01       		.byte	0x1
+ 1247 0131 6C       		.byte	0x6c
+ 1248 0132 98000000 		.4byte	0x98
+ 1249 0136 02       		.uleb128 0x2
+ 1250 0137 91       		.byte	0x91
+ 1251 0138 74       		.sleb128 -12
+ 1252 0139 09       		.uleb128 0x9
+ 1253 013a D6020000 		.4byte	.LASF24
+ 1254 013e 01       		.byte	0x1
+ 1255 013f 6D       		.byte	0x6d
+ 1256 0140 77000000 		.4byte	0x77
+ 1257 0144 02       		.uleb128 0x2
+ 1258 0145 91       		.byte	0x91
+ 1259 0146 72       		.sleb128 -14
+ 1260 0147 09       		.uleb128 0x9
+ 1261 0148 E7000000 		.4byte	.LASF25
+ 1262 014c 01       		.byte	0x1
+ 1263 014d 6E       		.byte	0x6e
+ 1264 014e 77000000 		.4byte	0x77
+ 1265 0152 02       		.uleb128 0x2
+ 1266 0153 91       		.byte	0x91
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 36
+
+
+ 1267 0154 70       		.sleb128 -16
+ 1268 0155 00       		.byte	0
+ 1269 0156 07       		.uleb128 0x7
+ 1270 0157 05010000 		.4byte	.LASF27
+ 1271 015b 01       		.byte	0x1
+ 1272 015c D0       		.byte	0xd0
+ 1273 015d 6B000000 		.4byte	0x6b
+ 1274 0161 00000000 		.4byte	.LFB4
+ 1275 0165 3A000000 		.4byte	.LFE4-.LFB4
+ 1276 0169 01       		.uleb128 0x1
+ 1277 016a 9C       		.byte	0x9c
+ 1278 016b 9A010000 		.4byte	0x19a
+ 1279 016f 08       		.uleb128 0x8
+ 1280 0170 DA010000 		.4byte	.LASF22
+ 1281 0174 01       		.byte	0x1
+ 1282 0175 D0       		.byte	0xd0
+ 1283 0176 77000000 		.4byte	0x77
+ 1284 017a 02       		.uleb128 0x2
+ 1285 017b 91       		.byte	0x91
+ 1286 017c 6E       		.sleb128 -18
+ 1287 017d 09       		.uleb128 0x9
+ 1288 017e 1D030000 		.4byte	.LASF28
+ 1289 0182 01       		.byte	0x1
+ 1290 0183 D2       		.byte	0xd2
+ 1291 0184 6B000000 		.4byte	0x6b
+ 1292 0188 02       		.uleb128 0x2
+ 1293 0189 91       		.byte	0x91
+ 1294 018a 76       		.sleb128 -10
+ 1295 018b 09       		.uleb128 0x9
+ 1296 018c 0B020000 		.4byte	.LASF29
+ 1297 0190 01       		.byte	0x1
+ 1298 0191 D3       		.byte	0xd3
+ 1299 0192 6B000000 		.4byte	0x6b
+ 1300 0196 02       		.uleb128 0x2
+ 1301 0197 91       		.byte	0x91
+ 1302 0198 77       		.sleb128 -9
+ 1303 0199 00       		.byte	0
+ 1304 019a 0A       		.uleb128 0xa
+ 1305 019b 7E010000 		.4byte	.LASF41
+ 1306 019f 01       		.byte	0x1
+ 1307 01a0 F7       		.byte	0xf7
+ 1308 01a1 6B000000 		.4byte	0x6b
+ 1309 01a5 00000000 		.4byte	.LFB5
+ 1310 01a9 10000000 		.4byte	.LFE5-.LFB5
+ 1311 01ad 01       		.uleb128 0x1
+ 1312 01ae 9C       		.byte	0x9c
+ 1313 01af 0B       		.uleb128 0xb
+ 1314 01b0 B5010000 		.4byte	.LASF30
+ 1315 01b4 01       		.byte	0x1
+ 1316 01b5 1101     		.2byte	0x111
+ 1317 01b7 98000000 		.4byte	0x98
+ 1318 01bb 00000000 		.4byte	.LFB6
+ 1319 01bf 8C000000 		.4byte	.LFE6-.LFB6
+ 1320 01c3 01       		.uleb128 0x1
+ 1321 01c4 9C       		.byte	0x9c
+ 1322 01c5 E8010000 		.4byte	0x1e8
+ 1323 01c9 0C       		.uleb128 0xc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 37
+
+
+ 1324 01ca AA020000 		.4byte	.LASF31
+ 1325 01ce 01       		.byte	0x1
+ 1326 01cf 1101     		.2byte	0x111
+ 1327 01d1 6B000000 		.4byte	0x6b
+ 1328 01d5 02       		.uleb128 0x2
+ 1329 01d6 91       		.byte	0x91
+ 1330 01d7 6F       		.sleb128 -17
+ 1331 01d8 0D       		.uleb128 0xd
+ 1332 01d9 C7000000 		.4byte	.LASF23
+ 1333 01dd 01       		.byte	0x1
+ 1334 01de 1301     		.2byte	0x113
+ 1335 01e0 98000000 		.4byte	0x98
+ 1336 01e4 02       		.uleb128 0x2
+ 1337 01e5 91       		.byte	0x91
+ 1338 01e6 74       		.sleb128 -12
+ 1339 01e7 00       		.byte	0
+ 1340 01e8 0B       		.uleb128 0xb
+ 1341 01e9 F9010000 		.4byte	.LASF32
+ 1342 01ed 01       		.byte	0x1
+ 1343 01ee 5901     		.2byte	0x159
+ 1344 01f0 98000000 		.4byte	0x98
+ 1345 01f4 00000000 		.4byte	.LFB7
+ 1346 01f8 F0000000 		.4byte	.LFE7-.LFB7
+ 1347 01fc 01       		.uleb128 0x1
+ 1348 01fd 9C       		.byte	0x9c
+ 1349 01fe 30020000 		.4byte	0x230
+ 1350 0202 0C       		.uleb128 0xc
+ 1351 0203 1A010000 		.4byte	.LASF33
+ 1352 0207 01       		.byte	0x1
+ 1353 0208 5901     		.2byte	0x159
+ 1354 020a 30020000 		.4byte	0x230
+ 1355 020e 02       		.uleb128 0x2
+ 1356 020f 91       		.byte	0x91
+ 1357 0210 6C       		.sleb128 -20
+ 1358 0211 0C       		.uleb128 0xc
+ 1359 0212 D6020000 		.4byte	.LASF24
+ 1360 0216 01       		.byte	0x1
+ 1361 0217 5901     		.2byte	0x159
+ 1362 0219 6B000000 		.4byte	0x6b
+ 1363 021d 02       		.uleb128 0x2
+ 1364 021e 91       		.byte	0x91
+ 1365 021f 6B       		.sleb128 -21
+ 1366 0220 0D       		.uleb128 0xd
+ 1367 0221 C7000000 		.4byte	.LASF23
+ 1368 0225 01       		.byte	0x1
+ 1369 0226 5B01     		.2byte	0x15b
+ 1370 0228 98000000 		.4byte	0x98
+ 1371 022c 02       		.uleb128 0x2
+ 1372 022d 91       		.byte	0x91
+ 1373 022e 74       		.sleb128 -12
+ 1374 022f 00       		.byte	0
+ 1375 0230 0E       		.uleb128 0xe
+ 1376 0231 04       		.byte	0x4
+ 1377 0232 36020000 		.4byte	0x236
+ 1378 0236 0F       		.uleb128 0xf
+ 1379 0237 6B000000 		.4byte	0x6b
+ 1380 023b 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 38
+
+
+ 1381 023c 23020000 		.4byte	.LASF34
+ 1382 0240 01       		.byte	0x1
+ 1383 0241 C601     		.2byte	0x1c6
+ 1384 0243 98000000 		.4byte	0x98
+ 1385 0247 00000000 		.4byte	.LFB8
+ 1386 024b B8000000 		.4byte	.LFE8-.LFB8
+ 1387 024f 01       		.uleb128 0x1
+ 1388 0250 9C       		.byte	0x9c
+ 1389 0251 83020000 		.4byte	0x283
+ 1390 0255 0C       		.uleb128 0xc
+ 1391 0256 1A010000 		.4byte	.LASF33
+ 1392 025a 01       		.byte	0x1
+ 1393 025b C601     		.2byte	0x1c6
+ 1394 025d 30020000 		.4byte	0x230
+ 1395 0261 02       		.uleb128 0x2
+ 1396 0262 91       		.byte	0x91
+ 1397 0263 6C       		.sleb128 -20
+ 1398 0264 0C       		.uleb128 0xc
+ 1399 0265 D6020000 		.4byte	.LASF24
+ 1400 0269 01       		.byte	0x1
+ 1401 026a C601     		.2byte	0x1c6
+ 1402 026c 6B000000 		.4byte	0x6b
+ 1403 0270 02       		.uleb128 0x2
+ 1404 0271 91       		.byte	0x91
+ 1405 0272 6B       		.sleb128 -21
+ 1406 0273 0D       		.uleb128 0xd
+ 1407 0274 C7000000 		.4byte	.LASF23
+ 1408 0278 01       		.byte	0x1
+ 1409 0279 C901     		.2byte	0x1c9
+ 1410 027b 98000000 		.4byte	0x98
+ 1411 027f 02       		.uleb128 0x2
+ 1412 0280 91       		.byte	0x91
+ 1413 0281 74       		.sleb128 -12
+ 1414 0282 00       		.byte	0
+ 1415 0283 0B       		.uleb128 0xb
+ 1416 0284 00000000 		.4byte	.LASF35
+ 1417 0288 01       		.byte	0x1
+ 1418 0289 2202     		.2byte	0x222
+ 1419 028b 98000000 		.4byte	0x98
+ 1420 028f 00000000 		.4byte	.LFB9
+ 1421 0293 4E000000 		.4byte	.LFE9-.LFB9
+ 1422 0297 01       		.uleb128 0x1
+ 1423 0298 9C       		.byte	0x9c
+ 1424 0299 BC020000 		.4byte	0x2bc
+ 1425 029d 0C       		.uleb128 0xc
+ 1426 029e AA020000 		.4byte	.LASF31
+ 1427 02a2 01       		.byte	0x1
+ 1428 02a3 2202     		.2byte	0x222
+ 1429 02a5 6B000000 		.4byte	0x6b
+ 1430 02a9 02       		.uleb128 0x2
+ 1431 02aa 91       		.byte	0x91
+ 1432 02ab 6F       		.sleb128 -17
+ 1433 02ac 0D       		.uleb128 0xd
+ 1434 02ad C7000000 		.4byte	.LASF23
+ 1435 02b1 01       		.byte	0x1
+ 1436 02b2 2402     		.2byte	0x224
+ 1437 02b4 98000000 		.4byte	0x98
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 39
+
+
+ 1438 02b8 02       		.uleb128 0x2
+ 1439 02b9 91       		.byte	0x91
+ 1440 02ba 74       		.sleb128 -12
+ 1441 02bb 00       		.byte	0
+ 1442 02bc 0B       		.uleb128 0xb
+ 1443 02bd 9C010000 		.4byte	.LASF36
+ 1444 02c1 01       		.byte	0x1
+ 1445 02c2 5802     		.2byte	0x258
+ 1446 02c4 98000000 		.4byte	0x98
+ 1447 02c8 00000000 		.4byte	.LFB10
+ 1448 02cc 58000000 		.4byte	.LFE10-.LFB10
+ 1449 02d0 01       		.uleb128 0x1
+ 1450 02d1 9C       		.byte	0x9c
+ 1451 02d2 E6020000 		.4byte	0x2e6
+ 1452 02d6 0D       		.uleb128 0xd
+ 1453 02d7 C7000000 		.4byte	.LASF23
+ 1454 02db 01       		.byte	0x1
+ 1455 02dc 5A02     		.2byte	0x25a
+ 1456 02de 98000000 		.4byte	0x98
+ 1457 02e2 02       		.uleb128 0x2
+ 1458 02e3 91       		.byte	0x91
+ 1459 02e4 74       		.sleb128 -12
+ 1460 02e5 00       		.byte	0
+ 1461 02e6 0B       		.uleb128 0xb
+ 1462 02e7 CE000000 		.4byte	.LASF37
+ 1463 02eb 01       		.byte	0x1
+ 1464 02ec 8B02     		.2byte	0x28b
+ 1465 02ee 98000000 		.4byte	0x98
+ 1466 02f2 00000000 		.4byte	.LFB11
+ 1467 02f6 00010000 		.4byte	.LFE11-.LFB11
+ 1468 02fa 01       		.uleb128 0x1
+ 1469 02fb 9C       		.byte	0x9c
+ 1470 02fc 3D030000 		.4byte	0x33d
+ 1471 0300 0C       		.uleb128 0xc
+ 1472 0301 60010000 		.4byte	.LASF21
+ 1473 0305 01       		.byte	0x1
+ 1474 0306 8B02     		.2byte	0x28b
+ 1475 0308 6B000000 		.4byte	0x6b
+ 1476 030c 02       		.uleb128 0x2
+ 1477 030d 91       		.byte	0x91
+ 1478 030e 6F       		.sleb128 -17
+ 1479 030f 0C       		.uleb128 0xc
+ 1480 0310 D6020000 		.4byte	.LASF24
+ 1481 0314 01       		.byte	0x1
+ 1482 0315 8B02     		.2byte	0x28b
+ 1483 0317 6B000000 		.4byte	0x6b
+ 1484 031b 02       		.uleb128 0x2
+ 1485 031c 91       		.byte	0x91
+ 1486 031d 6E       		.sleb128 -18
+ 1487 031e 0C       		.uleb128 0xc
+ 1488 031f E7000000 		.4byte	.LASF25
+ 1489 0323 01       		.byte	0x1
+ 1490 0324 8B02     		.2byte	0x28b
+ 1491 0326 6B000000 		.4byte	0x6b
+ 1492 032a 02       		.uleb128 0x2
+ 1493 032b 91       		.byte	0x91
+ 1494 032c 6D       		.sleb128 -19
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 40
+
+
+ 1495 032d 0D       		.uleb128 0xd
+ 1496 032e C7000000 		.4byte	.LASF23
+ 1497 0332 01       		.byte	0x1
+ 1498 0333 8E02     		.2byte	0x28e
+ 1499 0335 98000000 		.4byte	0x98
+ 1500 0339 02       		.uleb128 0x2
+ 1501 033a 91       		.byte	0x91
+ 1502 033b 74       		.sleb128 -12
+ 1503 033c 00       		.byte	0
+ 1504 033d 10       		.uleb128 0x10
+ 1505 033e 6B000000 		.4byte	0x6b
+ 1506 0342 4D030000 		.4byte	0x34d
+ 1507 0346 11       		.uleb128 0x11
+ 1508 0347 BC000000 		.4byte	0xbc
+ 1509 034b 01       		.byte	0x1
+ 1510 034c 00       		.byte	0
+ 1511 034d 12       		.uleb128 0x12
+ 1512 034e 51010000 		.4byte	.LASF42
+ 1513 0352 03       		.byte	0x3
+ 1514 0353 1C       		.byte	0x1c
+ 1515 0354 3D030000 		.4byte	0x33d
+ 1516 0358 00       		.byte	0
+ 1517              		.section	.debug_abbrev,"",%progbits
+ 1518              	.Ldebug_abbrev0:
+ 1519 0000 01       		.uleb128 0x1
+ 1520 0001 11       		.uleb128 0x11
+ 1521 0002 01       		.byte	0x1
+ 1522 0003 25       		.uleb128 0x25
+ 1523 0004 0E       		.uleb128 0xe
+ 1524 0005 13       		.uleb128 0x13
+ 1525 0006 0B       		.uleb128 0xb
+ 1526 0007 03       		.uleb128 0x3
+ 1527 0008 0E       		.uleb128 0xe
+ 1528 0009 1B       		.uleb128 0x1b
+ 1529 000a 0E       		.uleb128 0xe
+ 1530 000b 55       		.uleb128 0x55
+ 1531 000c 17       		.uleb128 0x17
+ 1532 000d 11       		.uleb128 0x11
+ 1533 000e 01       		.uleb128 0x1
+ 1534 000f 10       		.uleb128 0x10
+ 1535 0010 17       		.uleb128 0x17
+ 1536 0011 00       		.byte	0
+ 1537 0012 00       		.byte	0
+ 1538 0013 02       		.uleb128 0x2
+ 1539 0014 24       		.uleb128 0x24
+ 1540 0015 00       		.byte	0
+ 1541 0016 0B       		.uleb128 0xb
+ 1542 0017 0B       		.uleb128 0xb
+ 1543 0018 3E       		.uleb128 0x3e
+ 1544 0019 0B       		.uleb128 0xb
+ 1545 001a 03       		.uleb128 0x3
+ 1546 001b 0E       		.uleb128 0xe
+ 1547 001c 00       		.byte	0
+ 1548 001d 00       		.byte	0
+ 1549 001e 03       		.uleb128 0x3
+ 1550 001f 24       		.uleb128 0x24
+ 1551 0020 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 41
+
+
+ 1552 0021 0B       		.uleb128 0xb
+ 1553 0022 0B       		.uleb128 0xb
+ 1554 0023 3E       		.uleb128 0x3e
+ 1555 0024 0B       		.uleb128 0xb
+ 1556 0025 03       		.uleb128 0x3
+ 1557 0026 08       		.uleb128 0x8
+ 1558 0027 00       		.byte	0
+ 1559 0028 00       		.byte	0
+ 1560 0029 04       		.uleb128 0x4
+ 1561 002a 16       		.uleb128 0x16
+ 1562 002b 00       		.byte	0
+ 1563 002c 03       		.uleb128 0x3
+ 1564 002d 0E       		.uleb128 0xe
+ 1565 002e 3A       		.uleb128 0x3a
+ 1566 002f 0B       		.uleb128 0xb
+ 1567 0030 3B       		.uleb128 0x3b
+ 1568 0031 05       		.uleb128 0x5
+ 1569 0032 49       		.uleb128 0x49
+ 1570 0033 13       		.uleb128 0x13
+ 1571 0034 00       		.byte	0
+ 1572 0035 00       		.byte	0
+ 1573 0036 05       		.uleb128 0x5
+ 1574 0037 35       		.uleb128 0x35
+ 1575 0038 00       		.byte	0
+ 1576 0039 49       		.uleb128 0x49
+ 1577 003a 13       		.uleb128 0x13
+ 1578 003b 00       		.byte	0
+ 1579 003c 00       		.byte	0
+ 1580 003d 06       		.uleb128 0x6
+ 1581 003e 2E       		.uleb128 0x2e
+ 1582 003f 00       		.byte	0
+ 1583 0040 3F       		.uleb128 0x3f
+ 1584 0041 19       		.uleb128 0x19
+ 1585 0042 03       		.uleb128 0x3
+ 1586 0043 0E       		.uleb128 0xe
+ 1587 0044 3A       		.uleb128 0x3a
+ 1588 0045 0B       		.uleb128 0xb
+ 1589 0046 3B       		.uleb128 0x3b
+ 1590 0047 0B       		.uleb128 0xb
+ 1591 0048 27       		.uleb128 0x27
+ 1592 0049 19       		.uleb128 0x19
+ 1593 004a 11       		.uleb128 0x11
+ 1594 004b 01       		.uleb128 0x1
+ 1595 004c 12       		.uleb128 0x12
+ 1596 004d 06       		.uleb128 0x6
+ 1597 004e 40       		.uleb128 0x40
+ 1598 004f 18       		.uleb128 0x18
+ 1599 0050 9642     		.uleb128 0x2116
+ 1600 0052 19       		.uleb128 0x19
+ 1601 0053 00       		.byte	0
+ 1602 0054 00       		.byte	0
+ 1603 0055 07       		.uleb128 0x7
+ 1604 0056 2E       		.uleb128 0x2e
+ 1605 0057 01       		.byte	0x1
+ 1606 0058 3F       		.uleb128 0x3f
+ 1607 0059 19       		.uleb128 0x19
+ 1608 005a 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 42
+
+
+ 1609 005b 0E       		.uleb128 0xe
+ 1610 005c 3A       		.uleb128 0x3a
+ 1611 005d 0B       		.uleb128 0xb
+ 1612 005e 3B       		.uleb128 0x3b
+ 1613 005f 0B       		.uleb128 0xb
+ 1614 0060 27       		.uleb128 0x27
+ 1615 0061 19       		.uleb128 0x19
+ 1616 0062 49       		.uleb128 0x49
+ 1617 0063 13       		.uleb128 0x13
+ 1618 0064 11       		.uleb128 0x11
+ 1619 0065 01       		.uleb128 0x1
+ 1620 0066 12       		.uleb128 0x12
+ 1621 0067 06       		.uleb128 0x6
+ 1622 0068 40       		.uleb128 0x40
+ 1623 0069 18       		.uleb128 0x18
+ 1624 006a 9642     		.uleb128 0x2116
+ 1625 006c 19       		.uleb128 0x19
+ 1626 006d 01       		.uleb128 0x1
+ 1627 006e 13       		.uleb128 0x13
+ 1628 006f 00       		.byte	0
+ 1629 0070 00       		.byte	0
+ 1630 0071 08       		.uleb128 0x8
+ 1631 0072 05       		.uleb128 0x5
+ 1632 0073 00       		.byte	0
+ 1633 0074 03       		.uleb128 0x3
+ 1634 0075 0E       		.uleb128 0xe
+ 1635 0076 3A       		.uleb128 0x3a
+ 1636 0077 0B       		.uleb128 0xb
+ 1637 0078 3B       		.uleb128 0x3b
+ 1638 0079 0B       		.uleb128 0xb
+ 1639 007a 49       		.uleb128 0x49
+ 1640 007b 13       		.uleb128 0x13
+ 1641 007c 02       		.uleb128 0x2
+ 1642 007d 18       		.uleb128 0x18
+ 1643 007e 00       		.byte	0
+ 1644 007f 00       		.byte	0
+ 1645 0080 09       		.uleb128 0x9
+ 1646 0081 34       		.uleb128 0x34
+ 1647 0082 00       		.byte	0
+ 1648 0083 03       		.uleb128 0x3
+ 1649 0084 0E       		.uleb128 0xe
+ 1650 0085 3A       		.uleb128 0x3a
+ 1651 0086 0B       		.uleb128 0xb
+ 1652 0087 3B       		.uleb128 0x3b
+ 1653 0088 0B       		.uleb128 0xb
+ 1654 0089 49       		.uleb128 0x49
+ 1655 008a 13       		.uleb128 0x13
+ 1656 008b 02       		.uleb128 0x2
+ 1657 008c 18       		.uleb128 0x18
+ 1658 008d 00       		.byte	0
+ 1659 008e 00       		.byte	0
+ 1660 008f 0A       		.uleb128 0xa
+ 1661 0090 2E       		.uleb128 0x2e
+ 1662 0091 00       		.byte	0
+ 1663 0092 3F       		.uleb128 0x3f
+ 1664 0093 19       		.uleb128 0x19
+ 1665 0094 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 43
+
+
+ 1666 0095 0E       		.uleb128 0xe
+ 1667 0096 3A       		.uleb128 0x3a
+ 1668 0097 0B       		.uleb128 0xb
+ 1669 0098 3B       		.uleb128 0x3b
+ 1670 0099 0B       		.uleb128 0xb
+ 1671 009a 27       		.uleb128 0x27
+ 1672 009b 19       		.uleb128 0x19
+ 1673 009c 49       		.uleb128 0x49
+ 1674 009d 13       		.uleb128 0x13
+ 1675 009e 11       		.uleb128 0x11
+ 1676 009f 01       		.uleb128 0x1
+ 1677 00a0 12       		.uleb128 0x12
+ 1678 00a1 06       		.uleb128 0x6
+ 1679 00a2 40       		.uleb128 0x40
+ 1680 00a3 18       		.uleb128 0x18
+ 1681 00a4 9642     		.uleb128 0x2116
+ 1682 00a6 19       		.uleb128 0x19
+ 1683 00a7 00       		.byte	0
+ 1684 00a8 00       		.byte	0
+ 1685 00a9 0B       		.uleb128 0xb
+ 1686 00aa 2E       		.uleb128 0x2e
+ 1687 00ab 01       		.byte	0x1
+ 1688 00ac 3F       		.uleb128 0x3f
+ 1689 00ad 19       		.uleb128 0x19
+ 1690 00ae 03       		.uleb128 0x3
+ 1691 00af 0E       		.uleb128 0xe
+ 1692 00b0 3A       		.uleb128 0x3a
+ 1693 00b1 0B       		.uleb128 0xb
+ 1694 00b2 3B       		.uleb128 0x3b
+ 1695 00b3 05       		.uleb128 0x5
+ 1696 00b4 27       		.uleb128 0x27
+ 1697 00b5 19       		.uleb128 0x19
+ 1698 00b6 49       		.uleb128 0x49
+ 1699 00b7 13       		.uleb128 0x13
+ 1700 00b8 11       		.uleb128 0x11
+ 1701 00b9 01       		.uleb128 0x1
+ 1702 00ba 12       		.uleb128 0x12
+ 1703 00bb 06       		.uleb128 0x6
+ 1704 00bc 40       		.uleb128 0x40
+ 1705 00bd 18       		.uleb128 0x18
+ 1706 00be 9642     		.uleb128 0x2116
+ 1707 00c0 19       		.uleb128 0x19
+ 1708 00c1 01       		.uleb128 0x1
+ 1709 00c2 13       		.uleb128 0x13
+ 1710 00c3 00       		.byte	0
+ 1711 00c4 00       		.byte	0
+ 1712 00c5 0C       		.uleb128 0xc
+ 1713 00c6 05       		.uleb128 0x5
+ 1714 00c7 00       		.byte	0
+ 1715 00c8 03       		.uleb128 0x3
+ 1716 00c9 0E       		.uleb128 0xe
+ 1717 00ca 3A       		.uleb128 0x3a
+ 1718 00cb 0B       		.uleb128 0xb
+ 1719 00cc 3B       		.uleb128 0x3b
+ 1720 00cd 05       		.uleb128 0x5
+ 1721 00ce 49       		.uleb128 0x49
+ 1722 00cf 13       		.uleb128 0x13
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 44
+
+
+ 1723 00d0 02       		.uleb128 0x2
+ 1724 00d1 18       		.uleb128 0x18
+ 1725 00d2 00       		.byte	0
+ 1726 00d3 00       		.byte	0
+ 1727 00d4 0D       		.uleb128 0xd
+ 1728 00d5 34       		.uleb128 0x34
+ 1729 00d6 00       		.byte	0
+ 1730 00d7 03       		.uleb128 0x3
+ 1731 00d8 0E       		.uleb128 0xe
+ 1732 00d9 3A       		.uleb128 0x3a
+ 1733 00da 0B       		.uleb128 0xb
+ 1734 00db 3B       		.uleb128 0x3b
+ 1735 00dc 05       		.uleb128 0x5
+ 1736 00dd 49       		.uleb128 0x49
+ 1737 00de 13       		.uleb128 0x13
+ 1738 00df 02       		.uleb128 0x2
+ 1739 00e0 18       		.uleb128 0x18
+ 1740 00e1 00       		.byte	0
+ 1741 00e2 00       		.byte	0
+ 1742 00e3 0E       		.uleb128 0xe
+ 1743 00e4 0F       		.uleb128 0xf
+ 1744 00e5 00       		.byte	0
+ 1745 00e6 0B       		.uleb128 0xb
+ 1746 00e7 0B       		.uleb128 0xb
+ 1747 00e8 49       		.uleb128 0x49
+ 1748 00e9 13       		.uleb128 0x13
+ 1749 00ea 00       		.byte	0
+ 1750 00eb 00       		.byte	0
+ 1751 00ec 0F       		.uleb128 0xf
+ 1752 00ed 26       		.uleb128 0x26
+ 1753 00ee 00       		.byte	0
+ 1754 00ef 49       		.uleb128 0x49
+ 1755 00f0 13       		.uleb128 0x13
+ 1756 00f1 00       		.byte	0
+ 1757 00f2 00       		.byte	0
+ 1758 00f3 10       		.uleb128 0x10
+ 1759 00f4 01       		.uleb128 0x1
+ 1760 00f5 01       		.byte	0x1
+ 1761 00f6 49       		.uleb128 0x49
+ 1762 00f7 13       		.uleb128 0x13
+ 1763 00f8 01       		.uleb128 0x1
+ 1764 00f9 13       		.uleb128 0x13
+ 1765 00fa 00       		.byte	0
+ 1766 00fb 00       		.byte	0
+ 1767 00fc 11       		.uleb128 0x11
+ 1768 00fd 21       		.uleb128 0x21
+ 1769 00fe 00       		.byte	0
+ 1770 00ff 49       		.uleb128 0x49
+ 1771 0100 13       		.uleb128 0x13
+ 1772 0101 2F       		.uleb128 0x2f
+ 1773 0102 0B       		.uleb128 0xb
+ 1774 0103 00       		.byte	0
+ 1775 0104 00       		.byte	0
+ 1776 0105 12       		.uleb128 0x12
+ 1777 0106 34       		.uleb128 0x34
+ 1778 0107 00       		.byte	0
+ 1779 0108 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 45
+
+
+ 1780 0109 0E       		.uleb128 0xe
+ 1781 010a 3A       		.uleb128 0x3a
+ 1782 010b 0B       		.uleb128 0xb
+ 1783 010c 3B       		.uleb128 0x3b
+ 1784 010d 0B       		.uleb128 0xb
+ 1785 010e 49       		.uleb128 0x49
+ 1786 010f 13       		.uleb128 0x13
+ 1787 0110 3F       		.uleb128 0x3f
+ 1788 0111 19       		.uleb128 0x19
+ 1789 0112 3C       		.uleb128 0x3c
+ 1790 0113 19       		.uleb128 0x19
+ 1791 0114 00       		.byte	0
+ 1792 0115 00       		.byte	0
+ 1793 0116 00       		.byte	0
+ 1794              		.section	.debug_aranges,"",%progbits
+ 1795 0000 74000000 		.4byte	0x74
+ 1796 0004 0200     		.2byte	0x2
+ 1797 0006 00000000 		.4byte	.Ldebug_info0
+ 1798 000a 04       		.byte	0x4
+ 1799 000b 00       		.byte	0
+ 1800 000c 0000     		.2byte	0
+ 1801 000e 0000     		.2byte	0
+ 1802 0010 00000000 		.4byte	.LFB0
+ 1803 0014 10000000 		.4byte	.LFE0-.LFB0
+ 1804 0018 00000000 		.4byte	.LFB1
+ 1805 001c 0C000000 		.4byte	.LFE1-.LFB1
+ 1806 0020 00000000 		.4byte	.LFB2
+ 1807 0024 0C000000 		.4byte	.LFE2-.LFB2
+ 1808 0028 00000000 		.4byte	.LFB3
+ 1809 002c 14010000 		.4byte	.LFE3-.LFB3
+ 1810 0030 00000000 		.4byte	.LFB4
+ 1811 0034 3A000000 		.4byte	.LFE4-.LFB4
+ 1812 0038 00000000 		.4byte	.LFB5
+ 1813 003c 10000000 		.4byte	.LFE5-.LFB5
+ 1814 0040 00000000 		.4byte	.LFB6
+ 1815 0044 8C000000 		.4byte	.LFE6-.LFB6
+ 1816 0048 00000000 		.4byte	.LFB7
+ 1817 004c F0000000 		.4byte	.LFE7-.LFB7
+ 1818 0050 00000000 		.4byte	.LFB8
+ 1819 0054 B8000000 		.4byte	.LFE8-.LFB8
+ 1820 0058 00000000 		.4byte	.LFB9
+ 1821 005c 4E000000 		.4byte	.LFE9-.LFB9
+ 1822 0060 00000000 		.4byte	.LFB10
+ 1823 0064 58000000 		.4byte	.LFE10-.LFB10
+ 1824 0068 00000000 		.4byte	.LFB11
+ 1825 006c 00010000 		.4byte	.LFE11-.LFB11
+ 1826 0070 00000000 		.4byte	0
+ 1827 0074 00000000 		.4byte	0
+ 1828              		.section	.debug_ranges,"",%progbits
+ 1829              	.Ldebug_ranges0:
+ 1830 0000 00000000 		.4byte	.LFB0
+ 1831 0004 10000000 		.4byte	.LFE0
+ 1832 0008 00000000 		.4byte	.LFB1
+ 1833 000c 0C000000 		.4byte	.LFE1
+ 1834 0010 00000000 		.4byte	.LFB2
+ 1835 0014 0C000000 		.4byte	.LFE2
+ 1836 0018 00000000 		.4byte	.LFB3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 46
+
+
+ 1837 001c 14010000 		.4byte	.LFE3
+ 1838 0020 00000000 		.4byte	.LFB4
+ 1839 0024 3A000000 		.4byte	.LFE4
+ 1840 0028 00000000 		.4byte	.LFB5
+ 1841 002c 10000000 		.4byte	.LFE5
+ 1842 0030 00000000 		.4byte	.LFB6
+ 1843 0034 8C000000 		.4byte	.LFE6
+ 1844 0038 00000000 		.4byte	.LFB7
+ 1845 003c F0000000 		.4byte	.LFE7
+ 1846 0040 00000000 		.4byte	.LFB8
+ 1847 0044 B8000000 		.4byte	.LFE8
+ 1848 0048 00000000 		.4byte	.LFB9
+ 1849 004c 4E000000 		.4byte	.LFE9
+ 1850 0050 00000000 		.4byte	.LFB10
+ 1851 0054 58000000 		.4byte	.LFE10
+ 1852 0058 00000000 		.4byte	.LFB11
+ 1853 005c 00010000 		.4byte	.LFE11
+ 1854 0060 00000000 		.4byte	0
+ 1855 0064 00000000 		.4byte	0
+ 1856              		.section	.debug_line,"",%progbits
+ 1857              	.Ldebug_line0:
+ 1858 0000 27020000 		.section	.debug_str,"MS",%progbits,1
+ 1858      02005500 
+ 1858      00000201 
+ 1858      FB0E0D00 
+ 1858      01010101 
+ 1859              	.LASF35:
+ 1860 0000 45455052 		.ascii	"EEPROM_PSoC_StartErase\000"
+ 1860      4F4D5F50 
+ 1860      536F435F 
+ 1860      53746172 
+ 1860      74457261 
+ 1861              	.LASF14:
+ 1862 0017 63797374 		.ascii	"cystatus\000"
+ 1862      61747573 
+ 1862      00
+ 1863              	.LASF38:
+ 1864 0020 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1864      43313120 
+ 1864      352E342E 
+ 1864      31203230 
+ 1864      31363036 
+ 1865 0053 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 1865      20726576 
+ 1865      6973696F 
+ 1865      6E203233 
+ 1865      37373135 
+ 1866 0086 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 1866      66756E63 
+ 1866      74696F6E 
+ 1866      2D736563 
+ 1866      74696F6E 
+ 1867              	.LASF11:
+ 1868 00ae 666C6F61 		.ascii	"float\000"
+ 1868      7400
+ 1869              	.LASF3:
+ 1870 00b4 73686F72 		.ascii	"short unsigned int\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 47
+
+
+ 1870      7420756E 
+ 1870      7369676E 
+ 1870      65642069 
+ 1870      6E7400
+ 1871              	.LASF23:
+ 1872 00c7 73746174 		.ascii	"status\000"
+ 1872      757300
+ 1873              	.LASF37:
+ 1874 00ce 45455052 		.ascii	"EEPROM_PSoC_ByteWritePos\000"
+ 1874      4F4D5F50 
+ 1874      536F435F 
+ 1874      42797465 
+ 1874      57726974 
+ 1875              	.LASF25:
+ 1876 00e7 62797465 		.ascii	"byteNumber\000"
+ 1876      4E756D62 
+ 1876      657200
+ 1877              	.LASF18:
+ 1878 00f2 45455052 		.ascii	"EEPROM_PSoC_Enable\000"
+ 1878      4F4D5F50 
+ 1878      536F435F 
+ 1878      456E6162 
+ 1878      6C6500
+ 1879              	.LASF27:
+ 1880 0105 45455052 		.ascii	"EEPROM_PSoC_ReadByte\000"
+ 1880      4F4D5F50 
+ 1880      536F435F 
+ 1880      52656164 
+ 1880      42797465 
+ 1881              	.LASF33:
+ 1882 011a 726F7744 		.ascii	"rowData\000"
+ 1882      61746100 
+ 1883              	.LASF15:
+ 1884 0122 72656738 		.ascii	"reg8\000"
+ 1884      00
+ 1885              	.LASF19:
+ 1886 0127 45455052 		.ascii	"EEPROM_PSoC_Start\000"
+ 1886      4F4D5F50 
+ 1886      536F435F 
+ 1886      53746172 
+ 1886      7400
+ 1887              	.LASF5:
+ 1888 0139 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1888      20756E73 
+ 1888      69676E65 
+ 1888      6420696E 
+ 1888      7400
+ 1889              	.LASF9:
+ 1890 014b 75696E74 		.ascii	"uint8\000"
+ 1890      3800
+ 1891              	.LASF42:
+ 1892 0151 64696554 		.ascii	"dieTemperature\000"
+ 1892      656D7065 
+ 1892      72617475 
+ 1892      726500
+ 1893              	.LASF21:
+ 1894 0160 64617461 		.ascii	"dataByte\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 48
+
+
+ 1894      42797465 
+ 1894      00
+ 1895              	.LASF1:
+ 1896 0169 756E7369 		.ascii	"unsigned char\000"
+ 1896      676E6564 
+ 1896      20636861 
+ 1896      7200
+ 1897              	.LASF12:
+ 1898 0177 646F7562 		.ascii	"double\000"
+ 1898      6C6500
+ 1899              	.LASF41:
+ 1900 017e 45455052 		.ascii	"EEPROM_PSoC_UpdateTemperature\000"
+ 1900      4F4D5F50 
+ 1900      536F435F 
+ 1900      55706461 
+ 1900      74655465 
+ 1901              	.LASF36:
+ 1902 019c 45455052 		.ascii	"EEPROM_PSoC_Query\000"
+ 1902      4F4D5F50 
+ 1902      536F435F 
+ 1902      51756572 
+ 1902      7900
+ 1903              	.LASF10:
+ 1904 01ae 75696E74 		.ascii	"uint16\000"
+ 1904      313600
+ 1905              	.LASF30:
+ 1906 01b5 45455052 		.ascii	"EEPROM_PSoC_EraseSector\000"
+ 1906      4F4D5F50 
+ 1906      536F435F 
+ 1906      45726173 
+ 1906      65536563 
+ 1907              	.LASF8:
+ 1908 01cd 756E7369 		.ascii	"unsigned int\000"
+ 1908      676E6564 
+ 1908      20696E74 
+ 1908      00
+ 1909              	.LASF22:
+ 1910 01da 61646472 		.ascii	"address\000"
+ 1910      65737300 
+ 1911              	.LASF7:
+ 1912 01e2 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1912      206C6F6E 
+ 1912      6720756E 
+ 1912      7369676E 
+ 1912      65642069 
+ 1913              	.LASF32:
+ 1914 01f9 45455052 		.ascii	"EEPROM_PSoC_Write\000"
+ 1914      4F4D5F50 
+ 1914      536F435F 
+ 1914      57726974 
+ 1914      6500
+ 1915              	.LASF29:
+ 1916 020b 696E7465 		.ascii	"interruptState\000"
+ 1916      72727570 
+ 1916      74537461 
+ 1916      746500
+ 1917              	.LASF17:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 49
+
+
+ 1918 021a 73697A65 		.ascii	"sizetype\000"
+ 1918      74797065 
+ 1918      00
+ 1919              	.LASF34:
+ 1920 0223 45455052 		.ascii	"EEPROM_PSoC_StartWrite\000"
+ 1920      4F4D5F50 
+ 1920      536F435F 
+ 1920      53746172 
+ 1920      74577269 
+ 1921              	.LASF6:
+ 1922 023a 6C6F6E67 		.ascii	"long long int\000"
+ 1922      206C6F6E 
+ 1922      6720696E 
+ 1922      7400
+ 1923              	.LASF40:
+ 1924 0248 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 1924      73657273 
+ 1924      5C626172 
+ 1924      746F5C44 
+ 1924      726F7062 
+ 1925 0275 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 1925      5553425F 
+ 1925      4E617469 
+ 1925      76652E63 
+ 1925      7964736E 
+ 1926              	.LASF13:
+ 1927 028a 63686172 		.ascii	"char\000"
+ 1927      00
+ 1928              	.LASF20:
+ 1929 028f 45455052 		.ascii	"EEPROM_PSoC_Stop\000"
+ 1929      4F4D5F50 
+ 1929      536F435F 
+ 1929      53746F70 
+ 1929      00
+ 1930              	.LASF2:
+ 1931 02a0 73686F72 		.ascii	"short int\000"
+ 1931      7420696E 
+ 1931      7400
+ 1932              	.LASF31:
+ 1933 02aa 73656374 		.ascii	"sectorNumber\000"
+ 1933      6F724E75 
+ 1933      6D626572 
+ 1933      00
+ 1934              	.LASF26:
+ 1935 02b7 45455052 		.ascii	"EEPROM_PSoC_WriteByte\000"
+ 1935      4F4D5F50 
+ 1935      536F435F 
+ 1935      57726974 
+ 1935      65427974 
+ 1936              	.LASF4:
+ 1937 02cd 6C6F6E67 		.ascii	"long int\000"
+ 1937      20696E74 
+ 1937      00
+ 1938              	.LASF24:
+ 1939 02d6 726F774E 		.ascii	"rowNumber\000"
+ 1939      756D6265 
+ 1939      7200
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccTOXMxV.s 			page 50
+
+
+ 1940              	.LASF16:
+ 1941 02e0 6C6F6E67 		.ascii	"long double\000"
+ 1941      20646F75 
+ 1941      626C6500 
+ 1942              	.LASF0:
+ 1943 02ec 7369676E 		.ascii	"signed char\000"
+ 1943      65642063 
+ 1943      68617200 
+ 1944              	.LASF39:
+ 1945 02f8 47656E65 		.ascii	"Generated_Source\\PSoC5\\EEPROM_PSoC.c\000"
+ 1945      72617465 
+ 1945      645F536F 
+ 1945      75726365 
+ 1945      5C50536F 
+ 1946              	.LASF28:
+ 1947 031d 72657442 		.ascii	"retByte\000"
+ 1947      79746500 
+ 1948              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

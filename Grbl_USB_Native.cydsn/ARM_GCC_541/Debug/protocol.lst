@@ -1,0 +1,4467 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"protocol.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.bss
+  27              		.align	2
+  28              	line:
+  29 0000 00000000 		.space	80
+  29      00000000 
+  29      00000000 
+  29      00000000 
+  29      00000000 
+  30              		.section	.text.protocol_main_loop,"ax",%progbits
+  31              		.align	2
+  32              		.global	protocol_main_loop
+  33              		.thumb
+  34              		.thumb_func
+  35              		.type	protocol_main_loop, %function
+  36              	protocol_main_loop:
+  37              	.LFB64:
+  38              		.file 1 "protocol.c"
+   1:protocol.c    **** /*
+   2:protocol.c    ****   protocol.c - controls Grbl execution protocol and procedures
+   3:protocol.c    ****   Part of Grbl
+   4:protocol.c    **** 
+   5:protocol.c    ****   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
+   6:protocol.c    ****   Copyright (c) 2009-2011 Simen Svale Skogsrud
+   7:protocol.c    ****       Updated For PSOC BJD 2017
+   8:protocol.c    **** 
+   9:protocol.c    ****   Grbl is free software: you can redistribute it and/or modify
+  10:protocol.c    ****   it under the terms of the GNU General Public License as published by
+  11:protocol.c    ****   the Free Software Foundation, either version 3 of the License, or
+  12:protocol.c    ****   (at your option) any later version.
+  13:protocol.c    **** 
+  14:protocol.c    ****   Grbl is distributed in the hope that it will be useful,
+  15:protocol.c    ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 2
+
+
+  16:protocol.c    ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:protocol.c    ****   GNU General Public License for more details.
+  18:protocol.c    **** 
+  19:protocol.c    ****   You should have received a copy of the GNU General Public License
+  20:protocol.c    ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  21:protocol.c    **** */
+  22:protocol.c    **** 
+  23:protocol.c    **** #include "grbl.h"
+  24:protocol.c    **** 
+  25:protocol.c    **** // Define line flags. Includes comment type tracking and line overflow detection.
+  26:protocol.c    **** #define LINE_FLAG_OVERFLOW bit(0)
+  27:protocol.c    **** #define LINE_FLAG_COMMENT_PARENTHESES bit(1)
+  28:protocol.c    **** #define LINE_FLAG_COMMENT_SEMICOLON bit(2)
+  29:protocol.c    **** 
+  30:protocol.c    **** 
+  31:protocol.c    **** static char line[LINE_BUFFER_SIZE]; // Line to be executed. Zero-terminated.
+  32:protocol.c    **** 
+  33:protocol.c    **** static void protocol_exec_rt_suspend();
+  34:protocol.c    **** 
+  35:protocol.c    **** 
+  36:protocol.c    **** /*
+  37:protocol.c    ****   GRBL PRIMARY LOOP:
+  38:protocol.c    **** */
+  39:protocol.c    **** void protocol_main_loop()
+  40:protocol.c    **** {
+  39              		.loc 1 40 0
+  40              		.cfi_startproc
+  41              		@ args = 0, pretend = 0, frame = 8
+  42              		@ frame_needed = 1, uses_anonymous_args = 0
+  43 0000 80B5     		push	{r7, lr}
+  44              		.cfi_def_cfa_offset 8
+  45              		.cfi_offset 7, -8
+  46              		.cfi_offset 14, -4
+  47 0002 82B0     		sub	sp, sp, #8
+  48              		.cfi_def_cfa_offset 16
+  49 0004 00AF     		add	r7, sp, #0
+  50              		.cfi_def_cfa_register 7
+  41:protocol.c    ****   // Perform some machine checks to make sure everything is good to go.
+  42:protocol.c    ****   #ifdef CHECK_LIMITS_AT_INIT
+  43:protocol.c    ****     if (bit_istrue(settings.flags, BITFLAG_HARD_LIMIT_ENABLE)) {
+  51              		.loc 1 43 0
+  52 0006 6D4B     		ldr	r3, .L27
+  53 0008 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+  54 000c 03F00803 		and	r3, r3, #8
+  55 0010 002B     		cmp	r3, #0
+  56 0012 0AD0     		beq	.L2
+  44:protocol.c    ****       if (limits_get_state()) {
+  57              		.loc 1 44 0
+  58 0014 FFF7FEFF 		bl	limits_get_state
+  59 0018 0346     		mov	r3, r0
+  60 001a 002B     		cmp	r3, #0
+  61 001c 05D0     		beq	.L2
+  45:protocol.c    ****         sys.state = STATE_ALARM; // Ensure alarm state is active.
+  62              		.loc 1 45 0
+  63 001e 684B     		ldr	r3, .L27+4
+  64 0020 0122     		movs	r2, #1
+  65 0022 1A70     		strb	r2, [r3]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 3
+
+
+  46:protocol.c    ****         report_feedback_message(MESSAGE_CHECK_LIMITS);
+  66              		.loc 1 46 0
+  67 0024 0720     		movs	r0, #7
+  68 0026 FFF7FEFF 		bl	report_feedback_message
+  69              	.L2:
+  47:protocol.c    ****       }
+  48:protocol.c    ****     }
+  49:protocol.c    ****   #endif
+  50:protocol.c    ****   // Check for and report alarm state after a reset, error, or an initial power up.
+  51:protocol.c    ****   // NOTE: Sleep mode disables the stepper drivers and position can't be guaranteed.
+  52:protocol.c    ****   // Re-initialize the sleep state as an ALARM mode to ensure user homes or acknowledges.
+  53:protocol.c    ****   if (sys.state & (STATE_ALARM | STATE_SLEEP)) {
+  70              		.loc 1 53 0
+  71 002a 654B     		ldr	r3, .L27+4
+  72 002c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  73 002e 03F08103 		and	r3, r3, #129
+  74 0032 002B     		cmp	r3, #0
+  75 0034 06D0     		beq	.L3
+  54:protocol.c    ****     report_feedback_message(MESSAGE_ALARM_LOCK);
+  76              		.loc 1 54 0
+  77 0036 0220     		movs	r0, #2
+  78 0038 FFF7FEFF 		bl	report_feedback_message
+  55:protocol.c    ****     sys.state = STATE_ALARM; // Ensure alarm state is set.
+  79              		.loc 1 55 0
+  80 003c 604B     		ldr	r3, .L27+4
+  81 003e 0122     		movs	r2, #1
+  82 0040 1A70     		strb	r2, [r3]
+  83 0042 14E0     		b	.L4
+  84              	.L3:
+  56:protocol.c    ****   } else {
+  57:protocol.c    ****     // Check if the safety door is open.
+  58:protocol.c    ****     sys.state = STATE_IDLE;
+  85              		.loc 1 58 0
+  86 0044 5E4B     		ldr	r3, .L27+4
+  87 0046 0022     		movs	r2, #0
+  88 0048 1A70     		strb	r2, [r3]
+  59:protocol.c    ****     if (system_check_safety_door_ajar()) {
+  89              		.loc 1 59 0
+  90 004a FFF7FEFF 		bl	system_check_safety_door_ajar
+  91 004e 0346     		mov	r3, r0
+  92 0050 002B     		cmp	r3, #0
+  93 0052 09D0     		beq	.L5
+  60:protocol.c    ****       bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+  94              		.loc 1 60 0
+  95 0054 5B4B     		ldr	r3, .L27+8
+  96 0056 1B78     		ldrb	r3, [r3]
+  97 0058 DBB2     		uxtb	r3, r3
+  98 005a 43F02003 		orr	r3, r3, #32
+  99 005e DAB2     		uxtb	r2, r3
+ 100 0060 584B     		ldr	r3, .L27+8
+ 101 0062 1A70     		strb	r2, [r3]
+  61:protocol.c    ****       protocol_execute_realtime(); // Enter safety door mode. Should return as IDLE state.
+ 102              		.loc 1 61 0
+ 103 0064 FFF7FEFF 		bl	protocol_execute_realtime
+ 104              	.L5:
+  62:protocol.c    ****     }
+  63:protocol.c    ****     // All systems go!
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 4
+
+
+  64:protocol.c    ****     system_execute_startup(line); // Execute startup script.
+ 105              		.loc 1 64 0
+ 106 0068 5748     		ldr	r0, .L27+12
+ 107 006a FFF7FEFF 		bl	system_execute_startup
+ 108              	.L4:
+  65:protocol.c    ****   }
+  66:protocol.c    **** 
+  67:protocol.c    ****   // ---------------------------------------------------------------------------------
+  68:protocol.c    ****   // Primary loop! Upon a system abort, this exits back to main() to reset the system.
+  69:protocol.c    ****   // This is also where Grbl idles while waiting for something to do.
+  70:protocol.c    ****   // ---------------------------------------------------------------------------------
+  71:protocol.c    **** 
+  72:protocol.c    ****   uint8_t line_flags = 0;
+ 109              		.loc 1 72 0
+ 110 006e 0023     		movs	r3, #0
+ 111 0070 FB71     		strb	r3, [r7, #7]
+  73:protocol.c    ****   uint8_t char_counter = 0;
+ 112              		.loc 1 73 0
+ 113 0072 0023     		movs	r3, #0
+ 114 0074 BB71     		strb	r3, [r7, #6]
+ 115              	.L24:
+  74:protocol.c    ****   uint8_t c;
+  75:protocol.c    ****   for (;;) {
+  76:protocol.c    **** 
+  77:protocol.c    ****     usb_uart_check();
+ 116              		.loc 1 77 0
+ 117 0076 FFF7FEFF 		bl	usb_uart_check
+  78:protocol.c    ****     
+  79:protocol.c    ****     // Process one line of incoming serial data, as the data becomes available. Performs an
+  80:protocol.c    ****     // initial filtering by removing spaces and comments and capitalizing all letters.
+  81:protocol.c    ****     while((c = serial_read()) != SERIAL_NO_DATA) {
+ 118              		.loc 1 81 0
+ 119 007a 88E0     		b	.L6
+ 120              	.L22:
+  82:protocol.c    ****       if ((c == '\n') || (c == '\r')) { // End of line reached
+ 121              		.loc 1 82 0
+ 122 007c 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 123 007e 0A2B     		cmp	r3, #10
+ 124 0080 02D0     		beq	.L7
+ 125              		.loc 1 82 0 is_stmt 0 discriminator 1
+ 126 0082 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 127 0084 0D2B     		cmp	r3, #13
+ 128 0086 3DD1     		bne	.L8
+ 129              	.L7:
+  83:protocol.c    **** 
+  84:protocol.c    ****         protocol_execute_realtime(); // Runtime command check point.
+ 130              		.loc 1 84 0 is_stmt 1
+ 131 0088 FFF7FEFF 		bl	protocol_execute_realtime
+  85:protocol.c    ****         if (sys.abort) { return; } // Bail to calling function upon system abort
+ 132              		.loc 1 85 0
+ 133 008c 4C4B     		ldr	r3, .L27+4
+ 134 008e 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 135 0090 002B     		cmp	r3, #0
+ 136 0092 40F08D80 		bne	.L25
+  86:protocol.c    **** 
+  87:protocol.c    ****         line[char_counter] = 0; // Set string termination character.
+ 137              		.loc 1 87 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 5
+
+
+ 138 0096 BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 139 0098 4B4A     		ldr	r2, .L27+12
+ 140 009a 0021     		movs	r1, #0
+ 141 009c D154     		strb	r1, [r2, r3]
+  88:protocol.c    ****         #ifdef REPORT_ECHO_LINE_RECEIVED
+  89:protocol.c    ****           report_echo_line_received(line);
+  90:protocol.c    ****         #endif
+  91:protocol.c    **** 
+  92:protocol.c    ****         // Direct and execute one line of formatted input, and report status of execution.
+  93:protocol.c    ****         if (line_flags & LINE_FLAG_OVERFLOW) {
+ 142              		.loc 1 93 0
+ 143 009e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 144 00a0 03F00103 		and	r3, r3, #1
+ 145 00a4 002B     		cmp	r3, #0
+ 146 00a6 03D0     		beq	.L11
+  94:protocol.c    ****           // Report line overflow error.
+  95:protocol.c    ****           report_status_message(STATUS_OVERFLOW);
+ 147              		.loc 1 95 0
+ 148 00a8 0B20     		movs	r0, #11
+ 149 00aa FFF7FEFF 		bl	report_status_message
+ 150 00ae 24E0     		b	.L12
+ 151              	.L11:
+  96:protocol.c    ****         } else if (line[0] == 0) {
+ 152              		.loc 1 96 0
+ 153 00b0 454B     		ldr	r3, .L27+12
+ 154 00b2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 155 00b4 002B     		cmp	r3, #0
+ 156 00b6 03D1     		bne	.L13
+  97:protocol.c    ****           // Empty or comment line. For syncing purposes.
+  98:protocol.c    ****           report_status_message(STATUS_OK);
+ 157              		.loc 1 98 0
+ 158 00b8 0020     		movs	r0, #0
+ 159 00ba FFF7FEFF 		bl	report_status_message
+ 160 00be 1CE0     		b	.L12
+ 161              	.L13:
+  99:protocol.c    ****         } else if (line[0] == '$') {
+ 162              		.loc 1 99 0
+ 163 00c0 414B     		ldr	r3, .L27+12
+ 164 00c2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 165 00c4 242B     		cmp	r3, #36
+ 166 00c6 07D1     		bne	.L14
+ 100:protocol.c    ****           // Grbl '$' system command
+ 101:protocol.c    ****           report_status_message(system_execute_line(line));
+ 167              		.loc 1 101 0
+ 168 00c8 3F48     		ldr	r0, .L27+12
+ 169 00ca FFF7FEFF 		bl	system_execute_line
+ 170 00ce 0346     		mov	r3, r0
+ 171 00d0 1846     		mov	r0, r3
+ 172 00d2 FFF7FEFF 		bl	report_status_message
+ 173 00d6 10E0     		b	.L12
+ 174              	.L14:
+ 102:protocol.c    ****         } else if (sys.state & (STATE_ALARM | STATE_JOG)) {
+ 175              		.loc 1 102 0
+ 176 00d8 394B     		ldr	r3, .L27+4
+ 177 00da 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 178 00dc 03F02103 		and	r3, r3, #33
+ 179 00e0 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 6
+
+
+ 180 00e2 03D0     		beq	.L15
+ 103:protocol.c    ****           // Everything else is gcode. Block if in alarm or jog mode.
+ 104:protocol.c    ****           report_status_message(STATUS_SYSTEM_GC_LOCK);
+ 181              		.loc 1 104 0
+ 182 00e4 0920     		movs	r0, #9
+ 183 00e6 FFF7FEFF 		bl	report_status_message
+ 184 00ea 06E0     		b	.L12
+ 185              	.L15:
+ 105:protocol.c    ****         } else {
+ 106:protocol.c    ****           // Parse and execute g-code block.
+ 107:protocol.c    ****           report_status_message(gc_execute_line(line));
+ 186              		.loc 1 107 0
+ 187 00ec 3648     		ldr	r0, .L27+12
+ 188 00ee FFF7FEFF 		bl	gc_execute_line
+ 189 00f2 0346     		mov	r3, r0
+ 190 00f4 1846     		mov	r0, r3
+ 191 00f6 FFF7FEFF 		bl	report_status_message
+ 192              	.L12:
+ 108:protocol.c    ****         }
+ 109:protocol.c    **** 
+ 110:protocol.c    ****         // Reset tracking data for next line.
+ 111:protocol.c    ****         line_flags = 0;
+ 193              		.loc 1 111 0
+ 194 00fa 0023     		movs	r3, #0
+ 195 00fc FB71     		strb	r3, [r7, #7]
+ 112:protocol.c    ****         char_counter = 0;
+ 196              		.loc 1 112 0
+ 197 00fe 0023     		movs	r3, #0
+ 198 0100 BB71     		strb	r3, [r7, #6]
+ 199 0102 44E0     		b	.L6
+ 200              	.L8:
+ 113:protocol.c    **** 
+ 114:protocol.c    ****       } else {
+ 115:protocol.c    **** 
+ 116:protocol.c    ****         if (line_flags) {
+ 201              		.loc 1 116 0
+ 202 0104 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 203 0106 002B     		cmp	r3, #0
+ 204 0108 0CD0     		beq	.L16
+ 117:protocol.c    ****           // Throw away all (except EOL) comment characters and overflow characters.
+ 118:protocol.c    ****           if (c == ')') {
+ 205              		.loc 1 118 0
+ 206 010a 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 207 010c 292B     		cmp	r3, #41
+ 208 010e 3ED1     		bne	.L6
+ 119:protocol.c    ****             // End of '()' comment. Resume line allowed.
+ 120:protocol.c    ****             if (line_flags & LINE_FLAG_COMMENT_PARENTHESES) { line_flags &= ~(LINE_FLAG_COMMENT_PAR
+ 209              		.loc 1 120 0
+ 210 0110 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 211 0112 03F00203 		and	r3, r3, #2
+ 212 0116 002B     		cmp	r3, #0
+ 213 0118 39D0     		beq	.L6
+ 214              		.loc 1 120 0 is_stmt 0 discriminator 1
+ 215 011a FB79     		ldrb	r3, [r7, #7]
+ 216 011c 23F00203 		bic	r3, r3, #2
+ 217 0120 FB71     		strb	r3, [r7, #7]
+ 218 0122 34E0     		b	.L6
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 7
+
+
+ 219              	.L16:
+ 121:protocol.c    ****           }
+ 122:protocol.c    ****         } else {
+ 123:protocol.c    ****           if (c <= ' ') {
+ 220              		.loc 1 123 0 is_stmt 1
+ 221 0124 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 222 0126 202B     		cmp	r3, #32
+ 223 0128 31D9     		bls	.L6
+ 124:protocol.c    ****             // Throw away whitepace and control characters
+ 125:protocol.c    ****           } else if (c == '/') {
+ 224              		.loc 1 125 0
+ 225 012a 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 226 012c 2F2B     		cmp	r3, #47
+ 227 012e 2ED0     		beq	.L6
+ 126:protocol.c    ****             // Block delete NOT SUPPORTED. Ignore character.
+ 127:protocol.c    ****             // NOTE: If supported, would simply need to check the system if block delete is enabled
+ 128:protocol.c    ****           } else if (c == '(') {
+ 228              		.loc 1 128 0
+ 229 0130 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 230 0132 282B     		cmp	r3, #40
+ 231 0134 04D1     		bne	.L18
+ 129:protocol.c    ****             // Enable comments flag and ignore all characters until ')' or EOL.
+ 130:protocol.c    ****             // NOTE: This doesn't follow the NIST definition exactly, but is good enough for now.
+ 131:protocol.c    ****             // In the future, we could simply remove the items within the comments, but retain the
+ 132:protocol.c    ****             // comment control characters, so that the g-code parser can error-check it.
+ 133:protocol.c    ****             line_flags |= LINE_FLAG_COMMENT_PARENTHESES;
+ 232              		.loc 1 133 0
+ 233 0136 FB79     		ldrb	r3, [r7, #7]
+ 234 0138 43F00203 		orr	r3, r3, #2
+ 235 013c FB71     		strb	r3, [r7, #7]
+ 236 013e 26E0     		b	.L6
+ 237              	.L18:
+ 134:protocol.c    ****           } else if (c == ';') {
+ 238              		.loc 1 134 0
+ 239 0140 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 240 0142 3B2B     		cmp	r3, #59
+ 241 0144 04D1     		bne	.L19
+ 135:protocol.c    ****             // NOTE: ';' comment to EOL is a LinuxCNC definition. Not NIST.
+ 136:protocol.c    ****             line_flags |= LINE_FLAG_COMMENT_SEMICOLON;
+ 242              		.loc 1 136 0
+ 243 0146 FB79     		ldrb	r3, [r7, #7]
+ 244 0148 43F00403 		orr	r3, r3, #4
+ 245 014c FB71     		strb	r3, [r7, #7]
+ 246 014e 1EE0     		b	.L6
+ 247              	.L19:
+ 137:protocol.c    ****           // TODO: Install '%' feature
+ 138:protocol.c    ****           // } else if (c == '%') {
+ 139:protocol.c    ****             // Program start-end percent sign NOT SUPPORTED.
+ 140:protocol.c    ****             // NOTE: This maybe installed to tell Grbl when a program is running vs manual input,
+ 141:protocol.c    ****             // where, during a program, the system auto-cycle start will continue to execute
+ 142:protocol.c    ****             // everything until the next '%' sign. This will help fix resuming issues with certain
+ 143:protocol.c    ****             // functions that empty the planner buffer to execute its task on-time.
+ 144:protocol.c    ****           } else if (char_counter >= (LINE_BUFFER_SIZE-1)) {
+ 248              		.loc 1 144 0
+ 249 0150 BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 250 0152 4E2B     		cmp	r3, #78
+ 251 0154 04D9     		bls	.L20
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 8
+
+
+ 145:protocol.c    ****             // Detect line buffer overflow and set flag.
+ 146:protocol.c    ****             line_flags |= LINE_FLAG_OVERFLOW;
+ 252              		.loc 1 146 0
+ 253 0156 FB79     		ldrb	r3, [r7, #7]
+ 254 0158 43F00103 		orr	r3, r3, #1
+ 255 015c FB71     		strb	r3, [r7, #7]
+ 256 015e 16E0     		b	.L6
+ 257              	.L20:
+ 147:protocol.c    ****           } else if (c >= 'a' && c <= 'z') { // Upcase lowercase
+ 258              		.loc 1 147 0
+ 259 0160 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 260 0162 602B     		cmp	r3, #96
+ 261 0164 0CD9     		bls	.L21
+ 262              		.loc 1 147 0 is_stmt 0 discriminator 1
+ 263 0166 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 264 0168 7A2B     		cmp	r3, #122
+ 265 016a 09D8     		bhi	.L21
+ 148:protocol.c    ****             line[char_counter++] = c-'a'+'A';
+ 266              		.loc 1 148 0 is_stmt 1
+ 267 016c BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 268 016e 5A1C     		adds	r2, r3, #1
+ 269 0170 BA71     		strb	r2, [r7, #6]
+ 270 0172 1A46     		mov	r2, r3
+ 271 0174 7B79     		ldrb	r3, [r7, #5]
+ 272 0176 203B     		subs	r3, r3, #32
+ 273 0178 D9B2     		uxtb	r1, r3
+ 274 017a 134B     		ldr	r3, .L27+12
+ 275 017c 9954     		strb	r1, [r3, r2]
+ 276 017e 06E0     		b	.L6
+ 277              	.L21:
+ 149:protocol.c    ****           } else {
+ 150:protocol.c    ****             line[char_counter++] = c;
+ 278              		.loc 1 150 0
+ 279 0180 BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 280 0182 5A1C     		adds	r2, r3, #1
+ 281 0184 BA71     		strb	r2, [r7, #6]
+ 282 0186 1946     		mov	r1, r3
+ 283 0188 0F4A     		ldr	r2, .L27+12
+ 284 018a 7B79     		ldrb	r3, [r7, #5]
+ 285 018c 5354     		strb	r3, [r2, r1]
+ 286              	.L6:
+  81:protocol.c    ****       if ((c == '\n') || (c == '\r')) { // End of line reached
+ 287              		.loc 1 81 0
+ 288 018e FFF7FEFF 		bl	serial_read
+ 289 0192 0346     		mov	r3, r0
+ 290 0194 7B71     		strb	r3, [r7, #5]
+ 291 0196 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 292 0198 FF2B     		cmp	r3, #255
+ 293 019a 7FF46FAF 		bne	.L22
+ 151:protocol.c    ****           }
+ 152:protocol.c    ****         }
+ 153:protocol.c    **** 
+ 154:protocol.c    ****       }
+ 155:protocol.c    ****       
+ 156:protocol.c    ****     
+ 157:protocol.c    ****       
+ 158:protocol.c    ****     }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 9
+
+
+ 159:protocol.c    **** 
+ 160:protocol.c    ****     // If there are no more characters in the serial read buffer to be processed and executed,
+ 161:protocol.c    ****     // this indicates that g-code streaming has either filled the planner buffer or has
+ 162:protocol.c    ****     // completed. In either case, auto-cycle start, if enabled, any queued moves.
+ 163:protocol.c    ****     protocol_auto_cycle_start();
+ 294              		.loc 1 163 0
+ 295 019e FFF7FEFF 		bl	protocol_auto_cycle_start
+ 164:protocol.c    **** 
+ 165:protocol.c    ****     protocol_execute_realtime();  // Runtime command check point.
+ 296              		.loc 1 165 0
+ 297 01a2 FFF7FEFF 		bl	protocol_execute_realtime
+ 166:protocol.c    ****     if (sys.abort) { return; } // Bail to main() program loop to reset system.
+ 298              		.loc 1 166 0
+ 299 01a6 064B     		ldr	r3, .L27+4
+ 300 01a8 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 301 01aa 002B     		cmp	r3, #0
+ 302 01ac 02D1     		bne	.L26
+ 167:protocol.c    ****   }
+ 303              		.loc 1 167 0
+ 304 01ae 62E7     		b	.L24
+ 305              	.L25:
+  85:protocol.c    **** 
+ 306              		.loc 1 85 0
+ 307 01b0 00BF     		nop
+ 308 01b2 00E0     		b	.L1
+ 309              	.L26:
+ 166:protocol.c    ****     if (sys.abort) { return; } // Bail to main() program loop to reset system.
+ 310              		.loc 1 166 0
+ 311 01b4 00BF     		nop
+ 312              	.L1:
+ 168:protocol.c    **** 
+ 169:protocol.c    ****   return; /* Never reached */
+ 170:protocol.c    **** }
+ 313              		.loc 1 170 0
+ 314 01b6 0837     		adds	r7, r7, #8
+ 315              		.cfi_def_cfa_offset 8
+ 316 01b8 BD46     		mov	sp, r7
+ 317              		.cfi_def_cfa_register 13
+ 318              		@ sp needed
+ 319 01ba 80BD     		pop	{r7, pc}
+ 320              	.L28:
+ 321              		.align	2
+ 322              	.L27:
+ 323 01bc 00000000 		.word	settings
+ 324 01c0 00000000 		.word	sys
+ 325 01c4 00000000 		.word	sys_rt_exec_state
+ 326 01c8 00000000 		.word	line
+ 327              		.cfi_endproc
+ 328              	.LFE64:
+ 329              		.size	protocol_main_loop, .-protocol_main_loop
+ 330              		.section	.text.protocol_buffer_synchronize,"ax",%progbits
+ 331              		.align	2
+ 332              		.global	protocol_buffer_synchronize
+ 333              		.thumb
+ 334              		.thumb_func
+ 335              		.type	protocol_buffer_synchronize, %function
+ 336              	protocol_buffer_synchronize:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 10
+
+
+ 337              	.LFB65:
+ 171:protocol.c    **** 
+ 172:protocol.c    **** 
+ 173:protocol.c    **** // Block until all buffered steps are executed or in a cycle state. Works with feed hold
+ 174:protocol.c    **** // during a synchronize call, if it should happen. Also, waits for clean cycle end.
+ 175:protocol.c    **** void protocol_buffer_synchronize()
+ 176:protocol.c    **** {
+ 338              		.loc 1 176 0
+ 339              		.cfi_startproc
+ 340              		@ args = 0, pretend = 0, frame = 0
+ 341              		@ frame_needed = 1, uses_anonymous_args = 0
+ 342 0000 80B5     		push	{r7, lr}
+ 343              		.cfi_def_cfa_offset 8
+ 344              		.cfi_offset 7, -8
+ 345              		.cfi_offset 14, -4
+ 346 0002 00AF     		add	r7, sp, #0
+ 347              		.cfi_def_cfa_register 7
+ 177:protocol.c    ****   // If system is queued, ensure cycle resumes if the auto start flag is present.
+ 178:protocol.c    ****   protocol_auto_cycle_start();
+ 348              		.loc 1 178 0
+ 349 0004 FFF7FEFF 		bl	protocol_auto_cycle_start
+ 350              	.L32:
+ 179:protocol.c    ****   do {
+ 180:protocol.c    ****     protocol_execute_realtime();   // Check and execute run-time commands
+ 351              		.loc 1 180 0
+ 352 0008 FFF7FEFF 		bl	protocol_execute_realtime
+ 181:protocol.c    ****     if (sys.abort) { return; } // Check for system abort
+ 353              		.loc 1 181 0
+ 354 000c 074B     		ldr	r3, .L34
+ 355 000e 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 356 0010 002B     		cmp	r3, #0
+ 357 0012 09D1     		bne	.L33
+ 182:protocol.c    ****   } while (plan_get_current_block() || (sys.state == STATE_CYCLE));
+ 358              		.loc 1 182 0
+ 359 0014 FFF7FEFF 		bl	plan_get_current_block
+ 360 0018 0346     		mov	r3, r0
+ 361 001a 002B     		cmp	r3, #0
+ 362 001c F4D1     		bne	.L32
+ 363              		.loc 1 182 0 is_stmt 0 discriminator 1
+ 364 001e 034B     		ldr	r3, .L34
+ 365 0020 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 366 0022 082B     		cmp	r3, #8
+ 367 0024 F0D0     		beq	.L32
+ 368 0026 00E0     		b	.L29
+ 369              	.L33:
+ 181:protocol.c    ****     if (sys.abort) { return; } // Check for system abort
+ 370              		.loc 1 181 0 is_stmt 1
+ 371 0028 00BF     		nop
+ 372              	.L29:
+ 183:protocol.c    **** }
+ 373              		.loc 1 183 0
+ 374 002a 80BD     		pop	{r7, pc}
+ 375              	.L35:
+ 376              		.align	2
+ 377              	.L34:
+ 378 002c 00000000 		.word	sys
+ 379              		.cfi_endproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 11
+
+
+ 380              	.LFE65:
+ 381              		.size	protocol_buffer_synchronize, .-protocol_buffer_synchronize
+ 382              		.section	.text.protocol_auto_cycle_start,"ax",%progbits
+ 383              		.align	2
+ 384              		.global	protocol_auto_cycle_start
+ 385              		.thumb
+ 386              		.thumb_func
+ 387              		.type	protocol_auto_cycle_start, %function
+ 388              	protocol_auto_cycle_start:
+ 389              	.LFB66:
+ 184:protocol.c    **** 
+ 185:protocol.c    **** 
+ 186:protocol.c    **** // Auto-cycle start triggers when there is a motion ready to execute and if the main program is not
+ 187:protocol.c    **** // actively parsing commands.
+ 188:protocol.c    **** // NOTE: This function is called from the main loop, buffer sync, and mc_line() only and executes
+ 189:protocol.c    **** // when one of these conditions exist respectively: There are no more blocks sent (i.e. streaming
+ 190:protocol.c    **** // is finished, single commands), a command that needs to wait for the motions in the buffer to
+ 191:protocol.c    **** // execute calls a buffer sync, or the planner buffer is full and ready to go.
+ 192:protocol.c    **** void protocol_auto_cycle_start()
+ 193:protocol.c    **** {
+ 390              		.loc 1 193 0
+ 391              		.cfi_startproc
+ 392              		@ args = 0, pretend = 0, frame = 0
+ 393              		@ frame_needed = 1, uses_anonymous_args = 0
+ 394 0000 80B5     		push	{r7, lr}
+ 395              		.cfi_def_cfa_offset 8
+ 396              		.cfi_offset 7, -8
+ 397              		.cfi_offset 14, -4
+ 398 0002 00AF     		add	r7, sp, #0
+ 399              		.cfi_def_cfa_register 7
+ 194:protocol.c    ****   if (plan_get_current_block() != NULL) { // Check if there are any blocks in the buffer.
+ 400              		.loc 1 194 0
+ 401 0004 FFF7FEFF 		bl	plan_get_current_block
+ 402 0008 0346     		mov	r3, r0
+ 403 000a 002B     		cmp	r3, #0
+ 404 000c 02D0     		beq	.L38
+ 195:protocol.c    ****     system_set_exec_state_flag(EXEC_CYCLE_START); // If so, execute them!
+ 405              		.loc 1 195 0
+ 406 000e 0220     		movs	r0, #2
+ 407 0010 FFF7FEFF 		bl	system_set_exec_state_flag
+ 408              	.L38:
+ 196:protocol.c    ****   }
+ 197:protocol.c    **** }
+ 409              		.loc 1 197 0
+ 410 0014 00BF     		nop
+ 411 0016 80BD     		pop	{r7, pc}
+ 412              		.cfi_endproc
+ 413              	.LFE66:
+ 414              		.size	protocol_auto_cycle_start, .-protocol_auto_cycle_start
+ 415              		.section	.text.protocol_execute_realtime,"ax",%progbits
+ 416              		.align	2
+ 417              		.global	protocol_execute_realtime
+ 418              		.thumb
+ 419              		.thumb_func
+ 420              		.type	protocol_execute_realtime, %function
+ 421              	protocol_execute_realtime:
+ 422              	.LFB67:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 12
+
+
+ 198:protocol.c    **** 
+ 199:protocol.c    **** 
+ 200:protocol.c    **** // This function is the general interface to Grbl's real-time command execution system. It is calle
+ 201:protocol.c    **** // from various check points in the main program, primarily where there may be a while loop waiting
+ 202:protocol.c    **** // for a buffer to clear space or any point where the execution time from the last check point may
+ 203:protocol.c    **** // be more than a fraction of a second. This is a way to execute realtime commands asynchronously
+ 204:protocol.c    **** // (aka multitasking) with grbl's g-code parsing and planning functions. This function also serves
+ 205:protocol.c    **** // as an interface for the interrupts to set the system realtime flags, where only the main program
+ 206:protocol.c    **** // handles them, removing the need to define more computationally-expensive volatile variables. Thi
+ 207:protocol.c    **** // also provides a controlled way to execute certain tasks without having two or more instances of
+ 208:protocol.c    **** // the same task, such as the planner recalculating the buffer upon a feedhold or overrides.
+ 209:protocol.c    **** // NOTE: The sys_rt_exec_state variable flags are set by any process, step or serial interrupts, pi
+ 210:protocol.c    **** // limit switches, or the main program.
+ 211:protocol.c    **** void protocol_execute_realtime()
+ 212:protocol.c    **** {
+ 423              		.loc 1 212 0
+ 424              		.cfi_startproc
+ 425              		@ args = 0, pretend = 0, frame = 0
+ 426              		@ frame_needed = 1, uses_anonymous_args = 0
+ 427 0000 80B5     		push	{r7, lr}
+ 428              		.cfi_def_cfa_offset 8
+ 429              		.cfi_offset 7, -8
+ 430              		.cfi_offset 14, -4
+ 431 0002 00AF     		add	r7, sp, #0
+ 432              		.cfi_def_cfa_register 7
+ 213:protocol.c    ****   protocol_exec_rt_system();
+ 433              		.loc 1 213 0
+ 434 0004 FFF7FEFF 		bl	protocol_exec_rt_system
+ 214:protocol.c    ****   if (sys.suspend) { protocol_exec_rt_suspend(); }
+ 435              		.loc 1 214 0
+ 436 0008 034B     		ldr	r3, .L42
+ 437 000a 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 438 000c 002B     		cmp	r3, #0
+ 439 000e 01D0     		beq	.L41
+ 440              		.loc 1 214 0 is_stmt 0 discriminator 1
+ 441 0010 FFF7FEFF 		bl	protocol_exec_rt_suspend
+ 442              	.L41:
+ 215:protocol.c    ****   
+ 216:protocol.c    ****    
+ 217:protocol.c    ****   
+ 218:protocol.c    **** }
+ 443              		.loc 1 218 0 is_stmt 1
+ 444 0014 00BF     		nop
+ 445 0016 80BD     		pop	{r7, pc}
+ 446              	.L43:
+ 447              		.align	2
+ 448              	.L42:
+ 449 0018 00000000 		.word	sys
+ 450              		.cfi_endproc
+ 451              	.LFE67:
+ 452              		.size	protocol_execute_realtime, .-protocol_execute_realtime
+ 453              		.section	.text.protocol_exec_rt_system,"ax",%progbits
+ 454              		.align	2
+ 455              		.global	protocol_exec_rt_system
+ 456              		.thumb
+ 457              		.thumb_func
+ 458              		.type	protocol_exec_rt_system, %function
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 13
+
+
+ 459              	protocol_exec_rt_system:
+ 460              	.LFB68:
+ 219:protocol.c    **** 
+ 220:protocol.c    **** 
+ 221:protocol.c    **** // Executes run-time commands, when required. This function primarily operates as Grbl's state
+ 222:protocol.c    **** // machine and controls the various real-time features Grbl has to offer.
+ 223:protocol.c    **** // NOTE: Do not alter this unless you know exactly what you are doing!
+ 224:protocol.c    **** void protocol_exec_rt_system()
+ 225:protocol.c    **** {
+ 461              		.loc 1 225 0
+ 462              		.cfi_startproc
+ 463              		@ args = 0, pretend = 0, frame = 8
+ 464              		@ frame_needed = 1, uses_anonymous_args = 0
+ 465 0000 80B5     		push	{r7, lr}
+ 466              		.cfi_def_cfa_offset 8
+ 467              		.cfi_offset 7, -8
+ 468              		.cfi_offset 14, -4
+ 469 0002 82B0     		sub	sp, sp, #8
+ 470              		.cfi_def_cfa_offset 16
+ 471 0004 00AF     		add	r7, sp, #0
+ 472              		.cfi_def_cfa_register 7
+ 226:protocol.c    ****   uint8_t rt_exec; // Temp variable to avoid calling volatile multiple times.
+ 227:protocol.c    ****   rt_exec = sys_rt_exec_alarm; // Copy volatile sys_rt_exec_alarm.
+ 473              		.loc 1 227 0
+ 474 0006 9E4B     		ldr	r3, .L99
+ 475 0008 1B78     		ldrb	r3, [r3]
+ 476 000a FB70     		strb	r3, [r7, #3]
+ 228:protocol.c    ****   if (rt_exec) { // Enter only if any bit flag is true
+ 477              		.loc 1 228 0
+ 478 000c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 479 000e 002B     		cmp	r3, #0
+ 480 0010 1CD0     		beq	.L45
+ 229:protocol.c    ****     // System alarm. Everything has shutdown by something that has gone severely wrong. Report
+ 230:protocol.c    ****     // the source of the error to the user. If critical, Grbl disables by entering an infinite
+ 231:protocol.c    ****     // loop until system reset/abort.
+ 232:protocol.c    ****     sys.state = STATE_ALARM; // Set system alarm state
+ 481              		.loc 1 232 0
+ 482 0012 9C4B     		ldr	r3, .L99+4
+ 483 0014 0122     		movs	r2, #1
+ 484 0016 1A70     		strb	r2, [r3]
+ 233:protocol.c    ****     report_alarm_message(rt_exec);
+ 485              		.loc 1 233 0
+ 486 0018 97F90330 		ldrsb	r3, [r7, #3]
+ 487 001c 1846     		mov	r0, r3
+ 488 001e FFF7FEFF 		bl	report_alarm_message
+ 234:protocol.c    ****     // Halt everything upon a critical event flag. Currently hard and soft limits flag this.
+ 235:protocol.c    ****     if ((rt_exec == EXEC_ALARM_HARD_LIMIT) || (rt_exec == EXEC_ALARM_SOFT_LIMIT)) {
+ 489              		.loc 1 235 0
+ 490 0022 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 491 0024 012B     		cmp	r3, #1
+ 492 0026 02D0     		beq	.L46
+ 493              		.loc 1 235 0 is_stmt 0 discriminator 1
+ 494 0028 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 495 002a 022B     		cmp	r3, #2
+ 496 002c 0CD1     		bne	.L47
+ 497              	.L46:
+ 236:protocol.c    ****       report_feedback_message(MESSAGE_CRITICAL_EVENT);
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 14
+
+
+ 498              		.loc 1 236 0 is_stmt 1
+ 499 002e 0120     		movs	r0, #1
+ 500 0030 FFF7FEFF 		bl	report_feedback_message
+ 237:protocol.c    ****       system_clear_exec_state_flag(EXEC_RESET); // Disable any existing reset
+ 501              		.loc 1 237 0
+ 502 0034 1020     		movs	r0, #16
+ 503 0036 FFF7FEFF 		bl	system_clear_exec_state_flag
+ 504              	.L48:
+ 238:protocol.c    ****       do {
+ 239:protocol.c    ****         // Block everything, except reset and status reports, until user issues reset or power
+ 240:protocol.c    ****         // cycles. Hard limits typically occur while unattended or not paying attention. Gives
+ 241:protocol.c    ****         // the user and a GUI time to do what is needed before resetting, like killing the
+ 242:protocol.c    ****         // incoming stream. The same could be said about soft limits. While the position is not
+ 243:protocol.c    ****         // lost, continued streaming could cause a serious crash if by chance it gets executed.
+ 244:protocol.c    ****       } while (bit_isfalse(sys_rt_exec_state,EXEC_RESET));
+ 505              		.loc 1 244 0 discriminator 1
+ 506 003a 934B     		ldr	r3, .L99+8
+ 507 003c 1B78     		ldrb	r3, [r3]
+ 508 003e DBB2     		uxtb	r3, r3
+ 509 0040 03F01003 		and	r3, r3, #16
+ 510 0044 002B     		cmp	r3, #0
+ 511 0046 F8D0     		beq	.L48
+ 512              	.L47:
+ 245:protocol.c    ****     }
+ 246:protocol.c    ****     system_clear_exec_alarm(); // Clear alarm
+ 513              		.loc 1 246 0
+ 514 0048 FFF7FEFF 		bl	system_clear_exec_alarm
+ 515              	.L45:
+ 247:protocol.c    ****   }
+ 248:protocol.c    **** 
+ 249:protocol.c    ****   rt_exec = sys_rt_exec_state; // Copy volatile sys_rt_exec_state.
+ 516              		.loc 1 249 0
+ 517 004c 8E4B     		ldr	r3, .L99+8
+ 518 004e 1B78     		ldrb	r3, [r3]
+ 519 0050 FB70     		strb	r3, [r7, #3]
+ 250:protocol.c    ****   if (rt_exec) {
+ 520              		.loc 1 250 0
+ 521 0052 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 522 0054 002B     		cmp	r3, #0
+ 523 0056 00F07E81 		beq	.L49
+ 251:protocol.c    **** 
+ 252:protocol.c    ****     // Execute system abort.
+ 253:protocol.c    ****     if (rt_exec & EXEC_RESET) {
+ 524              		.loc 1 253 0
+ 525 005a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 526 005c 03F01003 		and	r3, r3, #16
+ 527 0060 002B     		cmp	r3, #0
+ 528 0062 03D0     		beq	.L50
+ 254:protocol.c    ****       sys.abort = true;  // Only place this is set true.
+ 529              		.loc 1 254 0
+ 530 0064 874B     		ldr	r3, .L99+4
+ 531 0066 0122     		movs	r2, #1
+ 532 0068 5A70     		strb	r2, [r3, #1]
+ 255:protocol.c    ****       return; // Nothing else to do but exit.
+ 533              		.loc 1 255 0
+ 534 006a 98E2     		b	.L44
+ 535              	.L50:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 15
+
+
+ 256:protocol.c    ****     }
+ 257:protocol.c    **** 
+ 258:protocol.c    ****     // Execute and serial print status
+ 259:protocol.c    ****     if (rt_exec & EXEC_STATUS_REPORT) {
+ 536              		.loc 1 259 0
+ 537 006c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 538 006e 03F00103 		and	r3, r3, #1
+ 539 0072 002B     		cmp	r3, #0
+ 540 0074 04D0     		beq	.L52
+ 260:protocol.c    ****       report_realtime_status();
+ 541              		.loc 1 260 0
+ 542 0076 FFF7FEFF 		bl	report_realtime_status
+ 261:protocol.c    ****       system_clear_exec_state_flag(EXEC_STATUS_REPORT);
+ 543              		.loc 1 261 0
+ 544 007a 0120     		movs	r0, #1
+ 545 007c FFF7FEFF 		bl	system_clear_exec_state_flag
+ 546              	.L52:
+ 262:protocol.c    ****     }
+ 263:protocol.c    ****     
+ 264:protocol.c    ****     
+ 265:protocol.c    **** 
+ 266:protocol.c    ****     // NOTE: Once hold is initiated, the system immediately enters a suspend state to block all
+ 267:protocol.c    ****     // main program processes until either reset or resumed. This ensures a hold completes safely.
+ 268:protocol.c    ****     if (rt_exec & (EXEC_MOTION_CANCEL | EXEC_FEED_HOLD | EXEC_SAFETY_DOOR | EXEC_SLEEP)) {
+ 547              		.loc 1 268 0
+ 548 0080 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 549 0082 03F0E803 		and	r3, r3, #232
+ 550 0086 002B     		cmp	r3, #0
+ 551 0088 00F09580 		beq	.L53
+ 269:protocol.c    **** 
+ 270:protocol.c    ****       // State check for allowable states for hold methods.
+ 271:protocol.c    ****       if (!(sys.state & (STATE_ALARM | STATE_CHECK_MODE))) {
+ 552              		.loc 1 271 0
+ 553 008c 7D4B     		ldr	r3, .L99+4
+ 554 008e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 555 0090 03F00303 		and	r3, r3, #3
+ 556 0094 002B     		cmp	r3, #0
+ 557 0096 79D1     		bne	.L54
+ 272:protocol.c    ****       
+ 273:protocol.c    ****         // If in CYCLE or JOG states, immediately initiate a motion HOLD.
+ 274:protocol.c    ****         if (sys.state & (STATE_CYCLE | STATE_JOG)) {
+ 558              		.loc 1 274 0
+ 559 0098 7A4B     		ldr	r3, .L99+4
+ 560 009a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 561 009c 03F02803 		and	r3, r3, #40
+ 562 00a0 002B     		cmp	r3, #0
+ 563 00a2 19D0     		beq	.L55
+ 275:protocol.c    ****           if (!(sys.suspend & (SUSPEND_MOTION_CANCEL | SUSPEND_JOG_CANCEL))) { // Block, if already
+ 564              		.loc 1 275 0
+ 565 00a4 774B     		ldr	r3, .L99+4
+ 566 00a6 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 567 00a8 03F0C003 		and	r3, r3, #192
+ 568 00ac 002B     		cmp	r3, #0
+ 569 00ae 13D1     		bne	.L55
+ 276:protocol.c    ****             st_update_plan_block_parameters(); // Notify stepper module to recompute for hold decel
+ 570              		.loc 1 276 0
+ 571 00b0 FFF7FEFF 		bl	st_update_plan_block_parameters
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 16
+
+
+ 277:protocol.c    ****             sys.step_control = STEP_CONTROL_EXECUTE_HOLD; // Initiate suspend state with active fla
+ 572              		.loc 1 277 0
+ 573 00b4 734B     		ldr	r3, .L99+4
+ 574 00b6 0222     		movs	r2, #2
+ 575 00b8 1A71     		strb	r2, [r3, #4]
+ 278:protocol.c    ****             if (sys.state == STATE_JOG) { // Jog cancelled upon any hold event, except for sleeping
+ 576              		.loc 1 278 0
+ 577 00ba 724B     		ldr	r3, .L99+4
+ 578 00bc 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 579 00be 202B     		cmp	r3, #32
+ 580 00c0 0AD1     		bne	.L55
+ 279:protocol.c    ****               if (!(rt_exec & EXEC_SLEEP)) { sys.suspend |= SUSPEND_JOG_CANCEL; } 
+ 581              		.loc 1 279 0
+ 582 00c2 97F90330 		ldrsb	r3, [r7, #3]
+ 583 00c6 002B     		cmp	r3, #0
+ 584 00c8 06DB     		blt	.L55
+ 585              		.loc 1 279 0 is_stmt 0 discriminator 1
+ 586 00ca 6E4B     		ldr	r3, .L99+4
+ 587 00cc 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 588 00ce 63F07F03 		orn	r3, r3, #127
+ 589 00d2 DAB2     		uxtb	r2, r3
+ 590 00d4 6B4B     		ldr	r3, .L99+4
+ 591 00d6 9A70     		strb	r2, [r3, #2]
+ 592              	.L55:
+ 280:protocol.c    ****             }
+ 281:protocol.c    ****           }
+ 282:protocol.c    ****         }
+ 283:protocol.c    ****         // If IDLE, Grbl is not in motion. Simply indicate suspend state and hold is complete.
+ 284:protocol.c    ****         if (sys.state == STATE_IDLE) { sys.suspend = SUSPEND_HOLD_COMPLETE; }
+ 593              		.loc 1 284 0 is_stmt 1
+ 594 00d8 6A4B     		ldr	r3, .L99+4
+ 595 00da 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 596 00dc 002B     		cmp	r3, #0
+ 597 00de 02D1     		bne	.L56
+ 598              		.loc 1 284 0 is_stmt 0 discriminator 1
+ 599 00e0 684B     		ldr	r3, .L99+4
+ 600 00e2 0122     		movs	r2, #1
+ 601 00e4 9A70     		strb	r2, [r3, #2]
+ 602              	.L56:
+ 285:protocol.c    **** 
+ 286:protocol.c    ****         // Execute and flag a motion cancel with deceleration and return to idle. Used primarily by
+ 287:protocol.c    ****         // to halt and cancel the remainder of the motion.
+ 288:protocol.c    ****         if (rt_exec & EXEC_MOTION_CANCEL) {
+ 603              		.loc 1 288 0 is_stmt 1
+ 604 00e6 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 605 00e8 03F04003 		and	r3, r3, #64
+ 606 00ec 002B     		cmp	r3, #0
+ 607 00ee 0CD0     		beq	.L57
+ 289:protocol.c    ****           // MOTION_CANCEL only occurs during a CYCLE, but a HOLD and SAFETY_DOOR may been initiate
+ 290:protocol.c    ****           // to hold the CYCLE. Motion cancel is valid for a single planner block motion only, whil
+ 291:protocol.c    ****           // will handle and clear multiple planner block motions.
+ 292:protocol.c    ****           if (!(sys.state & STATE_JOG)) { sys.suspend |= SUSPEND_MOTION_CANCEL; } // NOTE: State is
+ 608              		.loc 1 292 0
+ 609 00f0 644B     		ldr	r3, .L99+4
+ 610 00f2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 611 00f4 03F02003 		and	r3, r3, #32
+ 612 00f8 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 17
+
+
+ 613 00fa 06D1     		bne	.L57
+ 614              		.loc 1 292 0 is_stmt 0 discriminator 1
+ 615 00fc 614B     		ldr	r3, .L99+4
+ 616 00fe 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 617 0100 43F04003 		orr	r3, r3, #64
+ 618 0104 DAB2     		uxtb	r2, r3
+ 619 0106 5F4B     		ldr	r3, .L99+4
+ 620 0108 9A70     		strb	r2, [r3, #2]
+ 621              	.L57:
+ 293:protocol.c    ****         }
+ 294:protocol.c    **** 
+ 295:protocol.c    ****         // Execute a feed hold with deceleration, if required. Then, suspend system.
+ 296:protocol.c    ****         if (rt_exec & EXEC_FEED_HOLD) {
+ 622              		.loc 1 296 0 is_stmt 1
+ 623 010a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 624 010c 03F00803 		and	r3, r3, #8
+ 625 0110 002B     		cmp	r3, #0
+ 626 0112 08D0     		beq	.L58
+ 297:protocol.c    ****           // Block SAFETY_DOOR, JOG, and SLEEP states from changing to HOLD state.
+ 298:protocol.c    ****           if (!(sys.state & (STATE_SAFETY_DOOR | STATE_JOG | STATE_SLEEP))) { sys.state = STATE_HOL
+ 627              		.loc 1 298 0
+ 628 0114 5B4B     		ldr	r3, .L99+4
+ 629 0116 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 630 0118 03F0E003 		and	r3, r3, #224
+ 631 011c 002B     		cmp	r3, #0
+ 632 011e 02D1     		bne	.L58
+ 633              		.loc 1 298 0 is_stmt 0 discriminator 1
+ 634 0120 584B     		ldr	r3, .L99+4
+ 635 0122 1022     		movs	r2, #16
+ 636 0124 1A70     		strb	r2, [r3]
+ 637              	.L58:
+ 299:protocol.c    ****         }
+ 300:protocol.c    **** 
+ 301:protocol.c    ****         // Execute a safety door stop with a feed hold and disable spindle/coolant.
+ 302:protocol.c    ****         // NOTE: Safety door differs from feed holds by stopping everything no matter state, disabl
+ 303:protocol.c    ****         // devices (spindle/coolant), and blocks resuming until switch is re-engaged.
+ 304:protocol.c    ****         if (rt_exec & EXEC_SAFETY_DOOR) {
+ 638              		.loc 1 304 0 is_stmt 1
+ 639 0126 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 640 0128 03F02003 		and	r3, r3, #32
+ 641 012c 002B     		cmp	r3, #0
+ 642 012e 2DD0     		beq	.L54
+ 305:protocol.c    ****           report_feedback_message(MESSAGE_SAFETY_DOOR_AJAR);
+ 643              		.loc 1 305 0
+ 644 0130 0620     		movs	r0, #6
+ 645 0132 FFF7FEFF 		bl	report_feedback_message
+ 306:protocol.c    ****           // If jogging, block safety door methods until jog cancel is complete. Just flag that it 
+ 307:protocol.c    ****           if (!(sys.suspend & SUSPEND_JOG_CANCEL)) {
+ 646              		.loc 1 307 0
+ 647 0136 534B     		ldr	r3, .L99+4
+ 648 0138 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 649 013a 5BB2     		sxtb	r3, r3
+ 650 013c 002B     		cmp	r3, #0
+ 651 013e 1EDB     		blt	.L59
+ 308:protocol.c    ****             // Check if the safety re-opened during a restore parking motion only. Ignore if
+ 309:protocol.c    ****             // already retracting, parked or in sleep state.
+ 310:protocol.c    ****             if (sys.state == STATE_SAFETY_DOOR) {
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 18
+
+
+ 652              		.loc 1 310 0
+ 653 0140 504B     		ldr	r3, .L99+4
+ 654 0142 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 655 0144 402B     		cmp	r3, #64
+ 656 0146 13D1     		bne	.L60
+ 311:protocol.c    ****               if (sys.suspend & SUSPEND_INITIATE_RESTORE) { // Actively restoring
+ 657              		.loc 1 311 0
+ 658 0148 4E4B     		ldr	r3, .L99+4
+ 659 014a 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 660 014c 03F00803 		and	r3, r3, #8
+ 661 0150 002B     		cmp	r3, #0
+ 662 0152 0DD0     		beq	.L60
+ 312:protocol.c    ****                 #ifdef PARKING_ENABLE
+ 313:protocol.c    ****                   // Set hold and reset appropriate control flags to restart parking sequence.
+ 314:protocol.c    ****                   if (sys.step_control & STEP_CONTROL_EXECUTE_SYS_MOTION) {
+ 315:protocol.c    ****                     st_update_plan_block_parameters(); // Notify stepper module to recompute for ho
+ 316:protocol.c    ****                     sys.step_control = (STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION
+ 317:protocol.c    ****                     sys.suspend &= ~(SUSPEND_HOLD_COMPLETE);
+ 318:protocol.c    ****                   } // else NO_MOTION is active.
+ 319:protocol.c    ****                 #endif
+ 320:protocol.c    ****                 sys.suspend &= ~(SUSPEND_RETRACT_COMPLETE | SUSPEND_INITIATE_RESTORE | SUSPEND_REST
+ 663              		.loc 1 320 0
+ 664 0154 4B4B     		ldr	r3, .L99+4
+ 665 0156 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 666 0158 23F01C03 		bic	r3, r3, #28
+ 667 015c DAB2     		uxtb	r2, r3
+ 668 015e 494B     		ldr	r3, .L99+4
+ 669 0160 9A70     		strb	r2, [r3, #2]
+ 321:protocol.c    ****                 sys.suspend |= SUSPEND_RESTART_RETRACT;
+ 670              		.loc 1 321 0
+ 671 0162 484B     		ldr	r3, .L99+4
+ 672 0164 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 673 0166 43F00203 		orr	r3, r3, #2
+ 674 016a DAB2     		uxtb	r2, r3
+ 675 016c 454B     		ldr	r3, .L99+4
+ 676 016e 9A70     		strb	r2, [r3, #2]
+ 677              	.L60:
+ 322:protocol.c    ****               }
+ 323:protocol.c    ****             }
+ 324:protocol.c    ****             if (sys.state != STATE_SLEEP) { sys.state = STATE_SAFETY_DOOR; }
+ 678              		.loc 1 324 0
+ 679 0170 444B     		ldr	r3, .L99+4
+ 680 0172 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 681 0174 802B     		cmp	r3, #128
+ 682 0176 02D0     		beq	.L59
+ 683              		.loc 1 324 0 is_stmt 0 discriminator 1
+ 684 0178 424B     		ldr	r3, .L99+4
+ 685 017a 4022     		movs	r2, #64
+ 686 017c 1A70     		strb	r2, [r3]
+ 687              	.L59:
+ 325:protocol.c    ****           }
+ 326:protocol.c    ****           // NOTE: This flag doesn't change when the door closes, unlike sys.state. Ensures any par
+ 327:protocol.c    ****           // are executed if the door switch closes and the state returns to HOLD.
+ 328:protocol.c    ****           sys.suspend |= SUSPEND_SAFETY_DOOR_AJAR;
+ 688              		.loc 1 328 0 is_stmt 1
+ 689 017e 414B     		ldr	r3, .L99+4
+ 690 0180 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 19
+
+
+ 691 0182 43F02003 		orr	r3, r3, #32
+ 692 0186 DAB2     		uxtb	r2, r3
+ 693 0188 3E4B     		ldr	r3, .L99+4
+ 694 018a 9A70     		strb	r2, [r3, #2]
+ 695              	.L54:
+ 329:protocol.c    ****         }
+ 330:protocol.c    ****         
+ 331:protocol.c    ****       }
+ 332:protocol.c    **** 
+ 333:protocol.c    ****       if (rt_exec & EXEC_SLEEP) {
+ 696              		.loc 1 333 0
+ 697 018c 97F90330 		ldrsb	r3, [r7, #3]
+ 698 0190 002B     		cmp	r3, #0
+ 699 0192 0DDA     		bge	.L61
+ 334:protocol.c    ****         if (sys.state == STATE_ALARM) { sys.suspend |= (SUSPEND_RETRACT_COMPLETE|SUSPEND_HOLD_COMPL
+ 700              		.loc 1 334 0
+ 701 0194 3B4B     		ldr	r3, .L99+4
+ 702 0196 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 703 0198 012B     		cmp	r3, #1
+ 704 019a 06D1     		bne	.L62
+ 705              		.loc 1 334 0 is_stmt 0 discriminator 1
+ 706 019c 394B     		ldr	r3, .L99+4
+ 707 019e 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 708 01a0 43F00503 		orr	r3, r3, #5
+ 709 01a4 DAB2     		uxtb	r2, r3
+ 710 01a6 374B     		ldr	r3, .L99+4
+ 711 01a8 9A70     		strb	r2, [r3, #2]
+ 712              	.L62:
+ 335:protocol.c    ****         sys.state = STATE_SLEEP; 
+ 713              		.loc 1 335 0 is_stmt 1
+ 714 01aa 364B     		ldr	r3, .L99+4
+ 715 01ac 8022     		movs	r2, #128
+ 716 01ae 1A70     		strb	r2, [r3]
+ 717              	.L61:
+ 336:protocol.c    ****       }
+ 337:protocol.c    **** 
+ 338:protocol.c    ****       system_clear_exec_state_flag((EXEC_MOTION_CANCEL | EXEC_FEED_HOLD | EXEC_SAFETY_DOOR | EXEC_S
+ 718              		.loc 1 338 0
+ 719 01b0 E820     		movs	r0, #232
+ 720 01b2 FFF7FEFF 		bl	system_clear_exec_state_flag
+ 721              	.L53:
+ 339:protocol.c    ****     }
+ 340:protocol.c    **** 
+ 341:protocol.c    ****     // Execute a cycle start by starting the stepper interrupt to begin executing the blocks in que
+ 342:protocol.c    ****     if (rt_exec & EXEC_CYCLE_START) {
+ 722              		.loc 1 342 0
+ 723 01b6 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 724 01b8 03F00203 		and	r3, r3, #2
+ 725 01bc 002B     		cmp	r3, #0
+ 726 01be 6ED0     		beq	.L63
+ 343:protocol.c    ****       // Block if called at same time as the hold commands: feed hold, motion cancel, and safety do
+ 344:protocol.c    ****       // Ensures auto-cycle-start doesn't resume a hold without an explicit user-input.
+ 345:protocol.c    ****       if (!(rt_exec & (EXEC_FEED_HOLD | EXEC_MOTION_CANCEL | EXEC_SAFETY_DOOR))) {
+ 727              		.loc 1 345 0
+ 728 01c0 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 729 01c2 03F06803 		and	r3, r3, #104
+ 730 01c6 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 20
+
+
+ 731 01c8 66D1     		bne	.L64
+ 346:protocol.c    ****         // Resume door state when parking motion has retracted and door has been closed.
+ 347:protocol.c    ****         if ((sys.state == STATE_SAFETY_DOOR) && !(sys.suspend & SUSPEND_SAFETY_DOOR_AJAR)) {
+ 732              		.loc 1 347 0
+ 733 01ca 2E4B     		ldr	r3, .L99+4
+ 734 01cc 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 735 01ce 402B     		cmp	r3, #64
+ 736 01d0 1CD1     		bne	.L65
+ 737              		.loc 1 347 0 is_stmt 0 discriminator 1
+ 738 01d2 2C4B     		ldr	r3, .L99+4
+ 739 01d4 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 740 01d6 03F02003 		and	r3, r3, #32
+ 741 01da 002B     		cmp	r3, #0
+ 742 01dc 16D1     		bne	.L65
+ 348:protocol.c    ****           if (sys.suspend & SUSPEND_RESTORE_COMPLETE) {
+ 743              		.loc 1 348 0 is_stmt 1
+ 744 01de 294B     		ldr	r3, .L99+4
+ 745 01e0 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 746 01e2 03F01003 		and	r3, r3, #16
+ 747 01e6 002B     		cmp	r3, #0
+ 748 01e8 03D0     		beq	.L66
+ 349:protocol.c    ****             sys.state = STATE_IDLE; // Set to IDLE to immediately resume the cycle.
+ 749              		.loc 1 349 0
+ 750 01ea 264B     		ldr	r3, .L99+4
+ 751 01ec 0022     		movs	r2, #0
+ 752 01ee 1A70     		strb	r2, [r3]
+ 753 01f0 0CE0     		b	.L65
+ 754              	.L66:
+ 350:protocol.c    ****           } else if (sys.suspend & SUSPEND_RETRACT_COMPLETE) {
+ 755              		.loc 1 350 0
+ 756 01f2 244B     		ldr	r3, .L99+4
+ 757 01f4 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 758 01f6 03F00403 		and	r3, r3, #4
+ 759 01fa 002B     		cmp	r3, #0
+ 760 01fc 06D0     		beq	.L65
+ 351:protocol.c    ****             // Flag to re-energize powered components and restore original position, if disabled by
+ 352:protocol.c    ****             // NOTE: For a safety door to resume, the switch must be closed, as indicated by HOLD s
+ 353:protocol.c    ****             // the retraction execution is complete, which implies the initial feed hold is not act
+ 354:protocol.c    ****             // restore normal operation, the restore procedures must be initiated by the following 
+ 355:protocol.c    ****             // they are complete, it will call CYCLE_START automatically to resume and exit the sus
+ 356:protocol.c    ****             sys.suspend |= SUSPEND_INITIATE_RESTORE;
+ 761              		.loc 1 356 0
+ 762 01fe 214B     		ldr	r3, .L99+4
+ 763 0200 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 764 0202 43F00803 		orr	r3, r3, #8
+ 765 0206 DAB2     		uxtb	r2, r3
+ 766 0208 1E4B     		ldr	r3, .L99+4
+ 767 020a 9A70     		strb	r2, [r3, #2]
+ 768              	.L65:
+ 357:protocol.c    ****           }
+ 358:protocol.c    ****         }
+ 359:protocol.c    ****         // Cycle start only when IDLE or when a hold is complete and ready to resume.
+ 360:protocol.c    ****         if ((sys.state == STATE_IDLE) || ((sys.state & STATE_HOLD) && (sys.suspend & SUSPEND_HOLD_C
+ 769              		.loc 1 360 0
+ 770 020c 1D4B     		ldr	r3, .L99+4
+ 771 020e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 772 0210 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 21
+
+
+ 773 0212 0BD0     		beq	.L67
+ 774              		.loc 1 360 0 is_stmt 0 discriminator 1
+ 775 0214 1B4B     		ldr	r3, .L99+4
+ 776 0216 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 777 0218 03F01003 		and	r3, r3, #16
+ 778 021c 002B     		cmp	r3, #0
+ 779 021e 3BD0     		beq	.L64
+ 780              		.loc 1 360 0 discriminator 2
+ 781 0220 184B     		ldr	r3, .L99+4
+ 782 0222 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 783 0224 03F00103 		and	r3, r3, #1
+ 784 0228 002B     		cmp	r3, #0
+ 785 022a 35D0     		beq	.L64
+ 786              	.L67:
+ 361:protocol.c    ****           if (sys.state == STATE_HOLD && sys.spindle_stop_ovr) {
+ 787              		.loc 1 361 0 is_stmt 1
+ 788 022c 154B     		ldr	r3, .L99+4
+ 789 022e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 790 0230 102B     		cmp	r3, #16
+ 791 0232 0BD1     		bne	.L68
+ 792              		.loc 1 361 0 is_stmt 0 discriminator 1
+ 793 0234 134B     		ldr	r3, .L99+4
+ 794 0236 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 795 0238 002B     		cmp	r3, #0
+ 796 023a 07D0     		beq	.L68
+ 362:protocol.c    ****             sys.spindle_stop_ovr |= SPINDLE_STOP_OVR_RESTORE_CYCLE; // Set to restore in suspend ro
+ 797              		.loc 1 362 0 is_stmt 1
+ 798 023c 114B     		ldr	r3, .L99+4
+ 799 023e 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 800 0240 43F00803 		orr	r3, r3, #8
+ 801 0244 DAB2     		uxtb	r2, r3
+ 802 0246 0F4B     		ldr	r3, .L99+4
+ 803 0248 9A72     		strb	r2, [r3, #10]
+ 804 024a 25E0     		b	.L64
+ 805              	.L68:
+ 363:protocol.c    ****           } else {
+ 364:protocol.c    ****             // Start cycle only if queued motions exist in planner buffer and the motion is not can
+ 365:protocol.c    ****             sys.step_control = STEP_CONTROL_NORMAL_OP; // Restore step control to normal operation
+ 806              		.loc 1 365 0
+ 807 024c 0D4B     		ldr	r3, .L99+4
+ 808 024e 0022     		movs	r2, #0
+ 809 0250 1A71     		strb	r2, [r3, #4]
+ 366:protocol.c    ****             if (plan_get_current_block() && bit_isfalse(sys.suspend,SUSPEND_MOTION_CANCEL)) {
+ 810              		.loc 1 366 0
+ 811 0252 FFF7FEFF 		bl	plan_get_current_block
+ 812 0256 0346     		mov	r3, r0
+ 813 0258 002B     		cmp	r3, #0
+ 814 025a 17D0     		beq	.L69
+ 815              		.loc 1 366 0 is_stmt 0 discriminator 1
+ 816 025c 094B     		ldr	r3, .L99+4
+ 817 025e 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 818 0260 03F04003 		and	r3, r3, #64
+ 819 0264 002B     		cmp	r3, #0
+ 820 0266 11D1     		bne	.L69
+ 367:protocol.c    ****               sys.suspend = SUSPEND_DISABLE; // Break suspend state.
+ 821              		.loc 1 367 0 is_stmt 1
+ 822 0268 064B     		ldr	r3, .L99+4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 22
+
+
+ 823 026a 0022     		movs	r2, #0
+ 824 026c 9A70     		strb	r2, [r3, #2]
+ 368:protocol.c    ****               sys.state = STATE_CYCLE;
+ 825              		.loc 1 368 0
+ 826 026e 054B     		ldr	r3, .L99+4
+ 827 0270 0822     		movs	r2, #8
+ 828 0272 1A70     		strb	r2, [r3]
+ 369:protocol.c    ****               st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
+ 829              		.loc 1 369 0
+ 830 0274 FFF7FEFF 		bl	st_prep_buffer
+ 370:protocol.c    ****               st_wake_up();
+ 831              		.loc 1 370 0
+ 832 0278 FFF7FEFF 		bl	st_wake_up
+ 833 027c 0CE0     		b	.L64
+ 834              	.L100:
+ 835 027e 00BF     		.align	2
+ 836              	.L99:
+ 837 0280 00000000 		.word	sys_rt_exec_alarm
+ 838 0284 00000000 		.word	sys
+ 839 0288 00000000 		.word	sys_rt_exec_state
+ 840              	.L69:
+ 371:protocol.c    ****             } else { // Otherwise, do nothing. Set and resume IDLE state.
+ 372:protocol.c    ****               sys.suspend = SUSPEND_DISABLE; // Break suspend state.
+ 841              		.loc 1 372 0
+ 842 028c B64B     		ldr	r3, .L101
+ 843 028e 0022     		movs	r2, #0
+ 844 0290 9A70     		strb	r2, [r3, #2]
+ 373:protocol.c    ****               sys.state = STATE_IDLE;
+ 845              		.loc 1 373 0
+ 846 0292 B54B     		ldr	r3, .L101
+ 847 0294 0022     		movs	r2, #0
+ 848 0296 1A70     		strb	r2, [r3]
+ 849              	.L64:
+ 374:protocol.c    ****             }
+ 375:protocol.c    ****           }
+ 376:protocol.c    ****         }
+ 377:protocol.c    ****       }
+ 378:protocol.c    ****       system_clear_exec_state_flag(EXEC_CYCLE_START);
+ 850              		.loc 1 378 0
+ 851 0298 0220     		movs	r0, #2
+ 852 029a FFF7FEFF 		bl	system_clear_exec_state_flag
+ 853              	.L63:
+ 379:protocol.c    ****     }
+ 380:protocol.c    **** 
+ 381:protocol.c    ****     if (rt_exec & EXEC_CYCLE_STOP) {
+ 854              		.loc 1 381 0
+ 855 029e FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 856 02a0 03F00403 		and	r3, r3, #4
+ 857 02a4 002B     		cmp	r3, #0
+ 858 02a6 56D0     		beq	.L49
+ 382:protocol.c    ****       // Reinitializes the cycle plan and stepper system after a feed hold for a resume. Called by
+ 383:protocol.c    ****       // realtime command execution in the main program, ensuring that the planner re-plans safely.
+ 384:protocol.c    ****       // NOTE: Bresenham algorithm variables are still maintained through both the planner and step
+ 385:protocol.c    ****       // cycle reinitializations. The stepper path should continue exactly as if nothing has happen
+ 386:protocol.c    ****       // NOTE: EXEC_CYCLE_STOP is set by the stepper subsystem when a cycle or feed hold completes.
+ 387:protocol.c    ****       if ((sys.state & (STATE_HOLD|STATE_SAFETY_DOOR|STATE_SLEEP)) && !(sys.soft_limit) && !(sys.su
+ 859              		.loc 1 387 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 23
+
+
+ 860 02a8 AF4B     		ldr	r3, .L101
+ 861 02aa 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 862 02ac 03F0D003 		and	r3, r3, #208
+ 863 02b0 002B     		cmp	r3, #0
+ 864 02b2 1FD0     		beq	.L70
+ 865              		.loc 1 387 0 is_stmt 0 discriminator 1
+ 866 02b4 AC4B     		ldr	r3, .L101
+ 867 02b6 DB78     		ldrb	r3, [r3, #3]	@ zero_extendqisi2
+ 868 02b8 002B     		cmp	r3, #0
+ 869 02ba 1BD1     		bne	.L70
+ 870              		.loc 1 387 0 discriminator 2
+ 871 02bc AA4B     		ldr	r3, .L101
+ 872 02be 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 873 02c0 5BB2     		sxtb	r3, r3
+ 874 02c2 002B     		cmp	r3, #0
+ 875 02c4 16DB     		blt	.L70
+ 388:protocol.c    ****         // Hold complete. Set to indicate ready to resume.  Remain in HOLD or DOOR states until use
+ 389:protocol.c    ****         // has issued a resume command or reset.
+ 390:protocol.c    ****         plan_cycle_reinitialize();
+ 876              		.loc 1 390 0 is_stmt 1
+ 877 02c6 FFF7FEFF 		bl	plan_cycle_reinitialize
+ 391:protocol.c    ****         if (sys.step_control & STEP_CONTROL_EXECUTE_HOLD) { sys.suspend |= SUSPEND_HOLD_COMPLETE; }
+ 878              		.loc 1 391 0
+ 879 02ca A74B     		ldr	r3, .L101
+ 880 02cc 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 881 02ce 03F00203 		and	r3, r3, #2
+ 882 02d2 002B     		cmp	r3, #0
+ 883 02d4 06D0     		beq	.L71
+ 884              		.loc 1 391 0 is_stmt 0 discriminator 1
+ 885 02d6 A44B     		ldr	r3, .L101
+ 886 02d8 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 887 02da 43F00103 		orr	r3, r3, #1
+ 888 02de DAB2     		uxtb	r2, r3
+ 889 02e0 A14B     		ldr	r3, .L101
+ 890 02e2 9A70     		strb	r2, [r3, #2]
+ 891              	.L71:
+ 392:protocol.c    ****         bit_false(sys.step_control,(STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION));
+ 892              		.loc 1 392 0 is_stmt 1
+ 893 02e4 A04B     		ldr	r3, .L101
+ 894 02e6 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 895 02e8 23F00603 		bic	r3, r3, #6
+ 896 02ec DAB2     		uxtb	r2, r3
+ 897 02ee 9E4B     		ldr	r3, .L101
+ 898 02f0 1A71     		strb	r2, [r3, #4]
+ 899 02f2 2DE0     		b	.L72
+ 900              	.L70:
+ 393:protocol.c    ****       } else {
+ 394:protocol.c    ****         // Motion complete. Includes CYCLE/JOG/HOMING states and jog cancel/motion cancel/soft limi
+ 395:protocol.c    ****         // NOTE: Motion and jog cancel both immediately return to idle after the hold completes.
+ 396:protocol.c    ****         if (sys.suspend & SUSPEND_JOG_CANCEL) {   // For jog cancel, flush buffers and sync positio
+ 901              		.loc 1 396 0
+ 902 02f4 9C4B     		ldr	r3, .L101
+ 903 02f6 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 904 02f8 5BB2     		sxtb	r3, r3
+ 905 02fa 002B     		cmp	r3, #0
+ 906 02fc 0ADA     		bge	.L73
+ 397:protocol.c    ****           sys.step_control = STEP_CONTROL_NORMAL_OP;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 24
+
+
+ 907              		.loc 1 397 0
+ 908 02fe 9A4B     		ldr	r3, .L101
+ 909 0300 0022     		movs	r2, #0
+ 910 0302 1A71     		strb	r2, [r3, #4]
+ 398:protocol.c    ****           plan_reset();
+ 911              		.loc 1 398 0
+ 912 0304 FFF7FEFF 		bl	plan_reset
+ 399:protocol.c    ****           st_reset();
+ 913              		.loc 1 399 0
+ 914 0308 FFF7FEFF 		bl	st_reset
+ 400:protocol.c    ****           gc_sync_position();
+ 915              		.loc 1 400 0
+ 916 030c FFF7FEFF 		bl	gc_sync_position
+ 401:protocol.c    ****           plan_sync_position();
+ 917              		.loc 1 401 0
+ 918 0310 FFF7FEFF 		bl	plan_sync_position
+ 919              	.L73:
+ 402:protocol.c    ****         }
+ 403:protocol.c    ****         if (sys.suspend & SUSPEND_SAFETY_DOOR_AJAR) { // Only occurs when safety door opens during 
+ 920              		.loc 1 403 0
+ 921 0314 944B     		ldr	r3, .L101
+ 922 0316 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 923 0318 03F02003 		and	r3, r3, #32
+ 924 031c 002B     		cmp	r3, #0
+ 925 031e 11D0     		beq	.L74
+ 404:protocol.c    ****           sys.suspend &= ~(SUSPEND_JOG_CANCEL);
+ 926              		.loc 1 404 0
+ 927 0320 914B     		ldr	r3, .L101
+ 928 0322 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 929 0324 03F07F03 		and	r3, r3, #127
+ 930 0328 DAB2     		uxtb	r2, r3
+ 931 032a 8F4B     		ldr	r3, .L101
+ 932 032c 9A70     		strb	r2, [r3, #2]
+ 405:protocol.c    ****           sys.suspend |= SUSPEND_HOLD_COMPLETE;
+ 933              		.loc 1 405 0
+ 934 032e 8E4B     		ldr	r3, .L101
+ 935 0330 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 936 0332 43F00103 		orr	r3, r3, #1
+ 937 0336 DAB2     		uxtb	r2, r3
+ 938 0338 8B4B     		ldr	r3, .L101
+ 939 033a 9A70     		strb	r2, [r3, #2]
+ 406:protocol.c    ****           sys.state = STATE_SAFETY_DOOR;
+ 940              		.loc 1 406 0
+ 941 033c 8A4B     		ldr	r3, .L101
+ 942 033e 4022     		movs	r2, #64
+ 943 0340 1A70     		strb	r2, [r3]
+ 944 0342 05E0     		b	.L72
+ 945              	.L74:
+ 407:protocol.c    ****         } else {
+ 408:protocol.c    ****           sys.suspend = SUSPEND_DISABLE;
+ 946              		.loc 1 408 0
+ 947 0344 884B     		ldr	r3, .L101
+ 948 0346 0022     		movs	r2, #0
+ 949 0348 9A70     		strb	r2, [r3, #2]
+ 409:protocol.c    ****           sys.state = STATE_IDLE;
+ 950              		.loc 1 409 0
+ 951 034a 874B     		ldr	r3, .L101
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 25
+
+
+ 952 034c 0022     		movs	r2, #0
+ 953 034e 1A70     		strb	r2, [r3]
+ 954              	.L72:
+ 410:protocol.c    ****         }
+ 411:protocol.c    ****       }
+ 412:protocol.c    ****       system_clear_exec_state_flag(EXEC_CYCLE_STOP);
+ 955              		.loc 1 412 0
+ 956 0350 0420     		movs	r0, #4
+ 957 0352 FFF7FEFF 		bl	system_clear_exec_state_flag
+ 958              	.L49:
+ 413:protocol.c    ****     }
+ 414:protocol.c    ****   }
+ 415:protocol.c    **** 
+ 416:protocol.c    ****   // Execute overrides.
+ 417:protocol.c    ****   rt_exec = sys_rt_exec_motion_override; // Copy volatile sys_rt_exec_motion_override
+ 959              		.loc 1 417 0
+ 960 0356 854B     		ldr	r3, .L101+4
+ 961 0358 1B78     		ldrb	r3, [r3]
+ 962 035a FB70     		strb	r3, [r7, #3]
+ 418:protocol.c    ****   if (rt_exec) {
+ 963              		.loc 1 418 0
+ 964 035c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 965 035e 002B     		cmp	r3, #0
+ 966 0360 63D0     		beq	.L75
+ 967              	.LBB2:
+ 419:protocol.c    ****     system_clear_exec_motion_overrides(); // Clear all motion override flags.
+ 968              		.loc 1 419 0
+ 969 0362 FFF7FEFF 		bl	system_clear_exec_motion_overrides
+ 420:protocol.c    **** 
+ 421:protocol.c    ****     uint8_t new_f_override =  sys.f_override;
+ 970              		.loc 1 421 0
+ 971 0366 804B     		ldr	r3, .L101
+ 972 0368 DB79     		ldrb	r3, [r3, #7]
+ 973 036a FB71     		strb	r3, [r7, #7]
+ 422:protocol.c    ****     if (rt_exec & EXEC_FEED_OVR_RESET) { new_f_override = DEFAULT_FEED_OVERRIDE; }
+ 974              		.loc 1 422 0
+ 975 036c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 976 036e 03F00103 		and	r3, r3, #1
+ 977 0372 002B     		cmp	r3, #0
+ 978 0374 01D0     		beq	.L76
+ 979              		.loc 1 422 0 is_stmt 0 discriminator 1
+ 980 0376 6423     		movs	r3, #100
+ 981 0378 FB71     		strb	r3, [r7, #7]
+ 982              	.L76:
+ 423:protocol.c    ****     if (rt_exec & EXEC_FEED_OVR_COARSE_PLUS) { new_f_override += FEED_OVERRIDE_COARSE_INCREMENT; }
+ 983              		.loc 1 423 0 is_stmt 1
+ 984 037a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 985 037c 03F00203 		and	r3, r3, #2
+ 986 0380 002B     		cmp	r3, #0
+ 987 0382 02D0     		beq	.L77
+ 988              		.loc 1 423 0 is_stmt 0 discriminator 1
+ 989 0384 FB79     		ldrb	r3, [r7, #7]
+ 990 0386 0A33     		adds	r3, r3, #10
+ 991 0388 FB71     		strb	r3, [r7, #7]
+ 992              	.L77:
+ 424:protocol.c    ****     if (rt_exec & EXEC_FEED_OVR_COARSE_MINUS) { new_f_override -= FEED_OVERRIDE_COARSE_INCREMENT; }
+ 993              		.loc 1 424 0 is_stmt 1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 26
+
+
+ 994 038a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 995 038c 03F00403 		and	r3, r3, #4
+ 996 0390 002B     		cmp	r3, #0
+ 997 0392 02D0     		beq	.L78
+ 998              		.loc 1 424 0 is_stmt 0 discriminator 1
+ 999 0394 FB79     		ldrb	r3, [r7, #7]
+ 1000 0396 0A3B     		subs	r3, r3, #10
+ 1001 0398 FB71     		strb	r3, [r7, #7]
+ 1002              	.L78:
+ 425:protocol.c    ****     if (rt_exec & EXEC_FEED_OVR_FINE_PLUS) { new_f_override += FEED_OVERRIDE_FINE_INCREMENT; }
+ 1003              		.loc 1 425 0 is_stmt 1
+ 1004 039a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1005 039c 03F00803 		and	r3, r3, #8
+ 1006 03a0 002B     		cmp	r3, #0
+ 1007 03a2 02D0     		beq	.L79
+ 1008              		.loc 1 425 0 is_stmt 0 discriminator 1
+ 1009 03a4 FB79     		ldrb	r3, [r7, #7]
+ 1010 03a6 0133     		adds	r3, r3, #1
+ 1011 03a8 FB71     		strb	r3, [r7, #7]
+ 1012              	.L79:
+ 426:protocol.c    ****     if (rt_exec & EXEC_FEED_OVR_FINE_MINUS) { new_f_override -= FEED_OVERRIDE_FINE_INCREMENT; }
+ 1013              		.loc 1 426 0 is_stmt 1
+ 1014 03aa FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1015 03ac 03F01003 		and	r3, r3, #16
+ 1016 03b0 002B     		cmp	r3, #0
+ 1017 03b2 02D0     		beq	.L80
+ 1018              		.loc 1 426 0 is_stmt 0 discriminator 1
+ 1019 03b4 FB79     		ldrb	r3, [r7, #7]
+ 1020 03b6 013B     		subs	r3, r3, #1
+ 1021 03b8 FB71     		strb	r3, [r7, #7]
+ 1022              	.L80:
+ 427:protocol.c    ****     new_f_override = min(new_f_override,MAX_FEED_RATE_OVERRIDE);
+ 1023              		.loc 1 427 0 is_stmt 1
+ 1024 03ba FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 1025 03bc C82B     		cmp	r3, #200
+ 1026 03be 28BF     		it	cs
+ 1027 03c0 C823     		movcs	r3, #200
+ 1028 03c2 FB71     		strb	r3, [r7, #7]
+ 428:protocol.c    ****     new_f_override = max(new_f_override,MIN_FEED_RATE_OVERRIDE);
+ 1029              		.loc 1 428 0
+ 1030 03c4 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 1031 03c6 0A2B     		cmp	r3, #10
+ 1032 03c8 38BF     		it	cc
+ 1033 03ca 0A23     		movcc	r3, #10
+ 1034 03cc FB71     		strb	r3, [r7, #7]
+ 429:protocol.c    **** 
+ 430:protocol.c    ****     uint8_t new_r_override = sys.r_override;
+ 1035              		.loc 1 430 0
+ 1036 03ce 664B     		ldr	r3, .L101
+ 1037 03d0 1B7A     		ldrb	r3, [r3, #8]
+ 1038 03d2 BB71     		strb	r3, [r7, #6]
+ 431:protocol.c    ****     if (rt_exec & EXEC_RAPID_OVR_RESET) { new_r_override = DEFAULT_RAPID_OVERRIDE; }
+ 1039              		.loc 1 431 0
+ 1040 03d4 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1041 03d6 03F02003 		and	r3, r3, #32
+ 1042 03da 002B     		cmp	r3, #0
+ 1043 03dc 01D0     		beq	.L81
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 27
+
+
+ 1044              		.loc 1 431 0 is_stmt 0 discriminator 1
+ 1045 03de 6423     		movs	r3, #100
+ 1046 03e0 BB71     		strb	r3, [r7, #6]
+ 1047              	.L81:
+ 432:protocol.c    ****     if (rt_exec & EXEC_RAPID_OVR_MEDIUM) { new_r_override = RAPID_OVERRIDE_MEDIUM; }
+ 1048              		.loc 1 432 0 is_stmt 1
+ 1049 03e2 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1050 03e4 03F04003 		and	r3, r3, #64
+ 1051 03e8 002B     		cmp	r3, #0
+ 1052 03ea 01D0     		beq	.L82
+ 1053              		.loc 1 432 0 is_stmt 0 discriminator 1
+ 1054 03ec 3223     		movs	r3, #50
+ 1055 03ee BB71     		strb	r3, [r7, #6]
+ 1056              	.L82:
+ 433:protocol.c    ****     if (rt_exec & EXEC_RAPID_OVR_LOW) { new_r_override = RAPID_OVERRIDE_LOW; }
+ 1057              		.loc 1 433 0 is_stmt 1
+ 1058 03f0 97F90330 		ldrsb	r3, [r7, #3]
+ 1059 03f4 002B     		cmp	r3, #0
+ 1060 03f6 01DA     		bge	.L83
+ 1061              		.loc 1 433 0 is_stmt 0 discriminator 1
+ 1062 03f8 1923     		movs	r3, #25
+ 1063 03fa BB71     		strb	r3, [r7, #6]
+ 1064              	.L83:
+ 434:protocol.c    **** 
+ 435:protocol.c    ****     if ((new_f_override != sys.f_override) || (new_r_override != sys.r_override)) {
+ 1065              		.loc 1 435 0 is_stmt 1
+ 1066 03fc 5A4B     		ldr	r3, .L101
+ 1067 03fe DB79     		ldrb	r3, [r3, #7]	@ zero_extendqisi2
+ 1068 0400 FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 1069 0402 9A42     		cmp	r2, r3
+ 1070 0404 04D1     		bne	.L84
+ 1071              		.loc 1 435 0 is_stmt 0 discriminator 1
+ 1072 0406 584B     		ldr	r3, .L101
+ 1073 0408 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 1074 040a BA79     		ldrb	r2, [r7, #6]	@ zero_extendqisi2
+ 1075 040c 9A42     		cmp	r2, r3
+ 1076 040e 0CD0     		beq	.L75
+ 1077              	.L84:
+ 436:protocol.c    ****       sys.f_override = new_f_override;
+ 1078              		.loc 1 436 0 is_stmt 1
+ 1079 0410 554A     		ldr	r2, .L101
+ 1080 0412 FB79     		ldrb	r3, [r7, #7]
+ 1081 0414 D371     		strb	r3, [r2, #7]
+ 437:protocol.c    ****       sys.r_override = new_r_override;
+ 1082              		.loc 1 437 0
+ 1083 0416 544A     		ldr	r2, .L101
+ 1084 0418 BB79     		ldrb	r3, [r7, #6]
+ 1085 041a 1372     		strb	r3, [r2, #8]
+ 438:protocol.c    ****       sys.report_ovr_counter = 0; // Set to report change immediately
+ 1086              		.loc 1 438 0
+ 1087 041c 524B     		ldr	r3, .L101
+ 1088 041e 0022     		movs	r2, #0
+ 1089 0420 DA72     		strb	r2, [r3, #11]
+ 439:protocol.c    ****       plan_update_velocity_profile_parameters();
+ 1090              		.loc 1 439 0
+ 1091 0422 FFF7FEFF 		bl	plan_update_velocity_profile_parameters
+ 440:protocol.c    ****       plan_cycle_reinitialize();
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 28
+
+
+ 1092              		.loc 1 440 0
+ 1093 0426 FFF7FEFF 		bl	plan_cycle_reinitialize
+ 1094              	.L75:
+ 1095              	.LBE2:
+ 441:protocol.c    ****     }
+ 442:protocol.c    ****   }
+ 443:protocol.c    **** 
+ 444:protocol.c    ****   rt_exec = sys_rt_exec_accessory_override;
+ 1096              		.loc 1 444 0
+ 1097 042a 514B     		ldr	r3, .L101+8
+ 1098 042c 1B78     		ldrb	r3, [r3]
+ 1099 042e FB70     		strb	r3, [r7, #3]
+ 445:protocol.c    ****   if (rt_exec) {
+ 1100              		.loc 1 445 0
+ 1101 0430 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1102 0432 002B     		cmp	r3, #0
+ 1103 0434 00F0AB80 		beq	.L85
+ 1104              	.LBB3:
+ 446:protocol.c    ****     system_clear_exec_accessory_overrides(); // Clear all accessory override flags.
+ 1105              		.loc 1 446 0
+ 1106 0438 FFF7FEFF 		bl	system_clear_exec_accessory_overrides
+ 447:protocol.c    **** 
+ 448:protocol.c    ****     // NOTE: Unlike motion overrides, spindle overrides do not require a planner reinitialization.
+ 449:protocol.c    ****     uint8_t last_s_override =  sys.spindle_speed_ovr;
+ 1107              		.loc 1 449 0
+ 1108 043c 4A4B     		ldr	r3, .L101
+ 1109 043e 5B7A     		ldrb	r3, [r3, #9]
+ 1110 0440 7B71     		strb	r3, [r7, #5]
+ 450:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_RESET) { last_s_override = DEFAULT_SPINDLE_SPEED_OVERRIDE; }
+ 1111              		.loc 1 450 0
+ 1112 0442 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1113 0444 03F00103 		and	r3, r3, #1
+ 1114 0448 002B     		cmp	r3, #0
+ 1115 044a 01D0     		beq	.L86
+ 1116              		.loc 1 450 0 is_stmt 0 discriminator 1
+ 1117 044c 6423     		movs	r3, #100
+ 1118 044e 7B71     		strb	r3, [r7, #5]
+ 1119              	.L86:
+ 451:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_COARSE_PLUS) { last_s_override += SPINDLE_OVERRIDE_COARSE_INCREM
+ 1120              		.loc 1 451 0 is_stmt 1
+ 1121 0450 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1122 0452 03F00203 		and	r3, r3, #2
+ 1123 0456 002B     		cmp	r3, #0
+ 1124 0458 02D0     		beq	.L87
+ 1125              		.loc 1 451 0 is_stmt 0 discriminator 1
+ 1126 045a 7B79     		ldrb	r3, [r7, #5]
+ 1127 045c 0A33     		adds	r3, r3, #10
+ 1128 045e 7B71     		strb	r3, [r7, #5]
+ 1129              	.L87:
+ 452:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_COARSE_MINUS) { last_s_override -= SPINDLE_OVERRIDE_COARSE_INCRE
+ 1130              		.loc 1 452 0 is_stmt 1
+ 1131 0460 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1132 0462 03F00403 		and	r3, r3, #4
+ 1133 0466 002B     		cmp	r3, #0
+ 1134 0468 02D0     		beq	.L88
+ 1135              		.loc 1 452 0 is_stmt 0 discriminator 1
+ 1136 046a 7B79     		ldrb	r3, [r7, #5]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 29
+
+
+ 1137 046c 0A3B     		subs	r3, r3, #10
+ 1138 046e 7B71     		strb	r3, [r7, #5]
+ 1139              	.L88:
+ 453:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_FINE_PLUS) { last_s_override += SPINDLE_OVERRIDE_FINE_INCREMENT;
+ 1140              		.loc 1 453 0 is_stmt 1
+ 1141 0470 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1142 0472 03F00803 		and	r3, r3, #8
+ 1143 0476 002B     		cmp	r3, #0
+ 1144 0478 02D0     		beq	.L89
+ 1145              		.loc 1 453 0 is_stmt 0 discriminator 1
+ 1146 047a 7B79     		ldrb	r3, [r7, #5]
+ 1147 047c 0133     		adds	r3, r3, #1
+ 1148 047e 7B71     		strb	r3, [r7, #5]
+ 1149              	.L89:
+ 454:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_FINE_MINUS) { last_s_override -= SPINDLE_OVERRIDE_FINE_INCREMENT
+ 1150              		.loc 1 454 0 is_stmt 1
+ 1151 0480 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1152 0482 03F01003 		and	r3, r3, #16
+ 1153 0486 002B     		cmp	r3, #0
+ 1154 0488 02D0     		beq	.L90
+ 1155              		.loc 1 454 0 is_stmt 0 discriminator 1
+ 1156 048a 7B79     		ldrb	r3, [r7, #5]
+ 1157 048c 013B     		subs	r3, r3, #1
+ 1158 048e 7B71     		strb	r3, [r7, #5]
+ 1159              	.L90:
+ 455:protocol.c    ****     last_s_override = min(last_s_override,MAX_SPINDLE_SPEED_OVERRIDE);
+ 1160              		.loc 1 455 0 is_stmt 1
+ 1161 0490 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 1162 0492 C82B     		cmp	r3, #200
+ 1163 0494 28BF     		it	cs
+ 1164 0496 C823     		movcs	r3, #200
+ 1165 0498 7B71     		strb	r3, [r7, #5]
+ 456:protocol.c    ****     last_s_override = max(last_s_override,MIN_SPINDLE_SPEED_OVERRIDE);
+ 1166              		.loc 1 456 0
+ 1167 049a 7B79     		ldrb	r3, [r7, #5]	@ zero_extendqisi2
+ 1168 049c 0A2B     		cmp	r3, #10
+ 1169 049e 38BF     		it	cc
+ 1170 04a0 0A23     		movcc	r3, #10
+ 1171 04a2 7B71     		strb	r3, [r7, #5]
+ 457:protocol.c    **** 
+ 458:protocol.c    ****     if (last_s_override != sys.spindle_speed_ovr) {
+ 1172              		.loc 1 458 0
+ 1173 04a4 304B     		ldr	r3, .L101
+ 1174 04a6 5B7A     		ldrb	r3, [r3, #9]	@ zero_extendqisi2
+ 1175 04a8 7A79     		ldrb	r2, [r7, #5]	@ zero_extendqisi2
+ 1176 04aa 9A42     		cmp	r2, r3
+ 1177 04ac 0CD0     		beq	.L91
+ 459:protocol.c    ****       bit_true(sys.step_control, STEP_CONTROL_UPDATE_SPINDLE_PWM);
+ 1178              		.loc 1 459 0
+ 1179 04ae 2E4B     		ldr	r3, .L101
+ 1180 04b0 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1181 04b2 43F00803 		orr	r3, r3, #8
+ 1182 04b6 DAB2     		uxtb	r2, r3
+ 1183 04b8 2B4B     		ldr	r3, .L101
+ 1184 04ba 1A71     		strb	r2, [r3, #4]
+ 460:protocol.c    ****       sys.spindle_speed_ovr = last_s_override;
+ 1185              		.loc 1 460 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 30
+
+
+ 1186 04bc 2A4A     		ldr	r2, .L101
+ 1187 04be 7B79     		ldrb	r3, [r7, #5]
+ 1188 04c0 5372     		strb	r3, [r2, #9]
+ 461:protocol.c    ****       sys.report_ovr_counter = 0; // Set to report change immediately
+ 1189              		.loc 1 461 0
+ 1190 04c2 294B     		ldr	r3, .L101
+ 1191 04c4 0022     		movs	r2, #0
+ 1192 04c6 DA72     		strb	r2, [r3, #11]
+ 1193              	.L91:
+ 462:protocol.c    ****     }
+ 463:protocol.c    **** 
+ 464:protocol.c    ****     if (rt_exec & EXEC_SPINDLE_OVR_STOP) {
+ 1194              		.loc 1 464 0
+ 1195 04c8 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1196 04ca 03F02003 		and	r3, r3, #32
+ 1197 04ce 002B     		cmp	r3, #0
+ 1198 04d0 18D0     		beq	.L92
+ 465:protocol.c    ****       // Spindle stop override allowed only while in HOLD state.
+ 466:protocol.c    ****       // NOTE: Report counters are set in spindle_set_state() when spindle stop is executed.
+ 467:protocol.c    ****       if (sys.state == STATE_HOLD) {
+ 1199              		.loc 1 467 0
+ 1200 04d2 254B     		ldr	r3, .L101
+ 1201 04d4 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1202 04d6 102B     		cmp	r3, #16
+ 1203 04d8 14D1     		bne	.L92
+ 468:protocol.c    ****         if (!(sys.spindle_stop_ovr)) { sys.spindle_stop_ovr = SPINDLE_STOP_OVR_INITIATE; }
+ 1204              		.loc 1 468 0
+ 1205 04da 234B     		ldr	r3, .L101
+ 1206 04dc 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1207 04de 002B     		cmp	r3, #0
+ 1208 04e0 03D1     		bne	.L93
+ 1209              		.loc 1 468 0 is_stmt 0 discriminator 1
+ 1210 04e2 214B     		ldr	r3, .L101
+ 1211 04e4 0222     		movs	r2, #2
+ 1212 04e6 9A72     		strb	r2, [r3, #10]
+ 1213 04e8 0CE0     		b	.L92
+ 1214              	.L93:
+ 469:protocol.c    ****         else if (sys.spindle_stop_ovr & SPINDLE_STOP_OVR_ENABLED) { sys.spindle_stop_ovr |= SPINDLE
+ 1215              		.loc 1 469 0 is_stmt 1
+ 1216 04ea 1F4B     		ldr	r3, .L101
+ 1217 04ec 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1218 04ee 03F00103 		and	r3, r3, #1
+ 1219 04f2 002B     		cmp	r3, #0
+ 1220 04f4 06D0     		beq	.L92
+ 1221              		.loc 1 469 0 is_stmt 0 discriminator 1
+ 1222 04f6 1C4B     		ldr	r3, .L101
+ 1223 04f8 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1224 04fa 43F00403 		orr	r3, r3, #4
+ 1225 04fe DAB2     		uxtb	r2, r3
+ 1226 0500 194B     		ldr	r3, .L101
+ 1227 0502 9A72     		strb	r2, [r3, #10]
+ 1228              	.L92:
+ 470:protocol.c    ****       }
+ 471:protocol.c    ****     }
+ 472:protocol.c    **** 
+ 473:protocol.c    ****     // NOTE: Since coolant state always performs a planner sync whenever it changes, the current
+ 474:protocol.c    ****     // run state can be determined by checking the parser state.
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 31
+
+
+ 475:protocol.c    ****     if (rt_exec & (EXEC_COOLANT_FLOOD_OVR_TOGGLE | EXEC_COOLANT_MIST_OVR_TOGGLE)) {
+ 1229              		.loc 1 475 0 is_stmt 1
+ 1230 0504 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1231 0506 03F0C003 		and	r3, r3, #192
+ 1232 050a 002B     		cmp	r3, #0
+ 1233 050c 3FD0     		beq	.L85
+ 476:protocol.c    ****       if ((sys.state == STATE_IDLE) || (sys.state & (STATE_CYCLE | STATE_HOLD))) {
+ 1234              		.loc 1 476 0
+ 1235 050e 164B     		ldr	r3, .L101
+ 1236 0510 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1237 0512 002B     		cmp	r3, #0
+ 1238 0514 05D0     		beq	.L94
+ 1239              		.loc 1 476 0 is_stmt 0 discriminator 1
+ 1240 0516 144B     		ldr	r3, .L101
+ 1241 0518 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1242 051a 03F01803 		and	r3, r3, #24
+ 1243 051e 002B     		cmp	r3, #0
+ 1244 0520 35D0     		beq	.L85
+ 1245              	.L94:
+ 1246              	.LBB4:
+ 477:protocol.c    ****         uint8_t coolant_state = gc_state.modal.coolant;
+ 1247              		.loc 1 477 0 is_stmt 1
+ 1248 0522 144B     		ldr	r3, .L101+12
+ 1249 0524 1B7A     		ldrb	r3, [r3, #8]
+ 1250 0526 3B71     		strb	r3, [r7, #4]
+ 478:protocol.c    ****         #ifdef ENABLE_M7
+ 479:protocol.c    ****           if (rt_exec & EXEC_COOLANT_MIST_OVR_TOGGLE) {
+ 1251              		.loc 1 479 0
+ 1252 0528 97F90330 		ldrsb	r3, [r7, #3]
+ 1253 052c 002B     		cmp	r3, #0
+ 1254 052e 0CDA     		bge	.L95
+ 480:protocol.c    ****             if (coolant_state & COOLANT_MIST_ENABLE) { bit_false(coolant_state,COOLANT_MIST_ENABLE)
+ 1255              		.loc 1 480 0
+ 1256 0530 97F90430 		ldrsb	r3, [r7, #4]
+ 1257 0534 002B     		cmp	r3, #0
+ 1258 0536 04DA     		bge	.L96
+ 1259              		.loc 1 480 0 is_stmt 0 discriminator 1
+ 1260 0538 3B79     		ldrb	r3, [r7, #4]
+ 1261 053a 03F07F03 		and	r3, r3, #127
+ 1262 053e 3B71     		strb	r3, [r7, #4]
+ 1263 0540 03E0     		b	.L95
+ 1264              	.L96:
+ 481:protocol.c    ****             else { coolant_state |= COOLANT_MIST_ENABLE; }
+ 1265              		.loc 1 481 0 is_stmt 1
+ 1266 0542 3B79     		ldrb	r3, [r7, #4]
+ 1267 0544 63F07F03 		orn	r3, r3, #127
+ 1268 0548 3B71     		strb	r3, [r7, #4]
+ 1269              	.L95:
+ 482:protocol.c    ****           }
+ 483:protocol.c    ****           if (rt_exec & EXEC_COOLANT_FLOOD_OVR_TOGGLE) {
+ 1270              		.loc 1 483 0
+ 1271 054a FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1272 054c 03F04003 		and	r3, r3, #64
+ 1273 0550 002B     		cmp	r3, #0
+ 1274 0552 15D0     		beq	.L97
+ 484:protocol.c    ****             if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABL
+ 1275              		.loc 1 484 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 32
+
+
+ 1276 0554 3B79     		ldrb	r3, [r7, #4]	@ zero_extendqisi2
+ 1277 0556 03F04003 		and	r3, r3, #64
+ 1278 055a 002B     		cmp	r3, #0
+ 1279 055c 0CD0     		beq	.L98
+ 1280              		.loc 1 484 0 is_stmt 0 discriminator 1
+ 1281 055e 3B79     		ldrb	r3, [r7, #4]
+ 1282 0560 23F04003 		bic	r3, r3, #64
+ 1283 0564 3B71     		strb	r3, [r7, #4]
+ 1284 0566 0BE0     		b	.L97
+ 1285              	.L102:
+ 1286              		.align	2
+ 1287              	.L101:
+ 1288 0568 00000000 		.word	sys
+ 1289 056c 00000000 		.word	sys_rt_exec_motion_override
+ 1290 0570 00000000 		.word	sys_rt_exec_accessory_override
+ 1291 0574 00000000 		.word	gc_state
+ 1292              	.L98:
+ 485:protocol.c    ****             else { coolant_state |= COOLANT_FLOOD_ENABLE; }
+ 1293              		.loc 1 485 0 is_stmt 1
+ 1294 0578 3B79     		ldrb	r3, [r7, #4]
+ 1295 057a 43F04003 		orr	r3, r3, #64
+ 1296 057e 3B71     		strb	r3, [r7, #4]
+ 1297              	.L97:
+ 486:protocol.c    ****           }
+ 487:protocol.c    ****         #else
+ 488:protocol.c    ****           if (coolant_state & COOLANT_FLOOD_ENABLE) { bit_false(coolant_state,COOLANT_FLOOD_ENABLE)
+ 489:protocol.c    ****           else { coolant_state |= COOLANT_FLOOD_ENABLE; }
+ 490:protocol.c    ****         #endif
+ 491:protocol.c    ****         coolant_set_state(coolant_state); // Report counter set in coolant_set_state().
+ 1298              		.loc 1 491 0
+ 1299 0580 3B79     		ldrb	r3, [r7, #4]	@ zero_extendqisi2
+ 1300 0582 1846     		mov	r0, r3
+ 1301 0584 FFF7FEFF 		bl	coolant_set_state
+ 492:protocol.c    ****         gc_state.modal.coolant = coolant_state;
+ 1302              		.loc 1 492 0
+ 1303 0588 064A     		ldr	r2, .L103
+ 1304 058a 3B79     		ldrb	r3, [r7, #4]
+ 1305 058c 1372     		strb	r3, [r2, #8]
+ 1306              	.L85:
+ 1307              	.LBE4:
+ 1308              	.LBE3:
+ 493:protocol.c    ****       }
+ 494:protocol.c    ****     }
+ 495:protocol.c    ****     
+ 496:protocol.c    ****    
+ 497:protocol.c    ****     
+ 498:protocol.c    ****   }
+ 499:protocol.c    **** 
+ 500:protocol.c    ****   #ifdef DEBUG
+ 501:protocol.c    ****     if (sys_rt_exec_debug) {
+ 502:protocol.c    ****       report_realtime_debug();
+ 503:protocol.c    ****       sys_rt_exec_debug = 0;
+ 504:protocol.c    ****     }
+ 505:protocol.c    ****   #endif
+ 506:protocol.c    **** 
+ 507:protocol.c    ****   // Reload step segment buffer
+ 508:protocol.c    ****   if (sys.state & (STATE_CYCLE | STATE_HOLD | STATE_SAFETY_DOOR | STATE_HOMING | STATE_SLEEP| STATE
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 33
+
+
+ 1309              		.loc 1 508 0
+ 1310 058e 064B     		ldr	r3, .L103+4
+ 1311 0590 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1312 0592 03F0FC03 		and	r3, r3, #252
+ 1313 0596 002B     		cmp	r3, #0
+ 1314 0598 01D0     		beq	.L44
+ 509:protocol.c    ****     st_prep_buffer();
+ 1315              		.loc 1 509 0
+ 1316 059a FFF7FEFF 		bl	st_prep_buffer
+ 1317              	.L44:
+ 510:protocol.c    ****   }
+ 511:protocol.c    **** 
+ 512:protocol.c    **** }
+ 1318              		.loc 1 512 0
+ 1319 059e 0837     		adds	r7, r7, #8
+ 1320              		.cfi_def_cfa_offset 8
+ 1321 05a0 BD46     		mov	sp, r7
+ 1322              		.cfi_def_cfa_register 13
+ 1323              		@ sp needed
+ 1324 05a2 80BD     		pop	{r7, pc}
+ 1325              	.L104:
+ 1326              		.align	2
+ 1327              	.L103:
+ 1328 05a4 00000000 		.word	gc_state
+ 1329 05a8 00000000 		.word	sys
+ 1330              		.cfi_endproc
+ 1331              	.LFE68:
+ 1332              		.size	protocol_exec_rt_system, .-protocol_exec_rt_system
+ 1333              		.section	.text.protocol_exec_rt_suspend,"ax",%progbits
+ 1334              		.align	2
+ 1335              		.thumb
+ 1336              		.thumb_func
+ 1337              		.type	protocol_exec_rt_suspend, %function
+ 1338              	protocol_exec_rt_suspend:
+ 1339              	.LFB69:
+ 513:protocol.c    **** 
+ 514:protocol.c    **** 
+ 515:protocol.c    **** // Handles Grbl system suspend procedures, such as feed hold, safety door, and parking motion.
+ 516:protocol.c    **** // The system will enter this loop, create local variables for suspend tasks, and return to
+ 517:protocol.c    **** // whatever function that invoked the suspend, such that Grbl resumes normal operation.
+ 518:protocol.c    **** // This function is written in a way to promote custom parking motions. Simply use this as a
+ 519:protocol.c    **** // template
+ 520:protocol.c    **** static void protocol_exec_rt_suspend()
+ 521:protocol.c    **** {
+ 1340              		.loc 1 521 0
+ 1341              		.cfi_startproc
+ 1342              		@ args = 0, pretend = 0, frame = 16
+ 1343              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1344 0000 80B5     		push	{r7, lr}
+ 1345              		.cfi_def_cfa_offset 8
+ 1346              		.cfi_offset 7, -8
+ 1347              		.cfi_offset 14, -4
+ 1348 0002 84B0     		sub	sp, sp, #16
+ 1349              		.cfi_def_cfa_offset 24
+ 1350 0004 00AF     		add	r7, sp, #0
+ 1351              		.cfi_def_cfa_register 7
+ 522:protocol.c    ****   #ifdef PARKING_ENABLE
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 34
+
+
+ 523:protocol.c    ****     // Declare and initialize parking local variables
+ 524:protocol.c    ****     float restore_target[N_AXIS];
+ 525:protocol.c    ****     float parking_target[N_AXIS];
+ 526:protocol.c    ****     float retract_waypoint = PARKING_PULLOUT_INCREMENT;
+ 527:protocol.c    ****     plan_line_data_t plan_data;
+ 528:protocol.c    ****     plan_line_data_t *pl_data = &plan_data;
+ 529:protocol.c    ****     memset(pl_data,0,sizeof(plan_line_data_t));
+ 530:protocol.c    ****     pl_data->condition = (PL_COND_FLAG_SYSTEM_MOTION|PL_COND_FLAG_NO_FEED_OVERRIDE);
+ 531:protocol.c    ****     #ifdef USE_LINE_NUMBERS
+ 532:protocol.c    ****       pl_data->line_number = PARKING_MOTION_LINE_NUMBER;
+ 533:protocol.c    ****     #endif
+ 534:protocol.c    ****   #endif
+ 535:protocol.c    **** 
+ 536:protocol.c    ****   plan_block_t *block = plan_get_current_block();
+ 1352              		.loc 1 536 0
+ 1353 0006 FFF7FEFF 		bl	plan_get_current_block
+ 1354 000a 7860     		str	r0, [r7, #4]
+ 537:protocol.c    ****   uint8_t restore_condition;
+ 538:protocol.c    ****   #ifdef VARIABLE_SPINDLE
+ 539:protocol.c    ****     float restore_spindle_speed;
+ 540:protocol.c    ****     if (block == NULL) {
+ 1355              		.loc 1 540 0
+ 1356 000c 7B68     		ldr	r3, [r7, #4]
+ 1357 000e 002B     		cmp	r3, #0
+ 1358 0010 09D1     		bne	.L106
+ 541:protocol.c    ****       restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant);
+ 1359              		.loc 1 541 0
+ 1360 0012 9C4B     		ldr	r3, .L133
+ 1361 0014 5A7A     		ldrb	r2, [r3, #9]	@ zero_extendqisi2
+ 1362 0016 9B4B     		ldr	r3, .L133
+ 1363 0018 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 1364 001a 1343     		orrs	r3, r3, r2
+ 1365 001c FB73     		strb	r3, [r7, #15]
+ 542:protocol.c    ****       restore_spindle_speed = gc_state.spindle_speed;
+ 1366              		.loc 1 542 0
+ 1367 001e 994B     		ldr	r3, .L133
+ 1368 0020 DB68     		ldr	r3, [r3, #12]	@ float
+ 1369 0022 BB60     		str	r3, [r7, #8]	@ float
+ 1370 0024 05E0     		b	.L107
+ 1371              	.L106:
+ 543:protocol.c    ****     } else {
+ 544:protocol.c    ****       restore_condition = block->condition;
+ 1372              		.loc 1 544 0
+ 1373 0026 7B68     		ldr	r3, [r7, #4]
+ 1374 0028 5B7C     		ldrb	r3, [r3, #17]
+ 1375 002a FB73     		strb	r3, [r7, #15]
+ 545:protocol.c    ****       restore_spindle_speed = block->spindle_speed;
+ 1376              		.loc 1 545 0
+ 1377 002c 7B68     		ldr	r3, [r7, #4]
+ 1378 002e 1B6B     		ldr	r3, [r3, #48]	@ float
+ 1379 0030 BB60     		str	r3, [r7, #8]	@ float
+ 1380              	.L107:
+ 546:protocol.c    ****     }
+ 547:protocol.c    ****     #ifdef DISABLE_LASER_DURING_HOLD
+ 548:protocol.c    ****       if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) { 
+ 1381              		.loc 1 548 0
+ 1382 0032 954B     		ldr	r3, .L133+4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 35
+
+
+ 1383 0034 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 1384 0038 03F00203 		and	r3, r3, #2
+ 1385 003c 002B     		cmp	r3, #0
+ 1386 003e 00F01781 		beq	.L109
+ 549:protocol.c    ****         system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_STOP);
+ 1387              		.loc 1 549 0
+ 1388 0042 2020     		movs	r0, #32
+ 1389 0044 FFF7FEFF 		bl	system_set_exec_accessory_override_flag
+ 550:protocol.c    ****       }
+ 551:protocol.c    ****     #endif
+ 552:protocol.c    ****   #else
+ 553:protocol.c    ****     if (block == NULL) { restore_condition = (gc_state.modal.spindle | gc_state.modal.coolant); }
+ 554:protocol.c    ****     else { restore_condition = block->condition; }
+ 555:protocol.c    ****   #endif
+ 556:protocol.c    **** 
+ 557:protocol.c    ****   while (sys.suspend) {
+ 1390              		.loc 1 557 0
+ 1391 0048 12E1     		b	.L109
+ 1392              	.L131:
+ 558:protocol.c    **** 
+ 559:protocol.c    ****     if (sys.abort) { return; }
+ 1393              		.loc 1 559 0
+ 1394 004a 904B     		ldr	r3, .L133+8
+ 1395 004c 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 1396 004e 002B     		cmp	r3, #0
+ 1397 0050 40F01481 		bne	.L132
+ 560:protocol.c    **** 
+ 561:protocol.c    ****     // Block until initial hold is complete and the machine has stopped motion.
+ 562:protocol.c    ****     if (sys.suspend & SUSPEND_HOLD_COMPLETE) {
+ 1398              		.loc 1 562 0
+ 1399 0054 8D4B     		ldr	r3, .L133+8
+ 1400 0056 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1401 0058 03F00103 		and	r3, r3, #1
+ 1402 005c 002B     		cmp	r3, #0
+ 1403 005e 00F00581 		beq	.L112
+ 563:protocol.c    **** 
+ 564:protocol.c    ****       // Parking manager. Handles de/re-energizing, switch state checks, and parking motions for 
+ 565:protocol.c    ****       // the safety door and sleep states.
+ 566:protocol.c    ****       if (sys.state & (STATE_SAFETY_DOOR | STATE_SLEEP)) {
+ 1404              		.loc 1 566 0
+ 1405 0062 8A4B     		ldr	r3, .L133+8
+ 1406 0064 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1407 0066 03F0C003 		and	r3, r3, #192
+ 1408 006a 002B     		cmp	r3, #0
+ 1409 006c 00F09D80 		beq	.L113
+ 567:protocol.c    ****       
+ 568:protocol.c    ****         // Handles retraction motions and de-energizing.
+ 569:protocol.c    ****         if (bit_isfalse(sys.suspend,SUSPEND_RETRACT_COMPLETE)) {
+ 1410              		.loc 1 569 0
+ 1411 0070 864B     		ldr	r3, .L133+8
+ 1412 0072 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1413 0074 03F00403 		and	r3, r3, #4
+ 1414 0078 002B     		cmp	r3, #0
+ 1415 007a 19D1     		bne	.L114
+ 570:protocol.c    **** 
+ 571:protocol.c    ****           // Ensure any prior spindle stop override is disabled at start of safety door routine.
+ 572:protocol.c    ****           sys.spindle_stop_ovr = SPINDLE_STOP_OVR_DISABLED;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 36
+
+
+ 1416              		.loc 1 572 0
+ 1417 007c 834B     		ldr	r3, .L133+8
+ 1418 007e 0022     		movs	r2, #0
+ 1419 0080 9A72     		strb	r2, [r3, #10]
+ 573:protocol.c    **** 
+ 574:protocol.c    ****           #ifndef PARKING_ENABLE
+ 575:protocol.c    **** 
+ 576:protocol.c    ****             spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+ 1420              		.loc 1 576 0
+ 1421 0082 4FF00001 		mov	r1, #0
+ 1422 0086 0020     		movs	r0, #0
+ 1423 0088 FFF7FEFF 		bl	spindle_set_state
+ 577:protocol.c    ****             coolant_set_state(COOLANT_DISABLE);     // De-energize
+ 1424              		.loc 1 577 0
+ 1425 008c 0020     		movs	r0, #0
+ 1426 008e FFF7FEFF 		bl	coolant_set_state
+ 578:protocol.c    **** 
+ 579:protocol.c    ****           #else
+ 580:protocol.c    **** 					
+ 581:protocol.c    ****             // Get current position and store restore location and spindle retract waypoint.
+ 582:protocol.c    ****             system_convert_array_steps_to_mpos(parking_target,sys_position);
+ 583:protocol.c    ****             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+ 584:protocol.c    ****               memcpy(restore_target,parking_target,sizeof(parking_target));
+ 585:protocol.c    ****               retract_waypoint += restore_target[PARKING_AXIS];
+ 586:protocol.c    ****               retract_waypoint = min(retract_waypoint,PARKING_TARGET);
+ 587:protocol.c    ****             }
+ 588:protocol.c    **** 
+ 589:protocol.c    ****             // Execute slow pull-out parking retract motion. Parking requires homing enabled, the
+ 590:protocol.c    ****             // current location not exceeding the parking target location, and laser mode disabled.
+ 591:protocol.c    ****             // NOTE: State is will remain DOOR, until the de-energizing and retract is complete.
+ 592:protocol.c    ****             if ((bit_istrue(settings.flags,BITFLAG_HOMING_ENABLE)) &&
+ 593:protocol.c    ****                             (parking_target[PARKING_AXIS] < PARKING_TARGET) &&
+ 594:protocol.c    ****                             bit_isfalse(settings.flags,BITFLAG_LASER_MODE)) {
+ 595:protocol.c    **** 
+ 596:protocol.c    ****               // Retract spindle by pullout distance. Ensure retraction motion moves away from
+ 597:protocol.c    ****               // the workpiece and waypoint motion doesn't exceed the parking target location.
+ 598:protocol.c    ****               if (parking_target[PARKING_AXIS] < retract_waypoint) {
+ 599:protocol.c    ****                 parking_target[PARKING_AXIS] = retract_waypoint;
+ 600:protocol.c    ****                 pl_data->feed_rate = PARKING_PULLOUT_RATE;
+ 601:protocol.c    ****                 pl_data->condition |= (restore_condition & PL_COND_ACCESSORY_MASK); // Retain acces
+ 602:protocol.c    ****                 pl_data->spindle_speed = restore_spindle_speed;
+ 603:protocol.c    ****                 mc_parking_motion(parking_target, pl_data);
+ 604:protocol.c    ****               }
+ 605:protocol.c    **** 
+ 606:protocol.c    ****               // NOTE: Clear accessory state after retract and after an aborted restore motion.
+ 607:protocol.c    ****               pl_data->condition = (PL_COND_FLAG_SYSTEM_MOTION|PL_COND_FLAG_NO_FEED_OVERRIDE);
+ 608:protocol.c    ****               pl_data->spindle_speed = 0.0;
+ 609:protocol.c    ****               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+ 610:protocol.c    ****               coolant_set_state(COOLANT_DISABLE); // De-energize
+ 611:protocol.c    **** 
+ 612:protocol.c    ****               // Execute fast parking retract motion to parking target location.
+ 613:protocol.c    ****               if (parking_target[PARKING_AXIS] < PARKING_TARGET) {
+ 614:protocol.c    ****                 parking_target[PARKING_AXIS] = PARKING_TARGET;
+ 615:protocol.c    ****                 pl_data->feed_rate = PARKING_RATE;
+ 616:protocol.c    ****                 mc_parking_motion(parking_target, pl_data);
+ 617:protocol.c    ****               }
+ 618:protocol.c    **** 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 37
+
+
+ 619:protocol.c    ****             } else {
+ 620:protocol.c    **** 
+ 621:protocol.c    ****               // Parking motion not possible. Just disable the spindle and coolant.
+ 622:protocol.c    ****               // NOTE: Laser mode does not start a parking motion to ensure the laser stops immedia
+ 623:protocol.c    ****               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+ 624:protocol.c    ****               coolant_set_state(COOLANT_DISABLE);     // De-energize
+ 625:protocol.c    **** 
+ 626:protocol.c    ****             }
+ 627:protocol.c    **** 
+ 628:protocol.c    ****           #endif
+ 629:protocol.c    **** 
+ 630:protocol.c    ****           sys.suspend &= ~(SUSPEND_RESTART_RETRACT);
+ 1427              		.loc 1 630 0
+ 1428 0092 7E4B     		ldr	r3, .L133+8
+ 1429 0094 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1430 0096 23F00203 		bic	r3, r3, #2
+ 1431 009a DAB2     		uxtb	r2, r3
+ 1432 009c 7B4B     		ldr	r3, .L133+8
+ 1433 009e 9A70     		strb	r2, [r3, #2]
+ 631:protocol.c    ****           sys.suspend |= SUSPEND_RETRACT_COMPLETE;
+ 1434              		.loc 1 631 0
+ 1435 00a0 7A4B     		ldr	r3, .L133+8
+ 1436 00a2 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1437 00a4 43F00403 		orr	r3, r3, #4
+ 1438 00a8 DAB2     		uxtb	r2, r3
+ 1439 00aa 784B     		ldr	r3, .L133+8
+ 1440 00ac 9A70     		strb	r2, [r3, #2]
+ 1441 00ae DDE0     		b	.L112
+ 1442              	.L114:
+ 632:protocol.c    **** 
+ 633:protocol.c    ****         } else {
+ 634:protocol.c    **** 
+ 635:protocol.c    ****           
+ 636:protocol.c    ****           if (sys.state == STATE_SLEEP) {
+ 1443              		.loc 1 636 0
+ 1444 00b0 764B     		ldr	r3, .L133+8
+ 1445 00b2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1446 00b4 802B     		cmp	r3, #128
+ 1447 00b6 14D1     		bne	.L116
+ 637:protocol.c    ****             report_feedback_message(MESSAGE_SLEEP_MODE);
+ 1448              		.loc 1 637 0
+ 1449 00b8 0B20     		movs	r0, #11
+ 1450 00ba FFF7FEFF 		bl	report_feedback_message
+ 638:protocol.c    ****             // Spindle and coolant should already be stopped, but do it again just to be sure.
+ 639:protocol.c    ****             spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+ 1451              		.loc 1 639 0
+ 1452 00be 4FF00001 		mov	r1, #0
+ 1453 00c2 0020     		movs	r0, #0
+ 1454 00c4 FFF7FEFF 		bl	spindle_set_state
+ 640:protocol.c    ****             coolant_set_state(COOLANT_DISABLE); // De-energize
+ 1455              		.loc 1 640 0
+ 1456 00c8 0020     		movs	r0, #0
+ 1457 00ca FFF7FEFF 		bl	coolant_set_state
+ 641:protocol.c    ****             st_go_idle(); // Disable steppers
+ 1458              		.loc 1 641 0
+ 1459 00ce FFF7FEFF 		bl	st_go_idle
+ 642:protocol.c    ****             while (!(sys.abort)) { protocol_exec_rt_system(); } // Do nothing until reset.
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 38
+
+
+ 1460              		.loc 1 642 0
+ 1461 00d2 01E0     		b	.L117
+ 1462              	.L118:
+ 1463              		.loc 1 642 0 is_stmt 0 discriminator 2
+ 1464 00d4 FFF7FEFF 		bl	protocol_exec_rt_system
+ 1465              	.L117:
+ 1466              		.loc 1 642 0 discriminator 1
+ 1467 00d8 6C4B     		ldr	r3, .L133+8
+ 1468 00da 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 1469 00dc 002B     		cmp	r3, #0
+ 1470 00de F9D0     		beq	.L118
+ 643:protocol.c    ****             return; // Abort received. Return to re-initialize.
+ 1471              		.loc 1 643 0 is_stmt 1
+ 1472 00e0 CDE0     		b	.L105
+ 1473              	.L116:
+ 644:protocol.c    ****           }    
+ 645:protocol.c    ****           
+ 646:protocol.c    ****           // Allows resuming from parking/safety door. Actively checks if safety door is closed and
+ 647:protocol.c    ****           if (sys.state == STATE_SAFETY_DOOR) {
+ 1474              		.loc 1 647 0
+ 1475 00e2 6A4B     		ldr	r3, .L133+8
+ 1476 00e4 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1477 00e6 402B     		cmp	r3, #64
+ 1478 00e8 0BD1     		bne	.L119
+ 648:protocol.c    ****             if (!(system_check_safety_door_ajar())) {
+ 1479              		.loc 1 648 0
+ 1480 00ea FFF7FEFF 		bl	system_check_safety_door_ajar
+ 1481 00ee 0346     		mov	r3, r0
+ 1482 00f0 002B     		cmp	r3, #0
+ 1483 00f2 06D1     		bne	.L119
+ 649:protocol.c    ****               sys.suspend &= ~(SUSPEND_SAFETY_DOOR_AJAR); // Reset door ajar flag to denote ready t
+ 1484              		.loc 1 649 0
+ 1485 00f4 654B     		ldr	r3, .L133+8
+ 1486 00f6 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1487 00f8 23F02003 		bic	r3, r3, #32
+ 1488 00fc DAB2     		uxtb	r2, r3
+ 1489 00fe 634B     		ldr	r3, .L133+8
+ 1490 0100 9A70     		strb	r2, [r3, #2]
+ 1491              	.L119:
+ 650:protocol.c    ****             }
+ 651:protocol.c    ****           }
+ 652:protocol.c    **** 
+ 653:protocol.c    ****           // Handles parking restore and safety door resume.
+ 654:protocol.c    ****           if (sys.suspend & SUSPEND_INITIATE_RESTORE) {
+ 1492              		.loc 1 654 0
+ 1493 0102 624B     		ldr	r3, .L133+8
+ 1494 0104 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1495 0106 03F00803 		and	r3, r3, #8
+ 1496 010a 002B     		cmp	r3, #0
+ 1497 010c 00F0AE80 		beq	.L112
+ 655:protocol.c    **** 
+ 656:protocol.c    ****             #ifdef PARKING_ENABLE
+ 657:protocol.c    ****               // Execute fast restore motion to the pull-out position. Parking requires homing enab
+ 658:protocol.c    ****               // NOTE: State is will remain DOOR, until the de-energizing and retract is complete.
+ 659:protocol.c    ****               if ((settings.flags & (BITFLAG_HOMING_ENABLE|BITFLAG_LASER_MODE)) == BITFLAG_HOMING_E
+ 660:protocol.c    ****                 // Check to ensure the motion doesn't move below pull-out position.
+ 661:protocol.c    ****                 if (parking_target[PARKING_AXIS] <= PARKING_TARGET) {
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 39
+
+
+ 662:protocol.c    ****                   parking_target[PARKING_AXIS] = retract_waypoint;
+ 663:protocol.c    ****                   pl_data->feed_rate = PARKING_RATE;
+ 664:protocol.c    ****                   mc_parking_motion(parking_target, pl_data);
+ 665:protocol.c    ****                 }
+ 666:protocol.c    ****               }
+ 667:protocol.c    ****             #endif
+ 668:protocol.c    **** 
+ 669:protocol.c    ****             // Delayed Tasks: Restart spindle and coolant, delay to power-up, then resume cycle.
+ 670:protocol.c    ****             if (gc_state.modal.spindle != SPINDLE_DISABLE) {
+ 1498              		.loc 1 670 0
+ 1499 0110 5C4B     		ldr	r3, .L133
+ 1500 0112 5B7A     		ldrb	r3, [r3, #9]	@ zero_extendqisi2
+ 1501 0114 002B     		cmp	r3, #0
+ 1502 0116 21D0     		beq	.L120
+ 671:protocol.c    ****               // Block if safety door re-opened during prior restore actions.
+ 672:protocol.c    ****               if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+ 1503              		.loc 1 672 0
+ 1504 0118 5C4B     		ldr	r3, .L133+8
+ 1505 011a 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1506 011c 03F00203 		and	r3, r3, #2
+ 1507 0120 002B     		cmp	r3, #0
+ 1508 0122 1BD1     		bne	.L120
+ 673:protocol.c    ****                 if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) {
+ 1509              		.loc 1 673 0
+ 1510 0124 584B     		ldr	r3, .L133+4
+ 1511 0126 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 1512 012a 03F00203 		and	r3, r3, #2
+ 1513 012e 002B     		cmp	r3, #0
+ 1514 0130 07D0     		beq	.L121
+ 674:protocol.c    ****                   // When in laser mode, ignore spindle spin-up delay. Set to turn on laser when cy
+ 675:protocol.c    ****                   bit_true(sys.step_control, STEP_CONTROL_UPDATE_SPINDLE_PWM);
+ 1515              		.loc 1 675 0
+ 1516 0132 564B     		ldr	r3, .L133+8
+ 1517 0134 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1518 0136 43F00803 		orr	r3, r3, #8
+ 1519 013a DAB2     		uxtb	r2, r3
+ 1520 013c 534B     		ldr	r3, .L133+8
+ 1521 013e 1A71     		strb	r2, [r3, #4]
+ 1522 0140 0CE0     		b	.L120
+ 1523              	.L121:
+ 676:protocol.c    ****                 } else {
+ 677:protocol.c    ****                   spindle_set_state((restore_condition & (PL_COND_FLAG_SPINDLE_CW | PL_COND_FLAG_SP
+ 1524              		.loc 1 677 0
+ 1525 0142 FB7B     		ldrb	r3, [r7, #15]
+ 1526 0144 03F03003 		and	r3, r3, #48
+ 1527 0148 DBB2     		uxtb	r3, r3
+ 1528 014a B968     		ldr	r1, [r7, #8]	@ float
+ 1529 014c 1846     		mov	r0, r3
+ 1530 014e FFF7FEFF 		bl	spindle_set_state
+ 678:protocol.c    ****                   delay_sec(SAFETY_DOOR_SPINDLE_DELAY, DELAY_MODE_SYS_SUSPEND);
+ 1531              		.loc 1 678 0
+ 1532 0152 0121     		movs	r1, #1
+ 1533 0154 4FF08140 		mov	r0, #1082130432
+ 1534 0158 FFF7FEFF 		bl	delay_sec
+ 1535              	.L120:
+ 679:protocol.c    ****                 }
+ 680:protocol.c    ****               }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 40
+
+
+ 681:protocol.c    ****             }
+ 682:protocol.c    ****             if (gc_state.modal.coolant != COOLANT_DISABLE) {
+ 1536              		.loc 1 682 0
+ 1537 015c 494B     		ldr	r3, .L133
+ 1538 015e 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 1539 0160 002B     		cmp	r3, #0
+ 1540 0162 11D0     		beq	.L122
+ 683:protocol.c    ****               // Block if safety door re-opened during prior restore actions.
+ 684:protocol.c    ****               if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+ 1541              		.loc 1 684 0
+ 1542 0164 494B     		ldr	r3, .L133+8
+ 1543 0166 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1544 0168 03F00203 		and	r3, r3, #2
+ 1545 016c 002B     		cmp	r3, #0
+ 1546 016e 0BD1     		bne	.L122
+ 685:protocol.c    ****                 // NOTE: Laser mode will honor this delay. An exhaust system is often controlled by
+ 686:protocol.c    ****                 coolant_set_state((restore_condition & (PL_COND_FLAG_COOLANT_FLOOD | PL_COND_FLAG_C
+ 1547              		.loc 1 686 0
+ 1548 0170 FB7B     		ldrb	r3, [r7, #15]
+ 1549 0172 03F04003 		and	r3, r3, #64
+ 1550 0176 DBB2     		uxtb	r3, r3
+ 1551 0178 1846     		mov	r0, r3
+ 1552 017a FFF7FEFF 		bl	coolant_set_state
+ 687:protocol.c    ****                 delay_sec(SAFETY_DOOR_COOLANT_DELAY, DELAY_MODE_SYS_SUSPEND);
+ 1553              		.loc 1 687 0
+ 1554 017e 0121     		movs	r1, #1
+ 1555 0180 4FF07E50 		mov	r0, #1065353216
+ 1556 0184 FFF7FEFF 		bl	delay_sec
+ 1557              	.L122:
+ 688:protocol.c    ****               }
+ 689:protocol.c    ****             }
+ 690:protocol.c    **** 
+ 691:protocol.c    ****             #ifdef PARKING_ENABLE
+ 692:protocol.c    ****               // Execute slow plunge motion from pull-out position to resume position.
+ 693:protocol.c    ****               if ((settings.flags & (BITFLAG_HOMING_ENABLE|BITFLAG_LASER_MODE)) == BITFLAG_HOMING_E
+ 694:protocol.c    ****                 // Block if safety door re-opened during prior restore actions.
+ 695:protocol.c    ****                 if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+ 696:protocol.c    ****                   // Regardless if the retract parking motion was a valid/safe motion or not, the
+ 697:protocol.c    ****                   // restore parking motion should logically be valid, either by returning to the
+ 698:protocol.c    ****                   // original position through valid machine space or by not moving at all.
+ 699:protocol.c    ****                   pl_data->feed_rate = PARKING_PULLOUT_RATE;
+ 700:protocol.c    **** 									pl_data->condition |= (restore_condition & PL_COND_ACCESSORY_MASK); // Restore accessory s
+ 701:protocol.c    **** 									pl_data->spindle_speed = restore_spindle_speed;
+ 702:protocol.c    ****                   mc_parking_motion(restore_target, pl_data);
+ 703:protocol.c    ****                 }
+ 704:protocol.c    ****               }
+ 705:protocol.c    ****             #endif
+ 706:protocol.c    **** 
+ 707:protocol.c    ****             if (bit_isfalse(sys.suspend,SUSPEND_RESTART_RETRACT)) {
+ 1558              		.loc 1 707 0
+ 1559 0188 404B     		ldr	r3, .L133+8
+ 1560 018a 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1561 018c 03F00203 		and	r3, r3, #2
+ 1562 0190 002B     		cmp	r3, #0
+ 1563 0192 6BD1     		bne	.L112
+ 708:protocol.c    ****               sys.suspend |= SUSPEND_RESTORE_COMPLETE;
+ 1564              		.loc 1 708 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 41
+
+
+ 1565 0194 3D4B     		ldr	r3, .L133+8
+ 1566 0196 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1567 0198 43F01003 		orr	r3, r3, #16
+ 1568 019c DAB2     		uxtb	r2, r3
+ 1569 019e 3B4B     		ldr	r3, .L133+8
+ 1570 01a0 9A70     		strb	r2, [r3, #2]
+ 709:protocol.c    ****               system_set_exec_state_flag(EXEC_CYCLE_START); // Set to resume program.
+ 1571              		.loc 1 709 0
+ 1572 01a2 0220     		movs	r0, #2
+ 1573 01a4 FFF7FEFF 		bl	system_set_exec_state_flag
+ 1574 01a8 60E0     		b	.L112
+ 1575              	.L113:
+ 710:protocol.c    ****             }
+ 711:protocol.c    ****           }
+ 712:protocol.c    **** 
+ 713:protocol.c    ****         }
+ 714:protocol.c    **** 
+ 715:protocol.c    **** 
+ 716:protocol.c    ****       } else {
+ 717:protocol.c    **** 
+ 718:protocol.c    ****         // Feed hold manager. Controls spindle stop override states.
+ 719:protocol.c    ****         // NOTE: Hold ensured as completed by condition check at the beginning of suspend routine.
+ 720:protocol.c    ****         if (sys.spindle_stop_ovr) {
+ 1576              		.loc 1 720 0
+ 1577 01aa 384B     		ldr	r3, .L133+8
+ 1578 01ac 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1579 01ae 002B     		cmp	r3, #0
+ 1580 01b0 47D0     		beq	.L123
+ 721:protocol.c    ****           // Handles beginning of spindle stop
+ 722:protocol.c    ****           if (sys.spindle_stop_ovr & SPINDLE_STOP_OVR_INITIATE) {
+ 1581              		.loc 1 722 0
+ 1582 01b2 364B     		ldr	r3, .L133+8
+ 1583 01b4 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1584 01b6 03F00203 		and	r3, r3, #2
+ 1585 01ba 002B     		cmp	r3, #0
+ 1586 01bc 10D0     		beq	.L124
+ 723:protocol.c    ****             if (gc_state.modal.spindle != SPINDLE_DISABLE) {
+ 1587              		.loc 1 723 0
+ 1588 01be 314B     		ldr	r3, .L133
+ 1589 01c0 5B7A     		ldrb	r3, [r3, #9]	@ zero_extendqisi2
+ 1590 01c2 002B     		cmp	r3, #0
+ 1591 01c4 08D0     		beq	.L125
+ 724:protocol.c    ****               spindle_set_state(SPINDLE_DISABLE,0.0); // De-energize
+ 1592              		.loc 1 724 0
+ 1593 01c6 4FF00001 		mov	r1, #0
+ 1594 01ca 0020     		movs	r0, #0
+ 1595 01cc FFF7FEFF 		bl	spindle_set_state
+ 725:protocol.c    ****               sys.spindle_stop_ovr = SPINDLE_STOP_OVR_ENABLED; // Set stop override state to enable
+ 1596              		.loc 1 725 0
+ 1597 01d0 2E4B     		ldr	r3, .L133+8
+ 1598 01d2 0122     		movs	r2, #1
+ 1599 01d4 9A72     		strb	r2, [r3, #10]
+ 1600 01d6 49E0     		b	.L112
+ 1601              	.L125:
+ 726:protocol.c    ****             } else {
+ 727:protocol.c    ****               sys.spindle_stop_ovr = SPINDLE_STOP_OVR_DISABLED; // Clear stop override state
+ 1602              		.loc 1 727 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 42
+
+
+ 1603 01d8 2C4B     		ldr	r3, .L133+8
+ 1604 01da 0022     		movs	r2, #0
+ 1605 01dc 9A72     		strb	r2, [r3, #10]
+ 1606 01de 45E0     		b	.L112
+ 1607              	.L124:
+ 728:protocol.c    ****             }
+ 729:protocol.c    ****           // Handles restoring of spindle state
+ 730:protocol.c    ****           } else if (sys.spindle_stop_ovr & (SPINDLE_STOP_OVR_RESTORE | SPINDLE_STOP_OVR_RESTORE_CY
+ 1608              		.loc 1 730 0
+ 1609 01e0 2A4B     		ldr	r3, .L133+8
+ 1610 01e2 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1611 01e4 03F00C03 		and	r3, r3, #12
+ 1612 01e8 002B     		cmp	r3, #0
+ 1613 01ea 3FD0     		beq	.L112
+ 731:protocol.c    ****             if (gc_state.modal.spindle != SPINDLE_DISABLE) {
+ 1614              		.loc 1 731 0
+ 1615 01ec 254B     		ldr	r3, .L133
+ 1616 01ee 5B7A     		ldrb	r3, [r3, #9]	@ zero_extendqisi2
+ 1617 01f0 002B     		cmp	r3, #0
+ 1618 01f2 19D0     		beq	.L128
+ 732:protocol.c    ****               report_feedback_message(MESSAGE_SPINDLE_RESTORE);
+ 1619              		.loc 1 732 0
+ 1620 01f4 0A20     		movs	r0, #10
+ 1621 01f6 FFF7FEFF 		bl	report_feedback_message
+ 733:protocol.c    ****               if (bit_istrue(settings.flags,BITFLAG_LASER_MODE)) {
+ 1622              		.loc 1 733 0
+ 1623 01fa 234B     		ldr	r3, .L133+4
+ 1624 01fc 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 1625 0200 03F00203 		and	r3, r3, #2
+ 1626 0204 002B     		cmp	r3, #0
+ 1627 0206 07D0     		beq	.L129
+ 734:protocol.c    ****                 // When in laser mode, ignore spindle spin-up delay. Set to turn on laser when cycl
+ 735:protocol.c    ****                 bit_true(sys.step_control, STEP_CONTROL_UPDATE_SPINDLE_PWM);
+ 1628              		.loc 1 735 0
+ 1629 0208 204B     		ldr	r3, .L133+8
+ 1630 020a 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1631 020c 43F00803 		orr	r3, r3, #8
+ 1632 0210 DAB2     		uxtb	r2, r3
+ 1633 0212 1E4B     		ldr	r3, .L133+8
+ 1634 0214 1A71     		strb	r2, [r3, #4]
+ 1635 0216 07E0     		b	.L128
+ 1636              	.L129:
+ 736:protocol.c    ****               } else {
+ 737:protocol.c    ****                 spindle_set_state((restore_condition & (PL_COND_FLAG_SPINDLE_CW | PL_COND_FLAG_SPIN
+ 1637              		.loc 1 737 0
+ 1638 0218 FB7B     		ldrb	r3, [r7, #15]
+ 1639 021a 03F03003 		and	r3, r3, #48
+ 1640 021e DBB2     		uxtb	r3, r3
+ 1641 0220 B968     		ldr	r1, [r7, #8]	@ float
+ 1642 0222 1846     		mov	r0, r3
+ 1643 0224 FFF7FEFF 		bl	spindle_set_state
+ 1644              	.L128:
+ 738:protocol.c    ****               }
+ 739:protocol.c    ****             }
+ 740:protocol.c    ****             if (sys.spindle_stop_ovr & SPINDLE_STOP_OVR_RESTORE_CYCLE) {
+ 1645              		.loc 1 740 0
+ 1646 0228 184B     		ldr	r3, .L133+8
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 43
+
+
+ 1647 022a 9B7A     		ldrb	r3, [r3, #10]	@ zero_extendqisi2
+ 1648 022c 03F00803 		and	r3, r3, #8
+ 1649 0230 002B     		cmp	r3, #0
+ 1650 0232 02D0     		beq	.L130
+ 741:protocol.c    ****               system_set_exec_state_flag(EXEC_CYCLE_START);  // Set to resume program.
+ 1651              		.loc 1 741 0
+ 1652 0234 0220     		movs	r0, #2
+ 1653 0236 FFF7FEFF 		bl	system_set_exec_state_flag
+ 1654              	.L130:
+ 742:protocol.c    ****             }
+ 743:protocol.c    ****             sys.spindle_stop_ovr = SPINDLE_STOP_OVR_DISABLED; // Clear stop override state
+ 1655              		.loc 1 743 0
+ 1656 023a 144B     		ldr	r3, .L133+8
+ 1657 023c 0022     		movs	r2, #0
+ 1658 023e 9A72     		strb	r2, [r3, #10]
+ 1659 0240 14E0     		b	.L112
+ 1660              	.L123:
+ 744:protocol.c    ****           }
+ 745:protocol.c    ****         } else {
+ 746:protocol.c    ****           // Handles spindle state during hold. NOTE: Spindle speed overrides may be altered during
+ 747:protocol.c    ****           // NOTE: STEP_CONTROL_UPDATE_SPINDLE_PWM is automatically reset upon resume in step gener
+ 748:protocol.c    ****           if (bit_istrue(sys.step_control, STEP_CONTROL_UPDATE_SPINDLE_PWM)) {
+ 1661              		.loc 1 748 0
+ 1662 0242 124B     		ldr	r3, .L133+8
+ 1663 0244 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1664 0246 03F00803 		and	r3, r3, #8
+ 1665 024a 002B     		cmp	r3, #0
+ 1666 024c 0ED0     		beq	.L112
+ 749:protocol.c    ****             spindle_set_state((restore_condition & (PL_COND_FLAG_SPINDLE_CW | PL_COND_FLAG_SPINDLE_
+ 1667              		.loc 1 749 0
+ 1668 024e FB7B     		ldrb	r3, [r7, #15]
+ 1669 0250 03F03003 		and	r3, r3, #48
+ 1670 0254 DBB2     		uxtb	r3, r3
+ 1671 0256 B968     		ldr	r1, [r7, #8]	@ float
+ 1672 0258 1846     		mov	r0, r3
+ 1673 025a FFF7FEFF 		bl	spindle_set_state
+ 750:protocol.c    ****             bit_false(sys.step_control, STEP_CONTROL_UPDATE_SPINDLE_PWM);
+ 1674              		.loc 1 750 0
+ 1675 025e 0B4B     		ldr	r3, .L133+8
+ 1676 0260 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1677 0262 23F00803 		bic	r3, r3, #8
+ 1678 0266 DAB2     		uxtb	r2, r3
+ 1679 0268 084B     		ldr	r3, .L133+8
+ 1680 026a 1A71     		strb	r2, [r3, #4]
+ 1681              	.L112:
+ 751:protocol.c    ****           }
+ 752:protocol.c    ****         }
+ 753:protocol.c    **** 
+ 754:protocol.c    ****       }
+ 755:protocol.c    ****     }
+ 756:protocol.c    **** 
+ 757:protocol.c    ****     protocol_exec_rt_system();
+ 1682              		.loc 1 757 0
+ 1683 026c FFF7FEFF 		bl	protocol_exec_rt_system
+ 1684              	.L109:
+ 557:protocol.c    **** 
+ 1685              		.loc 1 557 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 44
+
+
+ 1686 0270 064B     		ldr	r3, .L133+8
+ 1687 0272 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 1688 0274 002B     		cmp	r3, #0
+ 1689 0276 7FF4E8AE 		bne	.L131
+ 1690 027a 00E0     		b	.L105
+ 1691              	.L132:
+ 559:protocol.c    **** 
+ 1692              		.loc 1 559 0
+ 1693 027c 00BF     		nop
+ 1694              	.L105:
+ 758:protocol.c    **** 
+ 759:protocol.c    ****   }
+ 760:protocol.c    **** }
+ 1695              		.loc 1 760 0
+ 1696 027e 1037     		adds	r7, r7, #16
+ 1697              		.cfi_def_cfa_offset 8
+ 1698 0280 BD46     		mov	sp, r7
+ 1699              		.cfi_def_cfa_register 13
+ 1700              		@ sp needed
+ 1701 0282 80BD     		pop	{r7, pc}
+ 1702              	.L134:
+ 1703              		.align	2
+ 1704              	.L133:
+ 1705 0284 00000000 		.word	gc_state
+ 1706 0288 00000000 		.word	settings
+ 1707 028c 00000000 		.word	sys
+ 1708              		.cfi_endproc
+ 1709              	.LFE69:
+ 1710              		.size	protocol_exec_rt_suspend, .-protocol_exec_rt_suspend
+ 1711              		.text
+ 1712              	.Letext0:
+ 1713              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1714              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1715              		.file 4 "settings.h"
+ 1716              		.file 5 "system.h"
+ 1717              		.file 6 "planner.h"
+ 1718              		.file 7 "gcode.h"
+ 1719              		.file 8 "Generated_Source\\PSoC5/core_cm3.h"
+ 1720              		.section	.debug_info,"",%progbits
+ 1721              	.Ldebug_info0:
+ 1722 0000 83060000 		.4byte	0x683
+ 1723 0004 0400     		.2byte	0x4
+ 1724 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1725 000a 04       		.byte	0x4
+ 1726 000b 01       		.uleb128 0x1
+ 1727 000c B6000000 		.4byte	.LASF113
+ 1728 0010 0C       		.byte	0xc
+ 1729 0011 49020000 		.4byte	.LASF114
+ 1730 0015 11060000 		.4byte	.LASF115
+ 1731 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1732 001d 00000000 		.4byte	0
+ 1733 0021 00000000 		.4byte	.Ldebug_line0
+ 1734 0025 02       		.uleb128 0x2
+ 1735 0026 01       		.byte	0x1
+ 1736 0027 06       		.byte	0x6
+ 1737 0028 53030000 		.4byte	.LASF0
+ 1738 002c 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 45
+
+
+ 1739 002d CF020000 		.4byte	.LASF3
+ 1740 0031 02       		.byte	0x2
+ 1741 0032 1D       		.byte	0x1d
+ 1742 0033 37000000 		.4byte	0x37
+ 1743 0037 02       		.uleb128 0x2
+ 1744 0038 01       		.byte	0x1
+ 1745 0039 08       		.byte	0x8
+ 1746 003a 3F030000 		.4byte	.LASF1
+ 1747 003e 02       		.uleb128 0x2
+ 1748 003f 02       		.byte	0x2
+ 1749 0040 05       		.byte	0x5
+ 1750 0041 78000000 		.4byte	.LASF2
+ 1751 0045 03       		.uleb128 0x3
+ 1752 0046 78010000 		.4byte	.LASF4
+ 1753 004a 02       		.byte	0x2
+ 1754 004b 2B       		.byte	0x2b
+ 1755 004c 50000000 		.4byte	0x50
+ 1756 0050 02       		.uleb128 0x2
+ 1757 0051 02       		.byte	0x2
+ 1758 0052 07       		.byte	0x7
+ 1759 0053 5A040000 		.4byte	.LASF5
+ 1760 0057 03       		.uleb128 0x3
+ 1761 0058 E3050000 		.4byte	.LASF6
+ 1762 005c 02       		.byte	0x2
+ 1763 005d 3F       		.byte	0x3f
+ 1764 005e 62000000 		.4byte	0x62
+ 1765 0062 02       		.uleb128 0x2
+ 1766 0063 04       		.byte	0x4
+ 1767 0064 05       		.byte	0x5
+ 1768 0065 B9020000 		.4byte	.LASF7
+ 1769 0069 03       		.uleb128 0x3
+ 1770 006a 57010000 		.4byte	.LASF8
+ 1771 006e 02       		.byte	0x2
+ 1772 006f 41       		.byte	0x41
+ 1773 0070 74000000 		.4byte	0x74
+ 1774 0074 02       		.uleb128 0x2
+ 1775 0075 04       		.byte	0x4
+ 1776 0076 07       		.byte	0x7
+ 1777 0077 53050000 		.4byte	.LASF9
+ 1778 007b 02       		.uleb128 0x2
+ 1779 007c 08       		.byte	0x8
+ 1780 007d 05       		.byte	0x5
+ 1781 007e 7C020000 		.4byte	.LASF10
+ 1782 0082 02       		.uleb128 0x2
+ 1783 0083 08       		.byte	0x8
+ 1784 0084 07       		.byte	0x7
+ 1785 0085 65030000 		.4byte	.LASF11
+ 1786 0089 04       		.uleb128 0x4
+ 1787 008a 04       		.byte	0x4
+ 1788 008b 05       		.byte	0x5
+ 1789 008c 696E7400 		.ascii	"int\000"
+ 1790 0090 02       		.uleb128 0x2
+ 1791 0091 04       		.byte	0x4
+ 1792 0092 07       		.byte	0x7
+ 1793 0093 9E030000 		.4byte	.LASF12
+ 1794 0097 03       		.uleb128 0x3
+ 1795 0098 D9010000 		.4byte	.LASF13
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 46
+
+
+ 1796 009c 03       		.byte	0x3
+ 1797 009d 18       		.byte	0x18
+ 1798 009e 2C000000 		.4byte	0x2c
+ 1799 00a2 03       		.uleb128 0x3
+ 1800 00a3 BD050000 		.4byte	.LASF14
+ 1801 00a7 03       		.byte	0x3
+ 1802 00a8 24       		.byte	0x24
+ 1803 00a9 45000000 		.4byte	0x45
+ 1804 00ad 03       		.uleb128 0x3
+ 1805 00ae B7040000 		.4byte	.LASF15
+ 1806 00b2 03       		.byte	0x3
+ 1807 00b3 2C       		.byte	0x2c
+ 1808 00b4 57000000 		.4byte	0x57
+ 1809 00b8 03       		.uleb128 0x3
+ 1810 00b9 82030000 		.4byte	.LASF16
+ 1811 00bd 03       		.byte	0x3
+ 1812 00be 30       		.byte	0x30
+ 1813 00bf 69000000 		.4byte	0x69
+ 1814 00c3 02       		.uleb128 0x2
+ 1815 00c4 04       		.byte	0x4
+ 1816 00c5 04       		.byte	0x4
+ 1817 00c6 61020000 		.4byte	.LASF17
+ 1818 00ca 02       		.uleb128 0x2
+ 1819 00cb 08       		.byte	0x8
+ 1820 00cc 04       		.byte	0x4
+ 1821 00cd 65050000 		.4byte	.LASF18
+ 1822 00d1 02       		.uleb128 0x2
+ 1823 00d2 01       		.byte	0x1
+ 1824 00d3 08       		.byte	0x8
+ 1825 00d4 8A040000 		.4byte	.LASF19
+ 1826 00d8 02       		.uleb128 0x2
+ 1827 00d9 08       		.byte	0x8
+ 1828 00da 04       		.byte	0x4
+ 1829 00db 17030000 		.4byte	.LASF20
+ 1830 00df 02       		.uleb128 0x2
+ 1831 00e0 04       		.byte	0x4
+ 1832 00e1 07       		.byte	0x7
+ 1833 00e2 A4000000 		.4byte	.LASF21
+ 1834 00e6 05       		.uleb128 0x5
+ 1835 00e7 97000000 		.4byte	0x97
+ 1836 00eb 06       		.uleb128 0x6
+ 1837 00ec 5C       		.byte	0x5c
+ 1838 00ed 04       		.byte	0x4
+ 1839 00ee 4F       		.byte	0x4f
+ 1840 00ef D8010000 		.4byte	0x1d8
+ 1841 00f3 07       		.uleb128 0x7
+ 1842 00f4 C2020000 		.4byte	.LASF22
+ 1843 00f8 04       		.byte	0x4
+ 1844 00f9 51       		.byte	0x51
+ 1845 00fa D8010000 		.4byte	0x1d8
+ 1846 00fe 00       		.byte	0
+ 1847 00ff 07       		.uleb128 0x7
+ 1848 0100 E1010000 		.4byte	.LASF23
+ 1849 0104 04       		.byte	0x4
+ 1850 0105 52       		.byte	0x52
+ 1851 0106 D8010000 		.4byte	0x1d8
+ 1852 010a 0C       		.byte	0xc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 47
+
+
+ 1853 010b 07       		.uleb128 0x7
+ 1854 010c 4D000000 		.4byte	.LASF24
+ 1855 0110 04       		.byte	0x4
+ 1856 0111 53       		.byte	0x53
+ 1857 0112 D8010000 		.4byte	0x1d8
+ 1858 0116 18       		.byte	0x18
+ 1859 0117 07       		.uleb128 0x7
+ 1860 0118 06060000 		.4byte	.LASF25
+ 1861 011c 04       		.byte	0x4
+ 1862 011d 54       		.byte	0x54
+ 1863 011e D8010000 		.4byte	0x1d8
+ 1864 0122 24       		.byte	0x24
+ 1865 0123 07       		.uleb128 0x7
+ 1866 0124 09050000 		.4byte	.LASF26
+ 1867 0128 04       		.byte	0x4
+ 1868 0129 57       		.byte	0x57
+ 1869 012a 97000000 		.4byte	0x97
+ 1870 012e 30       		.byte	0x30
+ 1871 012f 07       		.uleb128 0x7
+ 1872 0130 D3060000 		.4byte	.LASF27
+ 1873 0134 04       		.byte	0x4
+ 1874 0135 58       		.byte	0x58
+ 1875 0136 97000000 		.4byte	0x97
+ 1876 013a 31       		.byte	0x31
+ 1877 013b 07       		.uleb128 0x7
+ 1878 013c A7040000 		.4byte	.LASF28
+ 1879 0140 04       		.byte	0x4
+ 1880 0141 59       		.byte	0x59
+ 1881 0142 97000000 		.4byte	0x97
+ 1882 0146 32       		.byte	0x32
+ 1883 0147 07       		.uleb128 0x7
+ 1884 0148 B3010000 		.4byte	.LASF29
+ 1885 014c 04       		.byte	0x4
+ 1886 014d 5A       		.byte	0x5a
+ 1887 014e 97000000 		.4byte	0x97
+ 1888 0152 33       		.byte	0x33
+ 1889 0153 07       		.uleb128 0x7
+ 1890 0154 26040000 		.4byte	.LASF30
+ 1891 0158 04       		.byte	0x4
+ 1892 0159 5B       		.byte	0x5b
+ 1893 015a 97000000 		.4byte	0x97
+ 1894 015e 34       		.byte	0x34
+ 1895 015f 07       		.uleb128 0x7
+ 1896 0160 ED050000 		.4byte	.LASF31
+ 1897 0164 04       		.byte	0x4
+ 1898 0165 5C       		.byte	0x5c
+ 1899 0166 C3000000 		.4byte	0xc3
+ 1900 016a 38       		.byte	0x38
+ 1901 016b 07       		.uleb128 0x7
+ 1902 016c F7020000 		.4byte	.LASF32
+ 1903 0170 04       		.byte	0x4
+ 1904 0171 5D       		.byte	0x5d
+ 1905 0172 C3000000 		.4byte	0xc3
+ 1906 0176 3C       		.byte	0x3c
+ 1907 0177 07       		.uleb128 0x7
+ 1908 0178 CB040000 		.4byte	.LASF33
+ 1909 017c 04       		.byte	0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 48
+
+
+ 1910 017d 5F       		.byte	0x5f
+ 1911 017e C3000000 		.4byte	0xc3
+ 1912 0182 40       		.byte	0x40
+ 1913 0183 07       		.uleb128 0x7
+ 1914 0184 A5050000 		.4byte	.LASF34
+ 1915 0188 04       		.byte	0x4
+ 1916 0189 60       		.byte	0x60
+ 1917 018a C3000000 		.4byte	0xc3
+ 1918 018e 44       		.byte	0x44
+ 1919 018f 07       		.uleb128 0x7
+ 1920 0190 5F030000 		.4byte	.LASF35
+ 1921 0194 04       		.byte	0x4
+ 1922 0195 62       		.byte	0x62
+ 1923 0196 97000000 		.4byte	0x97
+ 1924 019a 48       		.byte	0x48
+ 1925 019b 07       		.uleb128 0x7
+ 1926 019c AD050000 		.4byte	.LASF36
+ 1927 01a0 04       		.byte	0x4
+ 1928 01a1 64       		.byte	0x64
+ 1929 01a2 97000000 		.4byte	0x97
+ 1930 01a6 49       		.byte	0x49
+ 1931 01a7 07       		.uleb128 0x7
+ 1932 01a8 53060000 		.4byte	.LASF37
+ 1933 01ac 04       		.byte	0x4
+ 1934 01ad 65       		.byte	0x65
+ 1935 01ae C3000000 		.4byte	0xc3
+ 1936 01b2 4C       		.byte	0x4c
+ 1937 01b3 07       		.uleb128 0x7
+ 1938 01b4 D4030000 		.4byte	.LASF38
+ 1939 01b8 04       		.byte	0x4
+ 1940 01b9 66       		.byte	0x66
+ 1941 01ba C3000000 		.4byte	0xc3
+ 1942 01be 50       		.byte	0x50
+ 1943 01bf 07       		.uleb128 0x7
+ 1944 01c0 F3040000 		.4byte	.LASF39
+ 1945 01c4 04       		.byte	0x4
+ 1946 01c5 67       		.byte	0x67
+ 1947 01c6 A2000000 		.4byte	0xa2
+ 1948 01ca 54       		.byte	0x54
+ 1949 01cb 07       		.uleb128 0x7
+ 1950 01cc 2F020000 		.4byte	.LASF40
+ 1951 01d0 04       		.byte	0x4
+ 1952 01d1 68       		.byte	0x68
+ 1953 01d2 C3000000 		.4byte	0xc3
+ 1954 01d6 58       		.byte	0x58
+ 1955 01d7 00       		.byte	0
+ 1956 01d8 08       		.uleb128 0x8
+ 1957 01d9 C3000000 		.4byte	0xc3
+ 1958 01dd E8010000 		.4byte	0x1e8
+ 1959 01e1 09       		.uleb128 0x9
+ 1960 01e2 DF000000 		.4byte	0xdf
+ 1961 01e6 02       		.byte	0x2
+ 1962 01e7 00       		.byte	0
+ 1963 01e8 03       		.uleb128 0x3
+ 1964 01e9 3E020000 		.4byte	.LASF41
+ 1965 01ed 04       		.byte	0x4
+ 1966 01ee 69       		.byte	0x69
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 49
+
+
+ 1967 01ef EB000000 		.4byte	0xeb
+ 1968 01f3 06       		.uleb128 0x6
+ 1969 01f4 14       		.byte	0x14
+ 1970 01f5 05       		.byte	0x5
+ 1971 01f6 81       		.byte	0x81
+ 1972 01f7 A4020000 		.4byte	0x2a4
+ 1973 01fb 07       		.uleb128 0x7
+ 1974 01fc 5A000000 		.4byte	.LASF42
+ 1975 0200 05       		.byte	0x5
+ 1976 0201 82       		.byte	0x82
+ 1977 0202 97000000 		.4byte	0x97
+ 1978 0206 00       		.byte	0
+ 1979 0207 07       		.uleb128 0x7
+ 1980 0208 4D030000 		.4byte	.LASF43
+ 1981 020c 05       		.byte	0x5
+ 1982 020d 83       		.byte	0x83
+ 1983 020e 97000000 		.4byte	0x97
+ 1984 0212 01       		.byte	0x1
+ 1985 0213 07       		.uleb128 0x7
+ 1986 0214 E0040000 		.4byte	.LASF44
+ 1987 0218 05       		.byte	0x5
+ 1988 0219 84       		.byte	0x84
+ 1989 021a 97000000 		.4byte	0x97
+ 1990 021e 02       		.byte	0x2
+ 1991 021f 07       		.uleb128 0x7
+ 1992 0220 E8040000 		.4byte	.LASF45
+ 1993 0224 05       		.byte	0x5
+ 1994 0225 85       		.byte	0x85
+ 1995 0226 97000000 		.4byte	0x97
+ 1996 022a 03       		.byte	0x3
+ 1997 022b 07       		.uleb128 0x7
+ 1998 022c D3040000 		.4byte	.LASF46
+ 1999 0230 05       		.byte	0x5
+ 2000 0231 86       		.byte	0x86
+ 2001 0232 97000000 		.4byte	0x97
+ 2002 0236 04       		.byte	0x4
+ 2003 0237 07       		.uleb128 0x7
+ 2004 0238 A9020000 		.4byte	.LASF47
+ 2005 023c 05       		.byte	0x5
+ 2006 023d 87       		.byte	0x87
+ 2007 023e 97000000 		.4byte	0x97
+ 2008 0242 05       		.byte	0x5
+ 2009 0243 07       		.uleb128 0x7
+ 2010 0244 39040000 		.4byte	.LASF48
+ 2011 0248 05       		.byte	0x5
+ 2012 0249 88       		.byte	0x88
+ 2013 024a 97000000 		.4byte	0x97
+ 2014 024e 06       		.byte	0x6
+ 2015 024f 07       		.uleb128 0x7
+ 2016 0250 BB030000 		.4byte	.LASF49
+ 2017 0254 05       		.byte	0x5
+ 2018 0255 89       		.byte	0x89
+ 2019 0256 97000000 		.4byte	0x97
+ 2020 025a 07       		.byte	0x7
+ 2021 025b 07       		.uleb128 0x7
+ 2022 025c 64060000 		.4byte	.LASF50
+ 2023 0260 05       		.byte	0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 50
+
+
+ 2024 0261 8A       		.byte	0x8a
+ 2025 0262 97000000 		.4byte	0x97
+ 2026 0266 08       		.byte	0x8
+ 2027 0267 07       		.uleb128 0x7
+ 2028 0268 8A020000 		.4byte	.LASF51
+ 2029 026c 05       		.byte	0x5
+ 2030 026d 8B       		.byte	0x8b
+ 2031 026e 97000000 		.4byte	0x97
+ 2032 0272 09       		.byte	0x9
+ 2033 0273 07       		.uleb128 0x7
+ 2034 0274 42050000 		.4byte	.LASF52
+ 2035 0278 05       		.byte	0x5
+ 2036 0279 8C       		.byte	0x8c
+ 2037 027a 97000000 		.4byte	0x97
+ 2038 027e 0A       		.byte	0xa
+ 2039 027f 07       		.uleb128 0x7
+ 2040 0280 D9020000 		.4byte	.LASF53
+ 2041 0284 05       		.byte	0x5
+ 2042 0285 8D       		.byte	0x8d
+ 2043 0286 97000000 		.4byte	0x97
+ 2044 028a 0B       		.byte	0xb
+ 2045 028b 07       		.uleb128 0x7
+ 2046 028c 6F060000 		.4byte	.LASF54
+ 2047 0290 05       		.byte	0x5
+ 2048 0291 8E       		.byte	0x8e
+ 2049 0292 97000000 		.4byte	0x97
+ 2050 0296 0C       		.byte	0xc
+ 2051 0297 07       		.uleb128 0x7
+ 2052 0298 C6030000 		.4byte	.LASF55
+ 2053 029c 05       		.byte	0x5
+ 2054 029d 90       		.byte	0x90
+ 2055 029e C3000000 		.4byte	0xc3
+ 2056 02a2 10       		.byte	0x10
+ 2057 02a3 00       		.byte	0
+ 2058 02a4 03       		.uleb128 0x3
+ 2059 02a5 AD000000 		.4byte	.LASF56
+ 2060 02a9 05       		.byte	0x5
+ 2061 02aa 92       		.byte	0x92
+ 2062 02ab F3010000 		.4byte	0x1f3
+ 2063 02af 06       		.uleb128 0x6
+ 2064 02b0 34       		.byte	0x34
+ 2065 02b1 06       		.byte	0x6
+ 2066 02b2 39       		.byte	0x39
+ 2067 02b3 48030000 		.4byte	0x348
+ 2068 02b7 07       		.uleb128 0x7
+ 2069 02b8 54040000 		.4byte	.LASF57
+ 2070 02bc 06       		.byte	0x6
+ 2071 02bd 3C       		.byte	0x3c
+ 2072 02be 48030000 		.4byte	0x348
+ 2073 02c2 00       		.byte	0
+ 2074 02c3 07       		.uleb128 0x7
+ 2075 02c4 FD010000 		.4byte	.LASF58
+ 2076 02c8 06       		.byte	0x6
+ 2077 02c9 3D       		.byte	0x3d
+ 2078 02ca B8000000 		.4byte	0xb8
+ 2079 02ce 0C       		.byte	0xc
+ 2080 02cf 07       		.uleb128 0x7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 51
+
+
+ 2081 02d0 98040000 		.4byte	.LASF59
+ 2082 02d4 06       		.byte	0x6
+ 2083 02d5 3E       		.byte	0x3e
+ 2084 02d6 97000000 		.4byte	0x97
+ 2085 02da 10       		.byte	0x10
+ 2086 02db 07       		.uleb128 0x7
+ 2087 02dc 6D040000 		.4byte	.LASF60
+ 2088 02e0 06       		.byte	0x6
+ 2089 02e1 41       		.byte	0x41
+ 2090 02e2 97000000 		.4byte	0x97
+ 2091 02e6 11       		.byte	0x11
+ 2092 02e7 07       		.uleb128 0x7
+ 2093 02e8 AB030000 		.4byte	.LASF61
+ 2094 02ec 06       		.byte	0x6
+ 2095 02ed 48       		.byte	0x48
+ 2096 02ee C3000000 		.4byte	0xc3
+ 2097 02f2 14       		.byte	0x14
+ 2098 02f3 07       		.uleb128 0x7
+ 2099 02f4 82000000 		.4byte	.LASF62
+ 2100 02f8 06       		.byte	0x6
+ 2101 02f9 49       		.byte	0x49
+ 2102 02fa C3000000 		.4byte	0xc3
+ 2103 02fe 18       		.byte	0x18
+ 2104 02ff 07       		.uleb128 0x7
+ 2105 0300 4D000000 		.4byte	.LASF24
+ 2106 0304 06       		.byte	0x6
+ 2107 0305 4B       		.byte	0x4b
+ 2108 0306 C3000000 		.4byte	0xc3
+ 2109 030a 1C       		.byte	0x1c
+ 2110 030b 07       		.uleb128 0x7
+ 2111 030c BF040000 		.4byte	.LASF63
+ 2112 0310 06       		.byte	0x6
+ 2113 0311 4C       		.byte	0x4c
+ 2114 0312 C3000000 		.4byte	0xc3
+ 2115 0316 20       		.byte	0x20
+ 2116 0317 07       		.uleb128 0x7
+ 2117 0318 9C010000 		.4byte	.LASF64
+ 2118 031c 06       		.byte	0x6
+ 2119 031d 50       		.byte	0x50
+ 2120 031e C3000000 		.4byte	0xc3
+ 2121 0322 24       		.byte	0x24
+ 2122 0323 07       		.uleb128 0x7
+ 2123 0324 4C010000 		.4byte	.LASF65
+ 2124 0328 06       		.byte	0x6
+ 2125 0329 51       		.byte	0x51
+ 2126 032a C3000000 		.4byte	0xc3
+ 2127 032e 28       		.byte	0x28
+ 2128 032f 07       		.uleb128 0x7
+ 2129 0330 D3050000 		.4byte	.LASF66
+ 2130 0334 06       		.byte	0x6
+ 2131 0335 52       		.byte	0x52
+ 2132 0336 C3000000 		.4byte	0xc3
+ 2133 033a 2C       		.byte	0x2c
+ 2134 033b 07       		.uleb128 0x7
+ 2135 033c C6030000 		.4byte	.LASF55
+ 2136 0340 06       		.byte	0x6
+ 2137 0341 56       		.byte	0x56
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 52
+
+
+ 2138 0342 C3000000 		.4byte	0xc3
+ 2139 0346 30       		.byte	0x30
+ 2140 0347 00       		.byte	0
+ 2141 0348 08       		.uleb128 0x8
+ 2142 0349 B8000000 		.4byte	0xb8
+ 2143 034d 58030000 		.4byte	0x358
+ 2144 0351 09       		.uleb128 0x9
+ 2145 0352 DF000000 		.4byte	0xdf
+ 2146 0356 02       		.byte	0x2
+ 2147 0357 00       		.byte	0
+ 2148 0358 03       		.uleb128 0x3
+ 2149 0359 8F010000 		.4byte	.LASF67
+ 2150 035d 06       		.byte	0x6
+ 2151 035e 58       		.byte	0x58
+ 2152 035f AF020000 		.4byte	0x2af
+ 2153 0363 06       		.uleb128 0x6
+ 2154 0364 0A       		.byte	0xa
+ 2155 0365 07       		.byte	0x7
+ 2156 0366 B4       		.byte	0xb4
+ 2157 0367 E4030000 		.4byte	0x3e4
+ 2158 036b 07       		.uleb128 0x7
+ 2159 036c 23030000 		.4byte	.LASF68
+ 2160 0370 07       		.byte	0x7
+ 2161 0371 B5       		.byte	0xb5
+ 2162 0372 97000000 		.4byte	0x97
+ 2163 0376 00       		.byte	0
+ 2164 0377 07       		.uleb128 0x7
+ 2165 0378 4A040000 		.4byte	.LASF69
+ 2166 037c 07       		.byte	0x7
+ 2167 037d B6       		.byte	0xb6
+ 2168 037e 97000000 		.4byte	0x97
+ 2169 0382 01       		.byte	0x1
+ 2170 0383 07       		.uleb128 0x7
+ 2171 0384 7C030000 		.4byte	.LASF70
+ 2172 0388 07       		.byte	0x7
+ 2173 0389 B7       		.byte	0xb7
+ 2174 038a 97000000 		.4byte	0x97
+ 2175 038e 02       		.byte	0x2
+ 2176 038f 07       		.uleb128 0x7
+ 2177 0390 8F040000 		.4byte	.LASF71
+ 2178 0394 07       		.byte	0x7
+ 2179 0395 B8       		.byte	0xb8
+ 2180 0396 97000000 		.4byte	0x97
+ 2181 039a 03       		.byte	0x3
+ 2182 039b 07       		.uleb128 0x7
+ 2183 039c 6B010000 		.4byte	.LASF72
+ 2184 03a0 07       		.byte	0x7
+ 2185 03a1 BA       		.byte	0xba
+ 2186 03a2 97000000 		.4byte	0x97
+ 2187 03a6 04       		.byte	0x4
+ 2188 03a7 07       		.uleb128 0x7
+ 2189 03a8 67020000 		.4byte	.LASF73
+ 2190 03ac 07       		.byte	0x7
+ 2191 03ad BC       		.byte	0xbc
+ 2192 03ae 97000000 		.4byte	0x97
+ 2193 03b2 05       		.byte	0x5
+ 2194 03b3 07       		.uleb128 0x7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 53
+
+
+ 2195 03b4 32030000 		.4byte	.LASF74
+ 2196 03b8 07       		.byte	0x7
+ 2197 03b9 BD       		.byte	0xbd
+ 2198 03ba 97000000 		.4byte	0x97
+ 2199 03be 06       		.byte	0x6
+ 2200 03bf 07       		.uleb128 0x7
+ 2201 03c0 54020000 		.4byte	.LASF75
+ 2202 03c4 07       		.byte	0x7
+ 2203 03c5 BF       		.byte	0xbf
+ 2204 03c6 97000000 		.4byte	0x97
+ 2205 03ca 07       		.byte	0x7
+ 2206 03cb 07       		.uleb128 0x7
+ 2207 03cc 2A030000 		.4byte	.LASF76
+ 2208 03d0 07       		.byte	0x7
+ 2209 03d1 C0       		.byte	0xc0
+ 2210 03d2 97000000 		.4byte	0x97
+ 2211 03d6 08       		.byte	0x8
+ 2212 03d7 07       		.uleb128 0x7
+ 2213 03d8 77040000 		.4byte	.LASF77
+ 2214 03dc 07       		.byte	0x7
+ 2215 03dd C1       		.byte	0xc1
+ 2216 03de 97000000 		.4byte	0x97
+ 2217 03e2 09       		.byte	0x9
+ 2218 03e3 00       		.byte	0
+ 2219 03e4 03       		.uleb128 0x3
+ 2220 03e5 EC020000 		.4byte	.LASF78
+ 2221 03e9 07       		.byte	0x7
+ 2222 03ea C2       		.byte	0xc2
+ 2223 03eb 63030000 		.4byte	0x363
+ 2224 03ef 06       		.uleb128 0x6
+ 2225 03f0 44       		.byte	0x44
+ 2226 03f1 07       		.byte	0x7
+ 2227 03f2 D2       		.byte	0xd2
+ 2228 03f3 64040000 		.4byte	0x464
+ 2229 03f7 07       		.uleb128 0x7
+ 2230 03f8 85050000 		.4byte	.LASF79
+ 2231 03fc 07       		.byte	0x7
+ 2232 03fd D3       		.byte	0xd3
+ 2233 03fe E4030000 		.4byte	0x3e4
+ 2234 0402 00       		.byte	0
+ 2235 0403 07       		.uleb128 0x7
+ 2236 0404 C6030000 		.4byte	.LASF55
+ 2237 0408 07       		.byte	0x7
+ 2238 0409 D5       		.byte	0xd5
+ 2239 040a C3000000 		.4byte	0xc3
+ 2240 040e 0C       		.byte	0xc
+ 2241 040f 07       		.uleb128 0x7
+ 2242 0410 4A040000 		.4byte	.LASF69
+ 2243 0414 07       		.byte	0x7
+ 2244 0415 D6       		.byte	0xd6
+ 2245 0416 C3000000 		.4byte	0xc3
+ 2246 041a 10       		.byte	0x10
+ 2247 041b 07       		.uleb128 0x7
+ 2248 041c 05030000 		.4byte	.LASF80
+ 2249 0420 07       		.byte	0x7
+ 2250 0421 D7       		.byte	0xd7
+ 2251 0422 97000000 		.4byte	0x97
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 54
+
+
+ 2252 0426 14       		.byte	0x14
+ 2253 0427 07       		.uleb128 0x7
+ 2254 0428 83010000 		.4byte	.LASF81
+ 2255 042c 07       		.byte	0x7
+ 2256 042d D8       		.byte	0xd8
+ 2257 042e AD000000 		.4byte	0xad
+ 2258 0432 18       		.byte	0x18
+ 2259 0433 07       		.uleb128 0x7
+ 2260 0434 9C060000 		.4byte	.LASF82
+ 2261 0438 07       		.byte	0x7
+ 2262 0439 DA       		.byte	0xda
+ 2263 043a D8010000 		.4byte	0x1d8
+ 2264 043e 1C       		.byte	0x1c
+ 2265 043f 07       		.uleb128 0x7
+ 2266 0440 0A030000 		.4byte	.LASF83
+ 2267 0444 07       		.byte	0x7
+ 2268 0445 DC       		.byte	0xdc
+ 2269 0446 D8010000 		.4byte	0x1d8
+ 2270 044a 28       		.byte	0x28
+ 2271 044b 07       		.uleb128 0x7
+ 2272 044c C6050000 		.4byte	.LASF84
+ 2273 0450 07       		.byte	0x7
+ 2274 0451 DE       		.byte	0xde
+ 2275 0452 D8010000 		.4byte	0x1d8
+ 2276 0456 34       		.byte	0x34
+ 2277 0457 07       		.uleb128 0x7
+ 2278 0458 EA010000 		.4byte	.LASF85
+ 2279 045c 07       		.byte	0x7
+ 2280 045d E0       		.byte	0xe0
+ 2281 045e C3000000 		.4byte	0xc3
+ 2282 0462 40       		.byte	0x40
+ 2283 0463 00       		.byte	0
+ 2284 0464 03       		.uleb128 0x3
+ 2285 0465 B2060000 		.4byte	.LASF86
+ 2286 0469 07       		.byte	0x7
+ 2287 046a E1       		.byte	0xe1
+ 2288 046b EF030000 		.4byte	0x3ef
+ 2289 046f 0A       		.uleb128 0xa
+ 2290 0470 8B030000 		.4byte	.LASF92
+ 2291 0474 01       		.byte	0x1
+ 2292 0475 27       		.byte	0x27
+ 2293 0476 00000000 		.4byte	.LFB64
+ 2294 047a CC010000 		.4byte	.LFE64-.LFB64
+ 2295 047e 01       		.uleb128 0x1
+ 2296 047f 9C       		.byte	0x9c
+ 2297 0480 AD040000 		.4byte	0x4ad
+ 2298 0484 0B       		.uleb128 0xb
+ 2299 0485 7F040000 		.4byte	.LASF87
+ 2300 0489 01       		.byte	0x1
+ 2301 048a 48       		.byte	0x48
+ 2302 048b 97000000 		.4byte	0x97
+ 2303 048f 02       		.uleb128 0x2
+ 2304 0490 91       		.byte	0x91
+ 2305 0491 77       		.sleb128 -9
+ 2306 0492 0B       		.uleb128 0xb
+ 2307 0493 12000000 		.4byte	.LASF88
+ 2308 0497 01       		.byte	0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 55
+
+
+ 2309 0498 49       		.byte	0x49
+ 2310 0499 97000000 		.4byte	0x97
+ 2311 049d 02       		.uleb128 0x2
+ 2312 049e 91       		.byte	0x91
+ 2313 049f 76       		.sleb128 -10
+ 2314 04a0 0C       		.uleb128 0xc
+ 2315 04a1 6300     		.ascii	"c\000"
+ 2316 04a3 01       		.byte	0x1
+ 2317 04a4 4A       		.byte	0x4a
+ 2318 04a5 97000000 		.4byte	0x97
+ 2319 04a9 02       		.uleb128 0x2
+ 2320 04aa 91       		.byte	0x91
+ 2321 04ab 75       		.sleb128 -11
+ 2322 04ac 00       		.byte	0
+ 2323 04ad 0D       		.uleb128 0xd
+ 2324 04ae 13020000 		.4byte	.LASF89
+ 2325 04b2 01       		.byte	0x1
+ 2326 04b3 AF       		.byte	0xaf
+ 2327 04b4 00000000 		.4byte	.LFB65
+ 2328 04b8 30000000 		.4byte	.LFE65-.LFB65
+ 2329 04bc 01       		.uleb128 0x1
+ 2330 04bd 9C       		.byte	0x9c
+ 2331 04be 0D       		.uleb128 0xd
+ 2332 04bf 8B050000 		.4byte	.LASF90
+ 2333 04c3 01       		.byte	0x1
+ 2334 04c4 C0       		.byte	0xc0
+ 2335 04c5 00000000 		.4byte	.LFB66
+ 2336 04c9 18000000 		.4byte	.LFE66-.LFB66
+ 2337 04cd 01       		.uleb128 0x1
+ 2338 04ce 9C       		.byte	0x9c
+ 2339 04cf 0D       		.uleb128 0xd
+ 2340 04d0 82060000 		.4byte	.LASF91
+ 2341 04d4 01       		.byte	0x1
+ 2342 04d5 D3       		.byte	0xd3
+ 2343 04d6 00000000 		.4byte	.LFB67
+ 2344 04da 1C000000 		.4byte	.LFE67-.LFB67
+ 2345 04de 01       		.uleb128 0x1
+ 2346 04df 9C       		.byte	0x9c
+ 2347 04e0 0A       		.uleb128 0xa
+ 2348 04e1 60000000 		.4byte	.LASF93
+ 2349 04e5 01       		.byte	0x1
+ 2350 04e6 E0       		.byte	0xe0
+ 2351 04e7 00000000 		.4byte	.LFB68
+ 2352 04eb AC050000 		.4byte	.LFE68-.LFB68
+ 2353 04ef 01       		.uleb128 0x1
+ 2354 04f0 9C       		.byte	0x9c
+ 2355 04f1 62050000 		.4byte	0x562
+ 2356 04f5 0B       		.uleb128 0xb
+ 2357 04f6 44010000 		.4byte	.LASF94
+ 2358 04fa 01       		.byte	0x1
+ 2359 04fb E2       		.byte	0xe2
+ 2360 04fc 97000000 		.4byte	0x97
+ 2361 0500 02       		.uleb128 0x2
+ 2362 0501 91       		.byte	0x91
+ 2363 0502 73       		.sleb128 -13
+ 2364 0503 0E       		.uleb128 0xe
+ 2365 0504 62030000 		.4byte	.LBB2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 56
+
+
+ 2366 0508 C8000000 		.4byte	.LBE2-.LBB2
+ 2367 050c 2F050000 		.4byte	0x52f
+ 2368 0510 0F       		.uleb128 0xf
+ 2369 0511 CA010000 		.4byte	.LASF95
+ 2370 0515 01       		.byte	0x1
+ 2371 0516 A501     		.2byte	0x1a5
+ 2372 0518 97000000 		.4byte	0x97
+ 2373 051c 02       		.uleb128 0x2
+ 2374 051d 91       		.byte	0x91
+ 2375 051e 77       		.sleb128 -9
+ 2376 051f 0F       		.uleb128 0xf
+ 2377 0520 3E000000 		.4byte	.LASF96
+ 2378 0524 01       		.byte	0x1
+ 2379 0525 AE01     		.2byte	0x1ae
+ 2380 0527 97000000 		.4byte	0x97
+ 2381 052b 02       		.uleb128 0x2
+ 2382 052c 91       		.byte	0x91
+ 2383 052d 76       		.sleb128 -10
+ 2384 052e 00       		.byte	0
+ 2385 052f 10       		.uleb128 0x10
+ 2386 0530 38040000 		.4byte	.LBB3
+ 2387 0534 56010000 		.4byte	.LBE3-.LBB3
+ 2388 0538 0F       		.uleb128 0xf
+ 2389 0539 E4060000 		.4byte	.LASF97
+ 2390 053d 01       		.byte	0x1
+ 2391 053e C101     		.2byte	0x1c1
+ 2392 0540 97000000 		.4byte	0x97
+ 2393 0544 02       		.uleb128 0x2
+ 2394 0545 91       		.byte	0x91
+ 2395 0546 75       		.sleb128 -11
+ 2396 0547 10       		.uleb128 0x10
+ 2397 0548 22050000 		.4byte	.LBB4
+ 2398 054c 6C000000 		.4byte	.LBE4-.LBB4
+ 2399 0550 0F       		.uleb128 0xf
+ 2400 0551 96000000 		.4byte	.LASF98
+ 2401 0555 01       		.byte	0x1
+ 2402 0556 DD01     		.2byte	0x1dd
+ 2403 0558 97000000 		.4byte	0x97
+ 2404 055c 02       		.uleb128 0x2
+ 2405 055d 91       		.byte	0x91
+ 2406 055e 74       		.sleb128 -12
+ 2407 055f 00       		.byte	0
+ 2408 0560 00       		.byte	0
+ 2409 0561 00       		.byte	0
+ 2410 0562 11       		.uleb128 0x11
+ 2411 0563 6C050000 		.4byte	.LASF116
+ 2412 0567 01       		.byte	0x1
+ 2413 0568 0802     		.2byte	0x208
+ 2414 056a 00000000 		.4byte	.LFB69
+ 2415 056e 90020000 		.4byte	.LFE69-.LFB69
+ 2416 0572 01       		.uleb128 0x1
+ 2417 0573 9C       		.byte	0x9c
+ 2418 0574 A6050000 		.4byte	0x5a6
+ 2419 0578 0F       		.uleb128 0xf
+ 2420 0579 00060000 		.4byte	.LASF99
+ 2421 057d 01       		.byte	0x1
+ 2422 057e 1802     		.2byte	0x218
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 57
+
+
+ 2423 0580 A6050000 		.4byte	0x5a6
+ 2424 0584 02       		.uleb128 0x2
+ 2425 0585 91       		.byte	0x91
+ 2426 0586 6C       		.sleb128 -20
+ 2427 0587 0F       		.uleb128 0xf
+ 2428 0588 14040000 		.4byte	.LASF100
+ 2429 058c 01       		.byte	0x1
+ 2430 058d 1902     		.2byte	0x219
+ 2431 058f 97000000 		.4byte	0x97
+ 2432 0593 02       		.uleb128 0x2
+ 2433 0594 91       		.byte	0x91
+ 2434 0595 77       		.sleb128 -9
+ 2435 0596 0F       		.uleb128 0xf
+ 2436 0597 1C050000 		.4byte	.LASF101
+ 2437 059b 01       		.byte	0x1
+ 2438 059c 1B02     		.2byte	0x21b
+ 2439 059e C3000000 		.4byte	0xc3
+ 2440 05a2 02       		.uleb128 0x2
+ 2441 05a3 91       		.byte	0x91
+ 2442 05a4 70       		.sleb128 -16
+ 2443 05a5 00       		.byte	0
+ 2444 05a6 12       		.uleb128 0x12
+ 2445 05a7 04       		.byte	0x4
+ 2446 05a8 58030000 		.4byte	0x358
+ 2447 05ac 08       		.uleb128 0x8
+ 2448 05ad D1000000 		.4byte	0xd1
+ 2449 05b1 BC050000 		.4byte	0x5bc
+ 2450 05b5 09       		.uleb128 0x9
+ 2451 05b6 DF000000 		.4byte	0xdf
+ 2452 05ba 4F       		.byte	0x4f
+ 2453 05bb 00       		.byte	0
+ 2454 05bc 0B       		.uleb128 0xb
+ 2455 05bd 0E020000 		.4byte	.LASF102
+ 2456 05c1 01       		.byte	0x1
+ 2457 05c2 1F       		.byte	0x1f
+ 2458 05c3 AC050000 		.4byte	0x5ac
+ 2459 05c7 05       		.uleb128 0x5
+ 2460 05c8 03       		.byte	0x3
+ 2461 05c9 00000000 		.4byte	line
+ 2462 05cd 13       		.uleb128 0x13
+ 2463 05ce A5060000 		.4byte	.LASF103
+ 2464 05d2 08       		.byte	0x8
+ 2465 05d3 1207     		.2byte	0x712
+ 2466 05d5 D9050000 		.4byte	0x5d9
+ 2467 05d9 05       		.uleb128 0x5
+ 2468 05da AD000000 		.4byte	0xad
+ 2469 05de 14       		.uleb128 0x14
+ 2470 05df 73020000 		.4byte	.LASF104
+ 2471 05e3 04       		.byte	0x4
+ 2472 05e4 6A       		.byte	0x6a
+ 2473 05e5 E8010000 		.4byte	0x1e8
+ 2474 05e9 15       		.uleb128 0x15
+ 2475 05ea 73797300 		.ascii	"sys\000"
+ 2476 05ee 05       		.byte	0x5
+ 2477 05ef 93       		.byte	0x93
+ 2478 05f0 A4020000 		.4byte	0x2a4
+ 2479 05f4 08       		.uleb128 0x8
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 58
+
+
+ 2480 05f5 AD000000 		.4byte	0xad
+ 2481 05f9 04060000 		.4byte	0x604
+ 2482 05fd 09       		.uleb128 0x9
+ 2483 05fe DF000000 		.4byte	0xdf
+ 2484 0602 02       		.byte	0x2
+ 2485 0603 00       		.byte	0
+ 2486 0604 16       		.uleb128 0x16
+ 2487 0605 9C020000 		.4byte	.LASF105
+ 2488 0609 05       		.byte	0x5
+ 2489 060a 96       		.byte	0x96
+ 2490 060b F4050000 		.4byte	0x5f4
+ 2491 060f 05       		.uleb128 0x5
+ 2492 0610 03       		.byte	0x3
+ 2493 0611 00000000 		.4byte	sys_position
+ 2494 0615 16       		.uleb128 0x16
+ 2495 0616 E5030000 		.4byte	.LASF106
+ 2496 061a 05       		.byte	0x5
+ 2497 061b 97       		.byte	0x97
+ 2498 061c F4050000 		.4byte	0x5f4
+ 2499 0620 05       		.uleb128 0x5
+ 2500 0621 03       		.byte	0x3
+ 2501 0622 00000000 		.4byte	sys_probe_position
+ 2502 0626 16       		.uleb128 0x16
+ 2503 0627 32050000 		.4byte	.LASF107
+ 2504 062b 05       		.byte	0x5
+ 2505 062c 99       		.byte	0x99
+ 2506 062d E6000000 		.4byte	0xe6
+ 2507 0631 05       		.uleb128 0x5
+ 2508 0632 03       		.byte	0x3
+ 2509 0633 00000000 		.4byte	sys_probe_state
+ 2510 0637 16       		.uleb128 0x16
+ 2511 0638 C1060000 		.4byte	.LASF108
+ 2512 063c 05       		.byte	0x5
+ 2513 063d 9A       		.byte	0x9a
+ 2514 063e E6000000 		.4byte	0xe6
+ 2515 0642 05       		.uleb128 0x5
+ 2516 0643 03       		.byte	0x3
+ 2517 0644 00000000 		.4byte	sys_rt_exec_state
+ 2518 0648 16       		.uleb128 0x16
+ 2519 0649 00000000 		.4byte	.LASF109
+ 2520 064d 05       		.byte	0x5
+ 2521 064e 9B       		.byte	0x9b
+ 2522 064f E6000000 		.4byte	0xe6
+ 2523 0653 05       		.uleb128 0x5
+ 2524 0654 03       		.byte	0x3
+ 2525 0655 00000000 		.4byte	sys_rt_exec_alarm
+ 2526 0659 16       		.uleb128 0x16
+ 2527 065a F8030000 		.4byte	.LASF110
+ 2528 065e 05       		.byte	0x5
+ 2529 065f 9C       		.byte	0x9c
+ 2530 0660 E6000000 		.4byte	0xe6
+ 2531 0664 05       		.uleb128 0x5
+ 2532 0665 03       		.byte	0x3
+ 2533 0666 00000000 		.4byte	sys_rt_exec_motion_override
+ 2534 066a 16       		.uleb128 0x16
+ 2535 066b 1F000000 		.4byte	.LASF111
+ 2536 066f 05       		.byte	0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 59
+
+
+ 2537 0670 9D       		.byte	0x9d
+ 2538 0671 E6000000 		.4byte	0xe6
+ 2539 0675 05       		.uleb128 0x5
+ 2540 0676 03       		.byte	0x3
+ 2541 0677 00000000 		.4byte	sys_rt_exec_accessory_override
+ 2542 067b 14       		.uleb128 0x14
+ 2543 067c 62010000 		.4byte	.LASF112
+ 2544 0680 07       		.byte	0x7
+ 2545 0681 E2       		.byte	0xe2
+ 2546 0682 64040000 		.4byte	0x464
+ 2547 0686 00       		.byte	0
+ 2548              		.section	.debug_abbrev,"",%progbits
+ 2549              	.Ldebug_abbrev0:
+ 2550 0000 01       		.uleb128 0x1
+ 2551 0001 11       		.uleb128 0x11
+ 2552 0002 01       		.byte	0x1
+ 2553 0003 25       		.uleb128 0x25
+ 2554 0004 0E       		.uleb128 0xe
+ 2555 0005 13       		.uleb128 0x13
+ 2556 0006 0B       		.uleb128 0xb
+ 2557 0007 03       		.uleb128 0x3
+ 2558 0008 0E       		.uleb128 0xe
+ 2559 0009 1B       		.uleb128 0x1b
+ 2560 000a 0E       		.uleb128 0xe
+ 2561 000b 55       		.uleb128 0x55
+ 2562 000c 17       		.uleb128 0x17
+ 2563 000d 11       		.uleb128 0x11
+ 2564 000e 01       		.uleb128 0x1
+ 2565 000f 10       		.uleb128 0x10
+ 2566 0010 17       		.uleb128 0x17
+ 2567 0011 00       		.byte	0
+ 2568 0012 00       		.byte	0
+ 2569 0013 02       		.uleb128 0x2
+ 2570 0014 24       		.uleb128 0x24
+ 2571 0015 00       		.byte	0
+ 2572 0016 0B       		.uleb128 0xb
+ 2573 0017 0B       		.uleb128 0xb
+ 2574 0018 3E       		.uleb128 0x3e
+ 2575 0019 0B       		.uleb128 0xb
+ 2576 001a 03       		.uleb128 0x3
+ 2577 001b 0E       		.uleb128 0xe
+ 2578 001c 00       		.byte	0
+ 2579 001d 00       		.byte	0
+ 2580 001e 03       		.uleb128 0x3
+ 2581 001f 16       		.uleb128 0x16
+ 2582 0020 00       		.byte	0
+ 2583 0021 03       		.uleb128 0x3
+ 2584 0022 0E       		.uleb128 0xe
+ 2585 0023 3A       		.uleb128 0x3a
+ 2586 0024 0B       		.uleb128 0xb
+ 2587 0025 3B       		.uleb128 0x3b
+ 2588 0026 0B       		.uleb128 0xb
+ 2589 0027 49       		.uleb128 0x49
+ 2590 0028 13       		.uleb128 0x13
+ 2591 0029 00       		.byte	0
+ 2592 002a 00       		.byte	0
+ 2593 002b 04       		.uleb128 0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 60
+
+
+ 2594 002c 24       		.uleb128 0x24
+ 2595 002d 00       		.byte	0
+ 2596 002e 0B       		.uleb128 0xb
+ 2597 002f 0B       		.uleb128 0xb
+ 2598 0030 3E       		.uleb128 0x3e
+ 2599 0031 0B       		.uleb128 0xb
+ 2600 0032 03       		.uleb128 0x3
+ 2601 0033 08       		.uleb128 0x8
+ 2602 0034 00       		.byte	0
+ 2603 0035 00       		.byte	0
+ 2604 0036 05       		.uleb128 0x5
+ 2605 0037 35       		.uleb128 0x35
+ 2606 0038 00       		.byte	0
+ 2607 0039 49       		.uleb128 0x49
+ 2608 003a 13       		.uleb128 0x13
+ 2609 003b 00       		.byte	0
+ 2610 003c 00       		.byte	0
+ 2611 003d 06       		.uleb128 0x6
+ 2612 003e 13       		.uleb128 0x13
+ 2613 003f 01       		.byte	0x1
+ 2614 0040 0B       		.uleb128 0xb
+ 2615 0041 0B       		.uleb128 0xb
+ 2616 0042 3A       		.uleb128 0x3a
+ 2617 0043 0B       		.uleb128 0xb
+ 2618 0044 3B       		.uleb128 0x3b
+ 2619 0045 0B       		.uleb128 0xb
+ 2620 0046 01       		.uleb128 0x1
+ 2621 0047 13       		.uleb128 0x13
+ 2622 0048 00       		.byte	0
+ 2623 0049 00       		.byte	0
+ 2624 004a 07       		.uleb128 0x7
+ 2625 004b 0D       		.uleb128 0xd
+ 2626 004c 00       		.byte	0
+ 2627 004d 03       		.uleb128 0x3
+ 2628 004e 0E       		.uleb128 0xe
+ 2629 004f 3A       		.uleb128 0x3a
+ 2630 0050 0B       		.uleb128 0xb
+ 2631 0051 3B       		.uleb128 0x3b
+ 2632 0052 0B       		.uleb128 0xb
+ 2633 0053 49       		.uleb128 0x49
+ 2634 0054 13       		.uleb128 0x13
+ 2635 0055 38       		.uleb128 0x38
+ 2636 0056 0B       		.uleb128 0xb
+ 2637 0057 00       		.byte	0
+ 2638 0058 00       		.byte	0
+ 2639 0059 08       		.uleb128 0x8
+ 2640 005a 01       		.uleb128 0x1
+ 2641 005b 01       		.byte	0x1
+ 2642 005c 49       		.uleb128 0x49
+ 2643 005d 13       		.uleb128 0x13
+ 2644 005e 01       		.uleb128 0x1
+ 2645 005f 13       		.uleb128 0x13
+ 2646 0060 00       		.byte	0
+ 2647 0061 00       		.byte	0
+ 2648 0062 09       		.uleb128 0x9
+ 2649 0063 21       		.uleb128 0x21
+ 2650 0064 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 61
+
+
+ 2651 0065 49       		.uleb128 0x49
+ 2652 0066 13       		.uleb128 0x13
+ 2653 0067 2F       		.uleb128 0x2f
+ 2654 0068 0B       		.uleb128 0xb
+ 2655 0069 00       		.byte	0
+ 2656 006a 00       		.byte	0
+ 2657 006b 0A       		.uleb128 0xa
+ 2658 006c 2E       		.uleb128 0x2e
+ 2659 006d 01       		.byte	0x1
+ 2660 006e 3F       		.uleb128 0x3f
+ 2661 006f 19       		.uleb128 0x19
+ 2662 0070 03       		.uleb128 0x3
+ 2663 0071 0E       		.uleb128 0xe
+ 2664 0072 3A       		.uleb128 0x3a
+ 2665 0073 0B       		.uleb128 0xb
+ 2666 0074 3B       		.uleb128 0x3b
+ 2667 0075 0B       		.uleb128 0xb
+ 2668 0076 11       		.uleb128 0x11
+ 2669 0077 01       		.uleb128 0x1
+ 2670 0078 12       		.uleb128 0x12
+ 2671 0079 06       		.uleb128 0x6
+ 2672 007a 40       		.uleb128 0x40
+ 2673 007b 18       		.uleb128 0x18
+ 2674 007c 9642     		.uleb128 0x2116
+ 2675 007e 19       		.uleb128 0x19
+ 2676 007f 01       		.uleb128 0x1
+ 2677 0080 13       		.uleb128 0x13
+ 2678 0081 00       		.byte	0
+ 2679 0082 00       		.byte	0
+ 2680 0083 0B       		.uleb128 0xb
+ 2681 0084 34       		.uleb128 0x34
+ 2682 0085 00       		.byte	0
+ 2683 0086 03       		.uleb128 0x3
+ 2684 0087 0E       		.uleb128 0xe
+ 2685 0088 3A       		.uleb128 0x3a
+ 2686 0089 0B       		.uleb128 0xb
+ 2687 008a 3B       		.uleb128 0x3b
+ 2688 008b 0B       		.uleb128 0xb
+ 2689 008c 49       		.uleb128 0x49
+ 2690 008d 13       		.uleb128 0x13
+ 2691 008e 02       		.uleb128 0x2
+ 2692 008f 18       		.uleb128 0x18
+ 2693 0090 00       		.byte	0
+ 2694 0091 00       		.byte	0
+ 2695 0092 0C       		.uleb128 0xc
+ 2696 0093 34       		.uleb128 0x34
+ 2697 0094 00       		.byte	0
+ 2698 0095 03       		.uleb128 0x3
+ 2699 0096 08       		.uleb128 0x8
+ 2700 0097 3A       		.uleb128 0x3a
+ 2701 0098 0B       		.uleb128 0xb
+ 2702 0099 3B       		.uleb128 0x3b
+ 2703 009a 0B       		.uleb128 0xb
+ 2704 009b 49       		.uleb128 0x49
+ 2705 009c 13       		.uleb128 0x13
+ 2706 009d 02       		.uleb128 0x2
+ 2707 009e 18       		.uleb128 0x18
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 62
+
+
+ 2708 009f 00       		.byte	0
+ 2709 00a0 00       		.byte	0
+ 2710 00a1 0D       		.uleb128 0xd
+ 2711 00a2 2E       		.uleb128 0x2e
+ 2712 00a3 00       		.byte	0
+ 2713 00a4 3F       		.uleb128 0x3f
+ 2714 00a5 19       		.uleb128 0x19
+ 2715 00a6 03       		.uleb128 0x3
+ 2716 00a7 0E       		.uleb128 0xe
+ 2717 00a8 3A       		.uleb128 0x3a
+ 2718 00a9 0B       		.uleb128 0xb
+ 2719 00aa 3B       		.uleb128 0x3b
+ 2720 00ab 0B       		.uleb128 0xb
+ 2721 00ac 11       		.uleb128 0x11
+ 2722 00ad 01       		.uleb128 0x1
+ 2723 00ae 12       		.uleb128 0x12
+ 2724 00af 06       		.uleb128 0x6
+ 2725 00b0 40       		.uleb128 0x40
+ 2726 00b1 18       		.uleb128 0x18
+ 2727 00b2 9642     		.uleb128 0x2116
+ 2728 00b4 19       		.uleb128 0x19
+ 2729 00b5 00       		.byte	0
+ 2730 00b6 00       		.byte	0
+ 2731 00b7 0E       		.uleb128 0xe
+ 2732 00b8 0B       		.uleb128 0xb
+ 2733 00b9 01       		.byte	0x1
+ 2734 00ba 11       		.uleb128 0x11
+ 2735 00bb 01       		.uleb128 0x1
+ 2736 00bc 12       		.uleb128 0x12
+ 2737 00bd 06       		.uleb128 0x6
+ 2738 00be 01       		.uleb128 0x1
+ 2739 00bf 13       		.uleb128 0x13
+ 2740 00c0 00       		.byte	0
+ 2741 00c1 00       		.byte	0
+ 2742 00c2 0F       		.uleb128 0xf
+ 2743 00c3 34       		.uleb128 0x34
+ 2744 00c4 00       		.byte	0
+ 2745 00c5 03       		.uleb128 0x3
+ 2746 00c6 0E       		.uleb128 0xe
+ 2747 00c7 3A       		.uleb128 0x3a
+ 2748 00c8 0B       		.uleb128 0xb
+ 2749 00c9 3B       		.uleb128 0x3b
+ 2750 00ca 05       		.uleb128 0x5
+ 2751 00cb 49       		.uleb128 0x49
+ 2752 00cc 13       		.uleb128 0x13
+ 2753 00cd 02       		.uleb128 0x2
+ 2754 00ce 18       		.uleb128 0x18
+ 2755 00cf 00       		.byte	0
+ 2756 00d0 00       		.byte	0
+ 2757 00d1 10       		.uleb128 0x10
+ 2758 00d2 0B       		.uleb128 0xb
+ 2759 00d3 01       		.byte	0x1
+ 2760 00d4 11       		.uleb128 0x11
+ 2761 00d5 01       		.uleb128 0x1
+ 2762 00d6 12       		.uleb128 0x12
+ 2763 00d7 06       		.uleb128 0x6
+ 2764 00d8 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 63
+
+
+ 2765 00d9 00       		.byte	0
+ 2766 00da 11       		.uleb128 0x11
+ 2767 00db 2E       		.uleb128 0x2e
+ 2768 00dc 01       		.byte	0x1
+ 2769 00dd 03       		.uleb128 0x3
+ 2770 00de 0E       		.uleb128 0xe
+ 2771 00df 3A       		.uleb128 0x3a
+ 2772 00e0 0B       		.uleb128 0xb
+ 2773 00e1 3B       		.uleb128 0x3b
+ 2774 00e2 05       		.uleb128 0x5
+ 2775 00e3 11       		.uleb128 0x11
+ 2776 00e4 01       		.uleb128 0x1
+ 2777 00e5 12       		.uleb128 0x12
+ 2778 00e6 06       		.uleb128 0x6
+ 2779 00e7 40       		.uleb128 0x40
+ 2780 00e8 18       		.uleb128 0x18
+ 2781 00e9 9642     		.uleb128 0x2116
+ 2782 00eb 19       		.uleb128 0x19
+ 2783 00ec 01       		.uleb128 0x1
+ 2784 00ed 13       		.uleb128 0x13
+ 2785 00ee 00       		.byte	0
+ 2786 00ef 00       		.byte	0
+ 2787 00f0 12       		.uleb128 0x12
+ 2788 00f1 0F       		.uleb128 0xf
+ 2789 00f2 00       		.byte	0
+ 2790 00f3 0B       		.uleb128 0xb
+ 2791 00f4 0B       		.uleb128 0xb
+ 2792 00f5 49       		.uleb128 0x49
+ 2793 00f6 13       		.uleb128 0x13
+ 2794 00f7 00       		.byte	0
+ 2795 00f8 00       		.byte	0
+ 2796 00f9 13       		.uleb128 0x13
+ 2797 00fa 34       		.uleb128 0x34
+ 2798 00fb 00       		.byte	0
+ 2799 00fc 03       		.uleb128 0x3
+ 2800 00fd 0E       		.uleb128 0xe
+ 2801 00fe 3A       		.uleb128 0x3a
+ 2802 00ff 0B       		.uleb128 0xb
+ 2803 0100 3B       		.uleb128 0x3b
+ 2804 0101 05       		.uleb128 0x5
+ 2805 0102 49       		.uleb128 0x49
+ 2806 0103 13       		.uleb128 0x13
+ 2807 0104 3F       		.uleb128 0x3f
+ 2808 0105 19       		.uleb128 0x19
+ 2809 0106 3C       		.uleb128 0x3c
+ 2810 0107 19       		.uleb128 0x19
+ 2811 0108 00       		.byte	0
+ 2812 0109 00       		.byte	0
+ 2813 010a 14       		.uleb128 0x14
+ 2814 010b 34       		.uleb128 0x34
+ 2815 010c 00       		.byte	0
+ 2816 010d 03       		.uleb128 0x3
+ 2817 010e 0E       		.uleb128 0xe
+ 2818 010f 3A       		.uleb128 0x3a
+ 2819 0110 0B       		.uleb128 0xb
+ 2820 0111 3B       		.uleb128 0x3b
+ 2821 0112 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 64
+
+
+ 2822 0113 49       		.uleb128 0x49
+ 2823 0114 13       		.uleb128 0x13
+ 2824 0115 3F       		.uleb128 0x3f
+ 2825 0116 19       		.uleb128 0x19
+ 2826 0117 3C       		.uleb128 0x3c
+ 2827 0118 19       		.uleb128 0x19
+ 2828 0119 00       		.byte	0
+ 2829 011a 00       		.byte	0
+ 2830 011b 15       		.uleb128 0x15
+ 2831 011c 34       		.uleb128 0x34
+ 2832 011d 00       		.byte	0
+ 2833 011e 03       		.uleb128 0x3
+ 2834 011f 08       		.uleb128 0x8
+ 2835 0120 3A       		.uleb128 0x3a
+ 2836 0121 0B       		.uleb128 0xb
+ 2837 0122 3B       		.uleb128 0x3b
+ 2838 0123 0B       		.uleb128 0xb
+ 2839 0124 49       		.uleb128 0x49
+ 2840 0125 13       		.uleb128 0x13
+ 2841 0126 3F       		.uleb128 0x3f
+ 2842 0127 19       		.uleb128 0x19
+ 2843 0128 3C       		.uleb128 0x3c
+ 2844 0129 19       		.uleb128 0x19
+ 2845 012a 00       		.byte	0
+ 2846 012b 00       		.byte	0
+ 2847 012c 16       		.uleb128 0x16
+ 2848 012d 34       		.uleb128 0x34
+ 2849 012e 00       		.byte	0
+ 2850 012f 03       		.uleb128 0x3
+ 2851 0130 0E       		.uleb128 0xe
+ 2852 0131 3A       		.uleb128 0x3a
+ 2853 0132 0B       		.uleb128 0xb
+ 2854 0133 3B       		.uleb128 0x3b
+ 2855 0134 0B       		.uleb128 0xb
+ 2856 0135 49       		.uleb128 0x49
+ 2857 0136 13       		.uleb128 0x13
+ 2858 0137 3F       		.uleb128 0x3f
+ 2859 0138 19       		.uleb128 0x19
+ 2860 0139 02       		.uleb128 0x2
+ 2861 013a 18       		.uleb128 0x18
+ 2862 013b 00       		.byte	0
+ 2863 013c 00       		.byte	0
+ 2864 013d 00       		.byte	0
+ 2865              		.section	.debug_aranges,"",%progbits
+ 2866 0000 44000000 		.4byte	0x44
+ 2867 0004 0200     		.2byte	0x2
+ 2868 0006 00000000 		.4byte	.Ldebug_info0
+ 2869 000a 04       		.byte	0x4
+ 2870 000b 00       		.byte	0
+ 2871 000c 0000     		.2byte	0
+ 2872 000e 0000     		.2byte	0
+ 2873 0010 00000000 		.4byte	.LFB64
+ 2874 0014 CC010000 		.4byte	.LFE64-.LFB64
+ 2875 0018 00000000 		.4byte	.LFB65
+ 2876 001c 30000000 		.4byte	.LFE65-.LFB65
+ 2877 0020 00000000 		.4byte	.LFB66
+ 2878 0024 18000000 		.4byte	.LFE66-.LFB66
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 65
+
+
+ 2879 0028 00000000 		.4byte	.LFB67
+ 2880 002c 1C000000 		.4byte	.LFE67-.LFB67
+ 2881 0030 00000000 		.4byte	.LFB68
+ 2882 0034 AC050000 		.4byte	.LFE68-.LFB68
+ 2883 0038 00000000 		.4byte	.LFB69
+ 2884 003c 90020000 		.4byte	.LFE69-.LFB69
+ 2885 0040 00000000 		.4byte	0
+ 2886 0044 00000000 		.4byte	0
+ 2887              		.section	.debug_ranges,"",%progbits
+ 2888              	.Ldebug_ranges0:
+ 2889 0000 00000000 		.4byte	.LFB64
+ 2890 0004 CC010000 		.4byte	.LFE64
+ 2891 0008 00000000 		.4byte	.LFB65
+ 2892 000c 30000000 		.4byte	.LFE65
+ 2893 0010 00000000 		.4byte	.LFB66
+ 2894 0014 18000000 		.4byte	.LFE66
+ 2895 0018 00000000 		.4byte	.LFB67
+ 2896 001c 1C000000 		.4byte	.LFE67
+ 2897 0020 00000000 		.4byte	.LFB68
+ 2898 0024 AC050000 		.4byte	.LFE68
+ 2899 0028 00000000 		.4byte	.LFB69
+ 2900 002c 90020000 		.4byte	.LFE69
+ 2901 0030 00000000 		.4byte	0
+ 2902 0034 00000000 		.4byte	0
+ 2903              		.section	.debug_line,"",%progbits
+ 2904              	.Ldebug_line0:
+ 2905 0000 1E040000 		.section	.debug_str,"MS",%progbits,1
+ 2905      02007501 
+ 2905      00000201 
+ 2905      FB0E0D00 
+ 2905      01010101 
+ 2906              	.LASF109:
+ 2907 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 2907      72745F65 
+ 2907      7865635F 
+ 2907      616C6172 
+ 2907      6D00
+ 2908              	.LASF88:
+ 2909 0012 63686172 		.ascii	"char_counter\000"
+ 2909      5F636F75 
+ 2909      6E746572 
+ 2909      00
+ 2910              	.LASF111:
+ 2911 001f 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 2911      72745F65 
+ 2911      7865635F 
+ 2911      61636365 
+ 2911      73736F72 
+ 2912              	.LASF96:
+ 2913 003e 6E65775F 		.ascii	"new_r_override\000"
+ 2913      725F6F76 
+ 2913      65727269 
+ 2913      646500
+ 2914              	.LASF24:
+ 2915 004d 61636365 		.ascii	"acceleration\000"
+ 2915      6C657261 
+ 2915      74696F6E 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 66
+
+
+ 2915      00
+ 2916              	.LASF42:
+ 2917 005a 73746174 		.ascii	"state\000"
+ 2917      6500
+ 2918              	.LASF93:
+ 2919 0060 70726F74 		.ascii	"protocol_exec_rt_system\000"
+ 2919      6F636F6C 
+ 2919      5F657865 
+ 2919      635F7274 
+ 2919      5F737973 
+ 2920              	.LASF2:
+ 2921 0078 73686F72 		.ascii	"short int\000"
+ 2921      7420696E 
+ 2921      7400
+ 2922              	.LASF62:
+ 2923 0082 6D61785F 		.ascii	"max_entry_speed_sqr\000"
+ 2923      656E7472 
+ 2923      795F7370 
+ 2923      6565645F 
+ 2923      73717200 
+ 2924              	.LASF98:
+ 2925 0096 636F6F6C 		.ascii	"coolant_state\000"
+ 2925      616E745F 
+ 2925      73746174 
+ 2925      6500
+ 2926              	.LASF21:
+ 2927 00a4 73697A65 		.ascii	"sizetype\000"
+ 2927      74797065 
+ 2927      00
+ 2928              	.LASF56:
+ 2929 00ad 73797374 		.ascii	"system_t\000"
+ 2929      656D5F74 
+ 2929      00
+ 2930              	.LASF113:
+ 2931 00b6 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 2931      43313120 
+ 2931      352E342E 
+ 2931      31203230 
+ 2931      31363036 
+ 2932 00e9 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 2932      20726576 
+ 2932      6973696F 
+ 2932      6E203233 
+ 2932      37373135 
+ 2933 011c 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 2933      66756E63 
+ 2933      74696F6E 
+ 2933      2D736563 
+ 2933      74696F6E 
+ 2934              	.LASF94:
+ 2935 0144 72745F65 		.ascii	"rt_exec\000"
+ 2935      78656300 
+ 2936              	.LASF65:
+ 2937 014c 72617069 		.ascii	"rapid_rate\000"
+ 2937      645F7261 
+ 2937      746500
+ 2938              	.LASF8:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 67
+
+
+ 2939 0157 5F5F7569 		.ascii	"__uint32_t\000"
+ 2939      6E743332 
+ 2939      5F7400
+ 2940              	.LASF112:
+ 2941 0162 67635F73 		.ascii	"gc_state\000"
+ 2941      74617465 
+ 2941      00
+ 2942              	.LASF72:
+ 2943 016b 706C616E 		.ascii	"plane_select\000"
+ 2943      655F7365 
+ 2943      6C656374 
+ 2943      00
+ 2944              	.LASF4:
+ 2945 0178 5F5F7569 		.ascii	"__uint16_t\000"
+ 2945      6E743136 
+ 2945      5F7400
+ 2946              	.LASF81:
+ 2947 0183 6C696E65 		.ascii	"line_number\000"
+ 2947      5F6E756D 
+ 2947      62657200 
+ 2948              	.LASF67:
+ 2949 018f 706C616E 		.ascii	"plan_block_t\000"
+ 2949      5F626C6F 
+ 2949      636B5F74 
+ 2949      00
+ 2950              	.LASF64:
+ 2951 019c 6D61785F 		.ascii	"max_junction_speed_sqr\000"
+ 2951      6A756E63 
+ 2951      74696F6E 
+ 2951      5F737065 
+ 2951      65645F73 
+ 2952              	.LASF29:
+ 2953 01b3 73746570 		.ascii	"stepper_idle_lock_time\000"
+ 2953      7065725F 
+ 2953      69646C65 
+ 2953      5F6C6F63 
+ 2953      6B5F7469 
+ 2954              	.LASF95:
+ 2955 01ca 6E65775F 		.ascii	"new_f_override\000"
+ 2955      665F6F76 
+ 2955      65727269 
+ 2955      646500
+ 2956              	.LASF13:
+ 2957 01d9 75696E74 		.ascii	"uint8_t\000"
+ 2957      385F7400 
+ 2958              	.LASF23:
+ 2959 01e1 6D61785F 		.ascii	"max_rate\000"
+ 2959      72617465 
+ 2959      00
+ 2960              	.LASF85:
+ 2961 01ea 746F6F6C 		.ascii	"tool_length_offset\000"
+ 2961      5F6C656E 
+ 2961      6774685F 
+ 2961      6F666673 
+ 2961      657400
+ 2962              	.LASF58:
+ 2963 01fd 73746570 		.ascii	"step_event_count\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 68
+
+
+ 2963      5F657665 
+ 2963      6E745F63 
+ 2963      6F756E74 
+ 2963      00
+ 2964              	.LASF102:
+ 2965 020e 6C696E65 		.ascii	"line\000"
+ 2965      00
+ 2966              	.LASF89:
+ 2967 0213 70726F74 		.ascii	"protocol_buffer_synchronize\000"
+ 2967      6F636F6C 
+ 2967      5F627566 
+ 2967      6665725F 
+ 2967      73796E63 
+ 2968              	.LASF40:
+ 2969 022f 686F6D69 		.ascii	"homing_pulloff\000"
+ 2969      6E675F70 
+ 2969      756C6C6F 
+ 2969      666600
+ 2970              	.LASF41:
+ 2971 023e 73657474 		.ascii	"settings_t\000"
+ 2971      696E6773 
+ 2971      5F7400
+ 2972              	.LASF114:
+ 2973 0249 70726F74 		.ascii	"protocol.c\000"
+ 2973      6F636F6C 
+ 2973      2E6300
+ 2974              	.LASF75:
+ 2975 0254 70726F67 		.ascii	"program_flow\000"
+ 2975      72616D5F 
+ 2975      666C6F77 
+ 2975      00
+ 2976              	.LASF17:
+ 2977 0261 666C6F61 		.ascii	"float\000"
+ 2977      7400
+ 2978              	.LASF73:
+ 2979 0267 746F6F6C 		.ascii	"tool_length\000"
+ 2979      5F6C656E 
+ 2979      67746800 
+ 2980              	.LASF104:
+ 2981 0273 73657474 		.ascii	"settings\000"
+ 2981      696E6773 
+ 2981      00
+ 2982              	.LASF10:
+ 2983 027c 6C6F6E67 		.ascii	"long long int\000"
+ 2983      206C6F6E 
+ 2983      6720696E 
+ 2983      7400
+ 2984              	.LASF51:
+ 2985 028a 7370696E 		.ascii	"spindle_speed_ovr\000"
+ 2985      646C655F 
+ 2985      73706565 
+ 2985      645F6F76 
+ 2985      7200
+ 2986              	.LASF105:
+ 2987 029c 7379735F 		.ascii	"sys_position\000"
+ 2987      706F7369 
+ 2987      74696F6E 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 69
+
+
+ 2987      00
+ 2988              	.LASF47:
+ 2989 02a9 70726F62 		.ascii	"probe_succeeded\000"
+ 2989      655F7375 
+ 2989      63636565 
+ 2989      64656400 
+ 2990              	.LASF7:
+ 2991 02b9 6C6F6E67 		.ascii	"long int\000"
+ 2991      20696E74 
+ 2991      00
+ 2992              	.LASF22:
+ 2993 02c2 73746570 		.ascii	"steps_per_mm\000"
+ 2993      735F7065 
+ 2993      725F6D6D 
+ 2993      00
+ 2994              	.LASF3:
+ 2995 02cf 5F5F7569 		.ascii	"__uint8_t\000"
+ 2995      6E74385F 
+ 2995      7400
+ 2996              	.LASF53:
+ 2997 02d9 7265706F 		.ascii	"report_ovr_counter\000"
+ 2997      72745F6F 
+ 2997      76725F63 
+ 2997      6F756E74 
+ 2997      657200
+ 2998              	.LASF78:
+ 2999 02ec 67635F6D 		.ascii	"gc_modal_t\000"
+ 2999      6F64616C 
+ 2999      5F7400
+ 3000              	.LASF32:
+ 3001 02f7 6172635F 		.ascii	"arc_tolerance\000"
+ 3001      746F6C65 
+ 3001      72616E63 
+ 3001      6500
+ 3002              	.LASF80:
+ 3003 0305 746F6F6C 		.ascii	"tool\000"
+ 3003      00
+ 3004              	.LASF83:
+ 3005 030a 636F6F72 		.ascii	"coord_system\000"
+ 3005      645F7379 
+ 3005      7374656D 
+ 3005      00
+ 3006              	.LASF20:
+ 3007 0317 6C6F6E67 		.ascii	"long double\000"
+ 3007      20646F75 
+ 3007      626C6500 
+ 3008              	.LASF68:
+ 3009 0323 6D6F7469 		.ascii	"motion\000"
+ 3009      6F6E00
+ 3010              	.LASF76:
+ 3011 032a 636F6F6C 		.ascii	"coolant\000"
+ 3011      616E7400 
+ 3012              	.LASF74:
+ 3013 0332 636F6F72 		.ascii	"coord_select\000"
+ 3013      645F7365 
+ 3013      6C656374 
+ 3013      00
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 70
+
+
+ 3014              	.LASF1:
+ 3015 033f 756E7369 		.ascii	"unsigned char\000"
+ 3015      676E6564 
+ 3015      20636861 
+ 3015      7200
+ 3016              	.LASF43:
+ 3017 034d 61626F72 		.ascii	"abort\000"
+ 3017      7400
+ 3018              	.LASF0:
+ 3019 0353 7369676E 		.ascii	"signed char\000"
+ 3019      65642063 
+ 3019      68617200 
+ 3020              	.LASF35:
+ 3021 035f 666C6167 		.ascii	"flags\000"
+ 3021      7300
+ 3022              	.LASF11:
+ 3023 0365 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3023      206C6F6E 
+ 3023      6720756E 
+ 3023      7369676E 
+ 3023      65642069 
+ 3024              	.LASF70:
+ 3025 037c 756E6974 		.ascii	"units\000"
+ 3025      7300
+ 3026              	.LASF16:
+ 3027 0382 75696E74 		.ascii	"uint32_t\000"
+ 3027      33325F74 
+ 3027      00
+ 3028              	.LASF92:
+ 3029 038b 70726F74 		.ascii	"protocol_main_loop\000"
+ 3029      6F636F6C 
+ 3029      5F6D6169 
+ 3029      6E5F6C6F 
+ 3029      6F7000
+ 3030              	.LASF12:
+ 3031 039e 756E7369 		.ascii	"unsigned int\000"
+ 3031      676E6564 
+ 3031      20696E74 
+ 3031      00
+ 3032              	.LASF61:
+ 3033 03ab 656E7472 		.ascii	"entry_speed_sqr\000"
+ 3033      795F7370 
+ 3033      6565645F 
+ 3033      73717200 
+ 3034              	.LASF49:
+ 3035 03bb 665F6F76 		.ascii	"f_override\000"
+ 3035      65727269 
+ 3035      646500
+ 3036              	.LASF55:
+ 3037 03c6 7370696E 		.ascii	"spindle_speed\000"
+ 3037      646C655F 
+ 3037      73706565 
+ 3037      6400
+ 3038              	.LASF38:
+ 3039 03d4 686F6D69 		.ascii	"homing_seek_rate\000"
+ 3039      6E675F73 
+ 3039      65656B5F 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 71
+
+
+ 3039      72617465 
+ 3039      00
+ 3040              	.LASF106:
+ 3041 03e5 7379735F 		.ascii	"sys_probe_position\000"
+ 3041      70726F62 
+ 3041      655F706F 
+ 3041      73697469 
+ 3041      6F6E00
+ 3042              	.LASF110:
+ 3043 03f8 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 3043      72745F65 
+ 3043      7865635F 
+ 3043      6D6F7469 
+ 3043      6F6E5F6F 
+ 3044              	.LASF100:
+ 3045 0414 72657374 		.ascii	"restore_condition\000"
+ 3045      6F72655F 
+ 3045      636F6E64 
+ 3045      6974696F 
+ 3045      6E00
+ 3046              	.LASF30:
+ 3047 0426 73746174 		.ascii	"status_report_mask\000"
+ 3047      75735F72 
+ 3047      65706F72 
+ 3047      745F6D61 
+ 3047      736B00
+ 3048              	.LASF48:
+ 3049 0439 686F6D69 		.ascii	"homing_axis_lock\000"
+ 3049      6E675F61 
+ 3049      7869735F 
+ 3049      6C6F636B 
+ 3049      00
+ 3050              	.LASF69:
+ 3051 044a 66656564 		.ascii	"feed_rate\000"
+ 3051      5F726174 
+ 3051      6500
+ 3052              	.LASF57:
+ 3053 0454 73746570 		.ascii	"steps\000"
+ 3053      7300
+ 3054              	.LASF5:
+ 3055 045a 73686F72 		.ascii	"short unsigned int\000"
+ 3055      7420756E 
+ 3055      7369676E 
+ 3055      65642069 
+ 3055      6E7400
+ 3056              	.LASF60:
+ 3057 046d 636F6E64 		.ascii	"condition\000"
+ 3057      6974696F 
+ 3057      6E00
+ 3058              	.LASF77:
+ 3059 0477 7370696E 		.ascii	"spindle\000"
+ 3059      646C6500 
+ 3060              	.LASF87:
+ 3061 047f 6C696E65 		.ascii	"line_flags\000"
+ 3061      5F666C61 
+ 3061      677300
+ 3062              	.LASF19:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 72
+
+
+ 3063 048a 63686172 		.ascii	"char\000"
+ 3063      00
+ 3064              	.LASF71:
+ 3065 048f 64697374 		.ascii	"distance\000"
+ 3065      616E6365 
+ 3065      00
+ 3066              	.LASF59:
+ 3067 0498 64697265 		.ascii	"direction_bits\000"
+ 3067      6374696F 
+ 3067      6E5F6269 
+ 3067      747300
+ 3068              	.LASF28:
+ 3069 04a7 6469725F 		.ascii	"dir_invert_mask\000"
+ 3069      696E7665 
+ 3069      72745F6D 
+ 3069      61736B00 
+ 3070              	.LASF15:
+ 3071 04b7 696E7433 		.ascii	"int32_t\000"
+ 3071      325F7400 
+ 3072              	.LASF63:
+ 3073 04bf 6D696C6C 		.ascii	"millimeters\000"
+ 3073      696D6574 
+ 3073      65727300 
+ 3074              	.LASF33:
+ 3075 04cb 72706D5F 		.ascii	"rpm_max\000"
+ 3075      6D617800 
+ 3076              	.LASF46:
+ 3077 04d3 73746570 		.ascii	"step_control\000"
+ 3077      5F636F6E 
+ 3077      74726F6C 
+ 3077      00
+ 3078              	.LASF44:
+ 3079 04e0 73757370 		.ascii	"suspend\000"
+ 3079      656E6400 
+ 3080              	.LASF45:
+ 3081 04e8 736F6674 		.ascii	"soft_limit\000"
+ 3081      5F6C696D 
+ 3081      697400
+ 3082              	.LASF39:
+ 3083 04f3 686F6D69 		.ascii	"homing_debounce_delay\000"
+ 3083      6E675F64 
+ 3083      65626F75 
+ 3083      6E63655F 
+ 3083      64656C61 
+ 3084              	.LASF26:
+ 3085 0509 70756C73 		.ascii	"pulse_microseconds\000"
+ 3085      655F6D69 
+ 3085      63726F73 
+ 3085      65636F6E 
+ 3085      647300
+ 3086              	.LASF101:
+ 3087 051c 72657374 		.ascii	"restore_spindle_speed\000"
+ 3087      6F72655F 
+ 3087      7370696E 
+ 3087      646C655F 
+ 3087      73706565 
+ 3088              	.LASF107:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 73
+
+
+ 3089 0532 7379735F 		.ascii	"sys_probe_state\000"
+ 3089      70726F62 
+ 3089      655F7374 
+ 3089      61746500 
+ 3090              	.LASF52:
+ 3091 0542 7370696E 		.ascii	"spindle_stop_ovr\000"
+ 3091      646C655F 
+ 3091      73746F70 
+ 3091      5F6F7672 
+ 3091      00
+ 3092              	.LASF9:
+ 3093 0553 6C6F6E67 		.ascii	"long unsigned int\000"
+ 3093      20756E73 
+ 3093      69676E65 
+ 3093      6420696E 
+ 3093      7400
+ 3094              	.LASF18:
+ 3095 0565 646F7562 		.ascii	"double\000"
+ 3095      6C6500
+ 3096              	.LASF116:
+ 3097 056c 70726F74 		.ascii	"protocol_exec_rt_suspend\000"
+ 3097      6F636F6C 
+ 3097      5F657865 
+ 3097      635F7274 
+ 3097      5F737573 
+ 3098              	.LASF79:
+ 3099 0585 6D6F6461 		.ascii	"modal\000"
+ 3099      6C00
+ 3100              	.LASF90:
+ 3101 058b 70726F74 		.ascii	"protocol_auto_cycle_start\000"
+ 3101      6F636F6C 
+ 3101      5F617574 
+ 3101      6F5F6379 
+ 3101      636C655F 
+ 3102              	.LASF34:
+ 3103 05a5 72706D5F 		.ascii	"rpm_min\000"
+ 3103      6D696E00 
+ 3104              	.LASF36:
+ 3105 05ad 686F6D69 		.ascii	"homing_dir_mask\000"
+ 3105      6E675F64 
+ 3105      69725F6D 
+ 3105      61736B00 
+ 3106              	.LASF14:
+ 3107 05bd 75696E74 		.ascii	"uint16_t\000"
+ 3107      31365F74 
+ 3107      00
+ 3108              	.LASF84:
+ 3109 05c6 636F6F72 		.ascii	"coord_offset\000"
+ 3109      645F6F66 
+ 3109      66736574 
+ 3109      00
+ 3110              	.LASF66:
+ 3111 05d3 70726F67 		.ascii	"programmed_rate\000"
+ 3111      72616D6D 
+ 3111      65645F72 
+ 3111      61746500 
+ 3112              	.LASF6:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 74
+
+
+ 3113 05e3 5F5F696E 		.ascii	"__int32_t\000"
+ 3113      7433325F 
+ 3113      7400
+ 3114              	.LASF31:
+ 3115 05ed 6A756E63 		.ascii	"junction_deviation\000"
+ 3115      74696F6E 
+ 3115      5F646576 
+ 3115      69617469 
+ 3115      6F6E00
+ 3116              	.LASF99:
+ 3117 0600 626C6F63 		.ascii	"block\000"
+ 3117      6B00
+ 3118              	.LASF25:
+ 3119 0606 6D61785F 		.ascii	"max_travel\000"
+ 3119      74726176 
+ 3119      656C00
+ 3120              	.LASF115:
+ 3121 0611 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 3121      73657273 
+ 3121      5C626172 
+ 3121      746F5C44 
+ 3121      726F7062 
+ 3122 063e 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 3122      5553425F 
+ 3122      4E617469 
+ 3122      76652E63 
+ 3122      7964736E 
+ 3123              	.LASF37:
+ 3124 0653 686F6D69 		.ascii	"homing_feed_rate\000"
+ 3124      6E675F66 
+ 3124      6565645F 
+ 3124      72617465 
+ 3124      00
+ 3125              	.LASF50:
+ 3126 0664 725F6F76 		.ascii	"r_override\000"
+ 3126      65727269 
+ 3126      646500
+ 3127              	.LASF54:
+ 3128 066f 7265706F 		.ascii	"report_wco_counter\000"
+ 3128      72745F77 
+ 3128      636F5F63 
+ 3128      6F756E74 
+ 3128      657200
+ 3129              	.LASF91:
+ 3130 0682 70726F74 		.ascii	"protocol_execute_realtime\000"
+ 3130      6F636F6C 
+ 3130      5F657865 
+ 3130      63757465 
+ 3130      5F726561 
+ 3131              	.LASF82:
+ 3132 069c 706F7369 		.ascii	"position\000"
+ 3132      74696F6E 
+ 3132      00
+ 3133              	.LASF103:
+ 3134 06a5 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 3134      52784275 
+ 3134      66666572 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccvWJHma.s 			page 75
+
+
+ 3134      00
+ 3135              	.LASF86:
+ 3136 06b2 70617273 		.ascii	"parser_state_t\000"
+ 3136      65725F73 
+ 3136      74617465 
+ 3136      5F7400
+ 3137              	.LASF108:
+ 3138 06c1 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 3138      72745F65 
+ 3138      7865635F 
+ 3138      73746174 
+ 3138      6500
+ 3139              	.LASF27:
+ 3140 06d3 73746570 		.ascii	"step_invert_mask\000"
+ 3140      5F696E76 
+ 3140      6572745F 
+ 3140      6D61736B 
+ 3140      00
+ 3141              	.LASF97:
+ 3142 06e4 6C617374 		.ascii	"last_s_override\000"
+ 3142      5F735F6F 
+ 3142      76657272 
+ 3142      69646500 
+ 3143              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

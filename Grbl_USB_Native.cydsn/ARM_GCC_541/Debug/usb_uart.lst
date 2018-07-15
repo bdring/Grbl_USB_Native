@@ -1,0 +1,1291 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"usb_uart.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.section	.text.usb_uart_init,"ax",%progbits
+  27              		.align	2
+  28              		.global	usb_uart_init
+  29              		.thumb
+  30              		.thumb_func
+  31              		.type	usb_uart_init, %function
+  32              	usb_uart_init:
+  33              	.LFB64:
+  34              		.file 1 "usb_uart.c"
+   1:usb_uart.c    **** /* ========================================
+   2:usb_uart.c    ****  *
+   3:usb_uart.c    ****  * Copyright Buildlog.net 2018
+   4:usb_uart.c    ****  * Bart Dring
+   5:usb_uart.c    ****  * Open Source CC4.0 Attribution - Share Alike
+   6:usb_uart.c    ****  * 
+   7:usb_uart.c    ****  * USB UART Functions for Grbl
+   8:usb_uart.c    ****  *
+   9:usb_uart.c    ****  * ========================================
+  10:usb_uart.c    **** */
+  11:usb_uart.c    **** 
+  12:usb_uart.c    **** #include "grbl.h"
+  13:usb_uart.c    **** 
+  14:usb_uart.c    **** /* ==========================================
+  15:usb_uart.c    **** *  Initialize the USB UART.
+  16:usb_uart.c    **** *
+  17:usb_uart.c    **** * ===========================================
+  18:usb_uart.c    **** */
+  19:usb_uart.c    **** 
+  20:usb_uart.c    **** 
+  21:usb_uart.c    **** void usb_uart_init() {
+  35              		.loc 1 21 0
+  36              		.cfi_startproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 2
+
+
+  37              		@ args = 0, pretend = 0, frame = 0
+  38              		@ frame_needed = 1, uses_anonymous_args = 0
+  39 0000 80B5     		push	{r7, lr}
+  40              		.cfi_def_cfa_offset 8
+  41              		.cfi_offset 7, -8
+  42              		.cfi_offset 14, -4
+  43 0002 00AF     		add	r7, sp, #0
+  44              		.cfi_def_cfa_register 7
+  22:usb_uart.c    ****     USBUART_Start(USBFS_DEVICE, USBUART_5V_OPERATION);
+  45              		.loc 1 22 0
+  46 0004 0121     		movs	r1, #1
+  47 0006 0020     		movs	r0, #0
+  48 0008 FFF7FEFF 		bl	USBUART_Start
+  23:usb_uart.c    **** }
+  49              		.loc 1 23 0
+  50 000c 00BF     		nop
+  51 000e 80BD     		pop	{r7, pc}
+  52              		.cfi_endproc
+  53              	.LFE64:
+  54              		.size	usb_uart_init, .-usb_uart_init
+  55              		.section	.text.usb_uart_check,"ax",%progbits
+  56              		.align	2
+  57              		.global	usb_uart_check
+  58              		.thumb
+  59              		.thumb_func
+  60              		.type	usb_uart_check, %function
+  61              	usb_uart_check:
+  62              	.LFB65:
+  24:usb_uart.c    **** 
+  25:usb_uart.c    **** /* 
+  26:usb_uart.c    **** This checks the status of the USBUART
+  27:usb_uart.c    **** ..Initializes the UART if the configuration has changed
+  28:usb_uart.c    **** ..Gets data if there is data ready to get
+  29:usb_uart.c    **** */ 
+  30:usb_uart.c    **** void usb_uart_check(){
+  63              		.loc 1 30 0
+  64              		.cfi_startproc
+  65              		@ args = 0, pretend = 0, frame = 72
+  66              		@ frame_needed = 1, uses_anonymous_args = 0
+  67 0000 80B5     		push	{r7, lr}
+  68              		.cfi_def_cfa_offset 8
+  69              		.cfi_offset 7, -8
+  70              		.cfi_offset 14, -4
+  71 0002 92B0     		sub	sp, sp, #72
+  72              		.cfi_def_cfa_offset 80
+  73 0004 00AF     		add	r7, sp, #0
+  74              		.cfi_def_cfa_register 7
+  31:usb_uart.c    ****     
+  32:usb_uart.c    ****     uint16 count; // number of bytes received   
+  33:usb_uart.c    ****     uint8 buffer[USBUART_BUFFER_SIZE]; // bytes received    
+  34:usb_uart.c    ****     
+  35:usb_uart.c    ****     
+  36:usb_uart.c    ****     if (0u != USBUART_IsConfigurationChanged())
+  75              		.loc 1 36 0
+  76 0006 FFF7FEFF 		bl	USBUART_IsConfigurationChanged
+  77 000a 0346     		mov	r3, r0
+  78 000c 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 3
+
+
+  79 000e 06D0     		beq	.L3
+  37:usb_uart.c    ****     {
+  38:usb_uart.c    ****         /* Initialize IN endpoints when device is configured. */
+  39:usb_uart.c    ****         if (0u != USBUART_GetConfiguration())
+  80              		.loc 1 39 0
+  81 0010 FFF7FEFF 		bl	USBUART_GetConfiguration
+  82 0014 0346     		mov	r3, r0
+  83 0016 002B     		cmp	r3, #0
+  84 0018 01D0     		beq	.L3
+  40:usb_uart.c    ****         {
+  41:usb_uart.c    ****             /* Enumeration is done, enable OUT endpoint to receive data 
+  42:usb_uart.c    ****              * from host. */
+  43:usb_uart.c    ****             USBUART_CDC_Init();
+  85              		.loc 1 43 0
+  86 001a FFF7FEFF 		bl	USBUART_CDC_Init
+  87              	.L3:
+  44:usb_uart.c    ****         }
+  45:usb_uart.c    ****     }
+  46:usb_uart.c    **** 
+  47:usb_uart.c    ****         /* Service USB CDC when device is configured. */
+  48:usb_uart.c    ****         if (0u != USBUART_GetConfiguration())
+  88              		.loc 1 48 0
+  89 001e FFF7FEFF 		bl	USBUART_GetConfiguration
+  90 0022 0346     		mov	r3, r0
+  91 0024 002B     		cmp	r3, #0
+  92 0026 21D0     		beq	.L7
+  49:usb_uart.c    ****         {
+  50:usb_uart.c    ****             /* Check for input data from host. */
+  51:usb_uart.c    ****             if (0u != USBUART_DataIsReady())
+  93              		.loc 1 51 0
+  94 0028 FFF7FEFF 		bl	USBUART_DataIsReady
+  95 002c 0346     		mov	r3, r0
+  96 002e 002B     		cmp	r3, #0
+  97 0030 1CD0     		beq	.L7
+  52:usb_uart.c    ****             {
+  53:usb_uart.c    ****                 /* Read received data and re-enable OUT endpoint. */
+  54:usb_uart.c    ****                 count = USBUART_GetAll(buffer);
+  98              		.loc 1 54 0
+  99 0032 3B46     		mov	r3, r7
+ 100 0034 1846     		mov	r0, r3
+ 101 0036 FFF7FEFF 		bl	USBUART_GetAll
+ 102 003a 0346     		mov	r3, r0
+ 103 003c A7F84230 		strh	r3, [r7, #66]	@ movhi
+  55:usb_uart.c    **** 
+  56:usb_uart.c    ****                 if (0u != count)
+ 104              		.loc 1 56 0
+ 105 0040 B7F84230 		ldrh	r3, [r7, #66]
+ 106 0044 002B     		cmp	r3, #0
+ 107 0046 11D0     		beq	.L7
+ 108              	.LBB2:
+  57:usb_uart.c    ****                 {                    
+  58:usb_uart.c    ****                     /* Send the data to Grbl */
+  59:usb_uart.c    ****                     for (int i = 0; i < count; i++) {
+ 109              		.loc 1 59 0
+ 110 0048 0023     		movs	r3, #0
+ 111 004a 7B64     		str	r3, [r7, #68]
+ 112 004c 09E0     		b	.L5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 4
+
+
+ 113              	.L6:
+  60:usb_uart.c    ****                         rx_handler(buffer[i]);
+ 114              		.loc 1 60 0 discriminator 3
+ 115 004e 3A46     		mov	r2, r7
+ 116 0050 7B6C     		ldr	r3, [r7, #68]
+ 117 0052 1344     		add	r3, r3, r2
+ 118 0054 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 119 0056 1846     		mov	r0, r3
+ 120 0058 FFF7FEFF 		bl	rx_handler
+  59:usb_uart.c    ****                         rx_handler(buffer[i]);
+ 121              		.loc 1 59 0 discriminator 3
+ 122 005c 7B6C     		ldr	r3, [r7, #68]
+ 123 005e 0133     		adds	r3, r3, #1
+ 124 0060 7B64     		str	r3, [r7, #68]
+ 125              	.L5:
+  59:usb_uart.c    ****                         rx_handler(buffer[i]);
+ 126              		.loc 1 59 0 is_stmt 0 discriminator 1
+ 127 0062 B7F84220 		ldrh	r2, [r7, #66]
+ 128 0066 7B6C     		ldr	r3, [r7, #68]
+ 129 0068 9A42     		cmp	r2, r3
+ 130 006a F0DC     		bgt	.L6
+ 131              	.L7:
+ 132              	.LBE2:
+  61:usb_uart.c    ****                     }
+  62:usb_uart.c    ****                 }
+  63:usb_uart.c    ****             }
+  64:usb_uart.c    ****             
+  65:usb_uart.c    ****            
+  66:usb_uart.c    ****             
+  67:usb_uart.c    ****             
+  68:usb_uart.c    ****             
+  69:usb_uart.c    **** 
+  70:usb_uart.c    ****         #ifdef LINE_DEBUG // used to debug the data via the TTL UART
+  71:usb_uart.c    ****             /* Check for Line settings change. */
+  72:usb_uart.c    ****             char lineStr[LINE_STR_LENGTH];
+  73:usb_uart.c    ****             char* parity[] = {"None", "Odd", "Even", "Mark", "Space"};
+  74:usb_uart.c    ****             char* stop[]   = {"1", "1.5", "2"};    
+  75:usb_uart.c    ****             
+  76:usb_uart.c    ****              uint8 state;
+  77:usb_uart.c    ****             state = USBUART_IsLineChanged();
+  78:usb_uart.c    ****             
+  79:usb_uart.c    ****             
+  80:usb_uart.c    ****             if (0u != state)
+  81:usb_uart.c    ****             {                
+  82:usb_uart.c    ****                 sprintf(lineStr, "State: %d \r\n", state);                
+  83:usb_uart.c    ****                 UART_PutString(lineStr);
+  84:usb_uart.c    ****                 sprintf(lineStr, "Baud: %ld \r\n", USBUART_GetDTERate());                
+  85:usb_uart.c    ****                 UART_PutString(lineStr);
+  86:usb_uart.c    ****                 
+  87:usb_uart.c    ****                 sprintf(lineStr, "Serial State: %d \r\n", USBUART_GetSerialState());               
+  88:usb_uart.c    ****                 UART_PutString(lineStr);
+  89:usb_uart.c    ****                 
+  90:usb_uart.c    ****                 if (0u != (state & USBUART_LINE_CODING_CHANGED))
+  91:usb_uart.c    ****                 {                  
+  92:usb_uart.c    ****                     /* Get string to output. */
+  93:usb_uart.c    ****                     sprintf(lineStr,"BR:%4ld %d%c%s", USBUART_GetDTERate(),\
+  94:usb_uart.c    ****                                    (uint16) USBUART_GetDataBits(),\
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 5
+
+
+  95:usb_uart.c    ****                                    parity[(uint16) USBUART_GetParityType()][0],\
+  96:usb_uart.c    ****                                    stop[(uint16) USBUART_GetCharFormat()]);
+  97:usb_uart.c    **** 
+  98:usb_uart.c    ****                     UART_PutString(lineStr);
+  99:usb_uart.c    ****                     UART_PutString("\r\n");
+ 100:usb_uart.c    ****                 }
+ 101:usb_uart.c    **** 
+ 102:usb_uart.c    ****                 /* Output on LCD Line Control settings. */
+ 103:usb_uart.c    ****                 if (0u != (state & USBUART_LINE_CONTROL_CHANGED))
+ 104:usb_uart.c    ****                 {                   
+ 105:usb_uart.c    ****                     /* Get string to output. */
+ 106:usb_uart.c    ****                     state = USBUART_GetLineControl();
+ 107:usb_uart.c    ****                     sprintf(lineStr,"DTR:%s,RTS:%s",  (0u != (state & USBUART_LINE_CONTROL_DTR)) ? 
+ 108:usb_uart.c    ****                                                       (0u != (state & USBUART_LINE_CONTROL_RTS)) ? 
+ 109:usb_uart.c    **** 
+ 110:usb_uart.c    ****                     UART_PutString(lineStr);
+ 111:usb_uart.c    ****                     UART_PutString("\r\n");
+ 112:usb_uart.c    ****                     
+ 113:usb_uart.c    ****                 }
+ 114:usb_uart.c    ****             }
+ 115:usb_uart.c    ****         #endif 
+ 116:usb_uart.c    ****         }   
+ 117:usb_uart.c    ****     
+ 118:usb_uart.c    **** }
+ 133              		.loc 1 118 0 is_stmt 1
+ 134 006c 00BF     		nop
+ 135 006e 4837     		adds	r7, r7, #72
+ 136              		.cfi_def_cfa_offset 8
+ 137 0070 BD46     		mov	sp, r7
+ 138              		.cfi_def_cfa_register 13
+ 139              		@ sp needed
+ 140 0072 80BD     		pop	{r7, pc}
+ 141              		.cfi_endproc
+ 142              	.LFE65:
+ 143              		.size	usb_uart_check, .-usb_uart_check
+ 144              		.section	.text.usb_uart_write,"ax",%progbits
+ 145              		.align	2
+ 146              		.global	usb_uart_write
+ 147              		.thumb
+ 148              		.thumb_func
+ 149              		.type	usb_uart_write, %function
+ 150              	usb_uart_write:
+ 151              	.LFB66:
+ 119:usb_uart.c    **** 
+ 120:usb_uart.c    **** 
+ 121:usb_uart.c    **** /* These functions are called by Grbl to send to the PC */
+ 122:usb_uart.c    **** void usb_uart_write(uint8_t data) {
+ 152              		.loc 1 122 0
+ 153              		.cfi_startproc
+ 154              		@ args = 0, pretend = 0, frame = 16
+ 155              		@ frame_needed = 1, uses_anonymous_args = 0
+ 156 0000 80B5     		push	{r7, lr}
+ 157              		.cfi_def_cfa_offset 8
+ 158              		.cfi_offset 7, -8
+ 159              		.cfi_offset 14, -4
+ 160 0002 84B0     		sub	sp, sp, #16
+ 161              		.cfi_def_cfa_offset 24
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 6
+
+
+ 162 0004 00AF     		add	r7, sp, #0
+ 163              		.cfi_def_cfa_register 7
+ 164 0006 0346     		mov	r3, r0
+ 165 0008 FB71     		strb	r3, [r7, #7]
+ 123:usb_uart.c    ****     uint16 ctr = 0;
+ 166              		.loc 1 123 0
+ 167 000a 0023     		movs	r3, #0
+ 168 000c FB81     		strh	r3, [r7, #14]	@ movhi
+ 124:usb_uart.c    ****     if (USBUART_GetConfiguration() == 1) {    
+ 169              		.loc 1 124 0
+ 170 000e FFF7FEFF 		bl	USBUART_GetConfiguration
+ 171 0012 0346     		mov	r3, r0
+ 172 0014 012B     		cmp	r3, #1
+ 173 0016 12D1     		bne	.L8
+ 125:usb_uart.c    ****         while (0u == USBUART_CDCIsReady())
+ 174              		.loc 1 125 0
+ 175 0018 06E0     		b	.L10
+ 176              	.L11:
+ 126:usb_uart.c    ****         {
+ 127:usb_uart.c    ****             ctr++;  if (ctr > 400) 
+ 177              		.loc 1 127 0
+ 178 001a FB89     		ldrh	r3, [r7, #14]
+ 179 001c 0133     		adds	r3, r3, #1
+ 180 001e FB81     		strh	r3, [r7, #14]	@ movhi
+ 181 0020 FB89     		ldrh	r3, [r7, #14]
+ 182 0022 B3F5C87F 		cmp	r3, #400
+ 183 0026 09D8     		bhi	.L12
+ 184              	.L10:
+ 125:usb_uart.c    ****         while (0u == USBUART_CDCIsReady())
+ 185              		.loc 1 125 0
+ 186 0028 FFF7FEFF 		bl	USBUART_CDCIsReady
+ 187 002c 0346     		mov	r3, r0
+ 188 002e 002B     		cmp	r3, #0
+ 189 0030 F3D0     		beq	.L11
+ 128:usb_uart.c    ****                 return; // prevent getting stuck
+ 129:usb_uart.c    ****         }
+ 130:usb_uart.c    ****         USBUART_PutChar(data);
+ 190              		.loc 1 130 0
+ 191 0032 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 192 0034 1846     		mov	r0, r3
+ 193 0036 FFF7FEFF 		bl	USBUART_PutChar
+ 194 003a 00E0     		b	.L8
+ 195              	.L12:
+ 128:usb_uart.c    ****                 return; // prevent getting stuck
+ 196              		.loc 1 128 0
+ 197 003c 00BF     		nop
+ 198              	.L8:
+ 131:usb_uart.c    ****     }
+ 132:usb_uart.c    **** }
+ 199              		.loc 1 132 0
+ 200 003e 1037     		adds	r7, r7, #16
+ 201              		.cfi_def_cfa_offset 8
+ 202 0040 BD46     		mov	sp, r7
+ 203              		.cfi_def_cfa_register 13
+ 204              		@ sp needed
+ 205 0042 80BD     		pop	{r7, pc}
+ 206              		.cfi_endproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 7
+
+
+ 207              	.LFE66:
+ 208              		.size	usb_uart_write, .-usb_uart_write
+ 209              		.section	.text.usb_uart_PutString,"ax",%progbits
+ 210              		.align	2
+ 211              		.global	usb_uart_PutString
+ 212              		.thumb
+ 213              		.thumb_func
+ 214              		.type	usb_uart_PutString, %function
+ 215              	usb_uart_PutString:
+ 216              	.LFB67:
+ 133:usb_uart.c    **** 
+ 134:usb_uart.c    **** 
+ 135:usb_uart.c    **** void usb_uart_PutString(const char *s) {    
+ 217              		.loc 1 135 0
+ 218              		.cfi_startproc
+ 219              		@ args = 0, pretend = 0, frame = 16
+ 220              		@ frame_needed = 1, uses_anonymous_args = 0
+ 221 0000 80B5     		push	{r7, lr}
+ 222              		.cfi_def_cfa_offset 8
+ 223              		.cfi_offset 7, -8
+ 224              		.cfi_offset 14, -4
+ 225 0002 84B0     		sub	sp, sp, #16
+ 226              		.cfi_def_cfa_offset 24
+ 227 0004 00AF     		add	r7, sp, #0
+ 228              		.cfi_def_cfa_register 7
+ 229 0006 7860     		str	r0, [r7, #4]
+ 136:usb_uart.c    ****     uint16 ctr = 0;
+ 230              		.loc 1 136 0
+ 231 0008 0023     		movs	r3, #0
+ 232 000a FB81     		strh	r3, [r7, #14]	@ movhi
+ 137:usb_uart.c    ****     if (USBUART_GetConfiguration() == 1) {    
+ 233              		.loc 1 137 0
+ 234 000c FFF7FEFF 		bl	USBUART_GetConfiguration
+ 235 0010 0346     		mov	r3, r0
+ 236 0012 012B     		cmp	r3, #1
+ 237 0014 11D1     		bne	.L13
+ 138:usb_uart.c    ****         while (0u == USBUART_CDCIsReady())
+ 238              		.loc 1 138 0
+ 239 0016 06E0     		b	.L15
+ 240              	.L16:
+ 139:usb_uart.c    ****         {
+ 140:usb_uart.c    ****             ctr++;  if (ctr > 400) 
+ 241              		.loc 1 140 0
+ 242 0018 FB89     		ldrh	r3, [r7, #14]
+ 243 001a 0133     		adds	r3, r3, #1
+ 244 001c FB81     		strh	r3, [r7, #14]	@ movhi
+ 245 001e FB89     		ldrh	r3, [r7, #14]
+ 246 0020 B3F5C87F 		cmp	r3, #400
+ 247 0024 08D8     		bhi	.L17
+ 248              	.L15:
+ 138:usb_uart.c    ****         while (0u == USBUART_CDCIsReady())
+ 249              		.loc 1 138 0
+ 250 0026 FFF7FEFF 		bl	USBUART_CDCIsReady
+ 251 002a 0346     		mov	r3, r0
+ 252 002c 002B     		cmp	r3, #0
+ 253 002e F3D0     		beq	.L16
+ 141:usb_uart.c    ****                 return; // prevent getting stuck
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 8
+
+
+ 142:usb_uart.c    ****         }
+ 143:usb_uart.c    ****         USBUART_PutString(s);
+ 254              		.loc 1 143 0
+ 255 0030 7868     		ldr	r0, [r7, #4]
+ 256 0032 FFF7FEFF 		bl	USBUART_PutString
+ 257 0036 00E0     		b	.L13
+ 258              	.L17:
+ 141:usb_uart.c    ****                 return; // prevent getting stuck
+ 259              		.loc 1 141 0
+ 260 0038 00BF     		nop
+ 261              	.L13:
+ 144:usb_uart.c    ****     }        
+ 145:usb_uart.c    **** }
+ 262              		.loc 1 145 0
+ 263 003a 1037     		adds	r7, r7, #16
+ 264              		.cfi_def_cfa_offset 8
+ 265 003c BD46     		mov	sp, r7
+ 266              		.cfi_def_cfa_register 13
+ 267              		@ sp needed
+ 268 003e 80BD     		pop	{r7, pc}
+ 269              		.cfi_endproc
+ 270              	.LFE67:
+ 271              		.size	usb_uart_PutString, .-usb_uart_PutString
+ 272              		.text
+ 273              	.Letext0:
+ 274              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 275              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 276              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
+ 277              		.file 5 "Generated_Source\\PSoC5/core_cm3.h"
+ 278              		.file 6 "system.h"
+ 279              		.section	.debug_info,"",%progbits
+ 280              	.Ldebug_info0:
+ 281 0000 43020000 		.4byte	0x243
+ 282 0004 0400     		.2byte	0x4
+ 283 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 284 000a 04       		.byte	0x4
+ 285 000b 01       		.uleb128 0x1
+ 286 000c 0A000000 		.4byte	.LASF33
+ 287 0010 0C       		.byte	0xc
+ 288 0011 42020000 		.4byte	.LASF34
+ 289 0015 FB010000 		.4byte	.LASF35
+ 290 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 291 001d 00000000 		.4byte	0
+ 292 0021 00000000 		.4byte	.Ldebug_line0
+ 293 0025 02       		.uleb128 0x2
+ 294 0026 01       		.byte	0x1
+ 295 0027 06       		.byte	0x6
+ 296 0028 09010000 		.4byte	.LASF0
+ 297 002c 03       		.uleb128 0x3
+ 298 002d 00000000 		.4byte	.LASF4
+ 299 0031 02       		.byte	0x2
+ 300 0032 1D       		.byte	0x1d
+ 301 0033 37000000 		.4byte	0x37
+ 302 0037 02       		.uleb128 0x2
+ 303 0038 01       		.byte	0x1
+ 304 0039 08       		.byte	0x8
+ 305 003a 15010000 		.4byte	.LASF1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 9
+
+
+ 306 003e 02       		.uleb128 0x2
+ 307 003f 02       		.byte	0x2
+ 308 0040 05       		.byte	0x5
+ 309 0041 53020000 		.4byte	.LASF2
+ 310 0045 02       		.uleb128 0x2
+ 311 0046 02       		.byte	0x2
+ 312 0047 07       		.byte	0x7
+ 313 0048 CC000000 		.4byte	.LASF3
+ 314 004c 03       		.uleb128 0x3
+ 315 004d C2000000 		.4byte	.LASF5
+ 316 0051 02       		.byte	0x2
+ 317 0052 3F       		.byte	0x3f
+ 318 0053 57000000 		.4byte	0x57
+ 319 0057 02       		.uleb128 0x2
+ 320 0058 04       		.byte	0x4
+ 321 0059 05       		.byte	0x5
+ 322 005a 6A020000 		.4byte	.LASF6
+ 323 005e 02       		.uleb128 0x2
+ 324 005f 04       		.byte	0x4
+ 325 0060 07       		.byte	0x7
+ 326 0061 36010000 		.4byte	.LASF7
+ 327 0065 02       		.uleb128 0x2
+ 328 0066 08       		.byte	0x8
+ 329 0067 05       		.byte	0x5
+ 330 0068 ED010000 		.4byte	.LASF8
+ 331 006c 02       		.uleb128 0x2
+ 332 006d 08       		.byte	0x8
+ 333 006e 07       		.byte	0x7
+ 334 006f BD010000 		.4byte	.LASF9
+ 335 0073 04       		.uleb128 0x4
+ 336 0074 04       		.byte	0x4
+ 337 0075 05       		.byte	0x5
+ 338 0076 696E7400 		.ascii	"int\000"
+ 339 007a 02       		.uleb128 0x2
+ 340 007b 04       		.byte	0x4
+ 341 007c 07       		.byte	0x7
+ 342 007d B0010000 		.4byte	.LASF10
+ 343 0081 03       		.uleb128 0x3
+ 344 0082 D4010000 		.4byte	.LASF11
+ 345 0086 03       		.byte	0x3
+ 346 0087 18       		.byte	0x18
+ 347 0088 2C000000 		.4byte	0x2c
+ 348 008c 03       		.uleb128 0x3
+ 349 008d DC010000 		.4byte	.LASF12
+ 350 0091 03       		.byte	0x3
+ 351 0092 2C       		.byte	0x2c
+ 352 0093 4C000000 		.4byte	0x4c
+ 353 0097 05       		.uleb128 0x5
+ 354 0098 64020000 		.4byte	.LASF13
+ 355 009c 04       		.byte	0x4
+ 356 009d 9201     		.2byte	0x192
+ 357 009f 37000000 		.4byte	0x37
+ 358 00a3 05       		.uleb128 0x5
+ 359 00a4 9A010000 		.4byte	.LASF14
+ 360 00a8 04       		.byte	0x4
+ 361 00a9 9301     		.2byte	0x193
+ 362 00ab 45000000 		.4byte	0x45
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 10
+
+
+ 363 00af 02       		.uleb128 0x2
+ 364 00b0 04       		.byte	0x4
+ 365 00b1 04       		.byte	0x4
+ 366 00b2 F3000000 		.4byte	.LASF15
+ 367 00b6 02       		.uleb128 0x2
+ 368 00b7 08       		.byte	0x8
+ 369 00b8 04       		.byte	0x4
+ 370 00b9 62010000 		.4byte	.LASF16
+ 371 00bd 02       		.uleb128 0x2
+ 372 00be 01       		.byte	0x1
+ 373 00bf 08       		.byte	0x8
+ 374 00c0 3D020000 		.4byte	.LASF17
+ 375 00c4 02       		.uleb128 0x2
+ 376 00c5 08       		.byte	0x8
+ 377 00c6 04       		.byte	0x4
+ 378 00c7 73020000 		.4byte	.LASF18
+ 379 00cb 02       		.uleb128 0x2
+ 380 00cc 04       		.byte	0x4
+ 381 00cd 07       		.byte	0x7
+ 382 00ce E4010000 		.4byte	.LASF19
+ 383 00d2 06       		.uleb128 0x6
+ 384 00d3 04       		.byte	0x4
+ 385 00d4 D8000000 		.4byte	0xd8
+ 386 00d8 07       		.uleb128 0x7
+ 387 00d9 BD000000 		.4byte	0xbd
+ 388 00dd 08       		.uleb128 0x8
+ 389 00de 81000000 		.4byte	0x81
+ 390 00e2 09       		.uleb128 0x9
+ 391 00e3 98000000 		.4byte	.LASF36
+ 392 00e7 01       		.byte	0x1
+ 393 00e8 15       		.byte	0x15
+ 394 00e9 00000000 		.4byte	.LFB64
+ 395 00ed 10000000 		.4byte	.LFE64-.LFB64
+ 396 00f1 01       		.uleb128 0x1
+ 397 00f2 9C       		.byte	0x9c
+ 398 00f3 0A       		.uleb128 0xa
+ 399 00f4 E4000000 		.4byte	.LASF37
+ 400 00f8 01       		.byte	0x1
+ 401 00f9 1E       		.byte	0x1e
+ 402 00fa 00000000 		.4byte	.LFB65
+ 403 00fe 74000000 		.4byte	.LFE65-.LFB65
+ 404 0102 01       		.uleb128 0x1
+ 405 0103 9C       		.byte	0x9c
+ 406 0104 3C010000 		.4byte	0x13c
+ 407 0108 0B       		.uleb128 0xb
+ 408 0109 4D020000 		.4byte	.LASF20
+ 409 010d 01       		.byte	0x1
+ 410 010e 20       		.byte	0x20
+ 411 010f A3000000 		.4byte	0xa3
+ 412 0113 02       		.uleb128 0x2
+ 413 0114 91       		.byte	0x91
+ 414 0115 72       		.sleb128 -14
+ 415 0116 0B       		.uleb128 0xb
+ 416 0117 5D020000 		.4byte	.LASF21
+ 417 011b 01       		.byte	0x1
+ 418 011c 21       		.byte	0x21
+ 419 011d 3C010000 		.4byte	0x13c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 11
+
+
+ 420 0121 03       		.uleb128 0x3
+ 421 0122 91       		.byte	0x91
+ 422 0123 B07F     		.sleb128 -80
+ 423 0125 0C       		.uleb128 0xc
+ 424 0126 48000000 		.4byte	.LBB2
+ 425 012a 24000000 		.4byte	.LBE2-.LBB2
+ 426 012e 0D       		.uleb128 0xd
+ 427 012f 6900     		.ascii	"i\000"
+ 428 0131 01       		.byte	0x1
+ 429 0132 3B       		.byte	0x3b
+ 430 0133 73000000 		.4byte	0x73
+ 431 0137 02       		.uleb128 0x2
+ 432 0138 91       		.byte	0x91
+ 433 0139 74       		.sleb128 -12
+ 434 013a 00       		.byte	0
+ 435 013b 00       		.byte	0
+ 436 013c 0E       		.uleb128 0xe
+ 437 013d 97000000 		.4byte	0x97
+ 438 0141 4C010000 		.4byte	0x14c
+ 439 0145 0F       		.uleb128 0xf
+ 440 0146 CB000000 		.4byte	0xcb
+ 441 014a 3F       		.byte	0x3f
+ 442 014b 00       		.byte	0
+ 443 014c 10       		.uleb128 0x10
+ 444 014d A1010000 		.4byte	.LASF22
+ 445 0151 01       		.byte	0x1
+ 446 0152 7A       		.byte	0x7a
+ 447 0153 00000000 		.4byte	.LFB66
+ 448 0157 44000000 		.4byte	.LFE66-.LFB66
+ 449 015b 01       		.uleb128 0x1
+ 450 015c 9C       		.byte	0x9c
+ 451 015d 7E010000 		.4byte	0x17e
+ 452 0161 11       		.uleb128 0x11
+ 453 0162 DF000000 		.4byte	.LASF24
+ 454 0166 01       		.byte	0x1
+ 455 0167 7A       		.byte	0x7a
+ 456 0168 81000000 		.4byte	0x81
+ 457 016c 02       		.uleb128 0x2
+ 458 016d 91       		.byte	0x91
+ 459 016e 6F       		.sleb128 -17
+ 460 016f 0D       		.uleb128 0xd
+ 461 0170 63747200 		.ascii	"ctr\000"
+ 462 0174 01       		.byte	0x1
+ 463 0175 7B       		.byte	0x7b
+ 464 0176 A3000000 		.4byte	0xa3
+ 465 017a 02       		.uleb128 0x2
+ 466 017b 91       		.byte	0x91
+ 467 017c 76       		.sleb128 -10
+ 468 017d 00       		.byte	0
+ 469 017e 10       		.uleb128 0x10
+ 470 017f 23010000 		.4byte	.LASF23
+ 471 0183 01       		.byte	0x1
+ 472 0184 87       		.byte	0x87
+ 473 0185 00000000 		.4byte	.LFB67
+ 474 0189 40000000 		.4byte	.LFE67-.LFB67
+ 475 018d 01       		.uleb128 0x1
+ 476 018e 9C       		.byte	0x9c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 12
+
+
+ 477 018f AE010000 		.4byte	0x1ae
+ 478 0193 12       		.uleb128 0x12
+ 479 0194 7300     		.ascii	"s\000"
+ 480 0196 01       		.byte	0x1
+ 481 0197 87       		.byte	0x87
+ 482 0198 D2000000 		.4byte	0xd2
+ 483 019c 02       		.uleb128 0x2
+ 484 019d 91       		.byte	0x91
+ 485 019e 6C       		.sleb128 -20
+ 486 019f 0D       		.uleb128 0xd
+ 487 01a0 63747200 		.ascii	"ctr\000"
+ 488 01a4 01       		.byte	0x1
+ 489 01a5 88       		.byte	0x88
+ 490 01a6 A3000000 		.4byte	0xa3
+ 491 01aa 02       		.uleb128 0x2
+ 492 01ab 91       		.byte	0x91
+ 493 01ac 76       		.sleb128 -10
+ 494 01ad 00       		.byte	0
+ 495 01ae 13       		.uleb128 0x13
+ 496 01af 55010000 		.4byte	.LASF25
+ 497 01b3 05       		.byte	0x5
+ 498 01b4 1207     		.2byte	0x712
+ 499 01b6 BA010000 		.4byte	0x1ba
+ 500 01ba 08       		.uleb128 0x8
+ 501 01bb 8C000000 		.4byte	0x8c
+ 502 01bf 0E       		.uleb128 0xe
+ 503 01c0 8C000000 		.4byte	0x8c
+ 504 01c4 CF010000 		.4byte	0x1cf
+ 505 01c8 0F       		.uleb128 0xf
+ 506 01c9 CB000000 		.4byte	0xcb
+ 507 01cd 02       		.byte	0x2
+ 508 01ce 00       		.byte	0
+ 509 01cf 14       		.uleb128 0x14
+ 510 01d0 48010000 		.4byte	.LASF26
+ 511 01d4 06       		.byte	0x6
+ 512 01d5 96       		.byte	0x96
+ 513 01d6 BF010000 		.4byte	0x1bf
+ 514 01da 05       		.uleb128 0x5
+ 515 01db 03       		.byte	0x3
+ 516 01dc 00000000 		.4byte	sys_position
+ 517 01e0 14       		.uleb128 0x14
+ 518 01e1 7F020000 		.4byte	.LASF27
+ 519 01e5 06       		.byte	0x6
+ 520 01e6 97       		.byte	0x97
+ 521 01e7 BF010000 		.4byte	0x1bf
+ 522 01eb 05       		.uleb128 0x5
+ 523 01ec 03       		.byte	0x3
+ 524 01ed 00000000 		.4byte	sys_probe_position
+ 525 01f1 14       		.uleb128 0x14
+ 526 01f2 F9000000 		.4byte	.LASF28
+ 527 01f6 06       		.byte	0x6
+ 528 01f7 99       		.byte	0x99
+ 529 01f8 DD000000 		.4byte	0xdd
+ 530 01fc 05       		.uleb128 0x5
+ 531 01fd 03       		.byte	0x3
+ 532 01fe 00000000 		.4byte	sys_probe_state
+ 533 0202 14       		.uleb128 0x14
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 13
+
+
+ 534 0203 92020000 		.4byte	.LASF29
+ 535 0207 06       		.byte	0x6
+ 536 0208 9A       		.byte	0x9a
+ 537 0209 DD000000 		.4byte	0xdd
+ 538 020d 05       		.uleb128 0x5
+ 539 020e 03       		.byte	0x3
+ 540 020f 00000000 		.4byte	sys_rt_exec_state
+ 541 0213 14       		.uleb128 0x14
+ 542 0214 69010000 		.4byte	.LASF30
+ 543 0218 06       		.byte	0x6
+ 544 0219 9B       		.byte	0x9b
+ 545 021a DD000000 		.4byte	0xdd
+ 546 021e 05       		.uleb128 0x5
+ 547 021f 03       		.byte	0x3
+ 548 0220 00000000 		.4byte	sys_rt_exec_alarm
+ 549 0224 14       		.uleb128 0x14
+ 550 0225 A6000000 		.4byte	.LASF31
+ 551 0229 06       		.byte	0x6
+ 552 022a 9C       		.byte	0x9c
+ 553 022b DD000000 		.4byte	0xdd
+ 554 022f 05       		.uleb128 0x5
+ 555 0230 03       		.byte	0x3
+ 556 0231 00000000 		.4byte	sys_rt_exec_motion_override
+ 557 0235 14       		.uleb128 0x14
+ 558 0236 7B010000 		.4byte	.LASF32
+ 559 023a 06       		.byte	0x6
+ 560 023b 9D       		.byte	0x9d
+ 561 023c DD000000 		.4byte	0xdd
+ 562 0240 05       		.uleb128 0x5
+ 563 0241 03       		.byte	0x3
+ 564 0242 00000000 		.4byte	sys_rt_exec_accessory_override
+ 565 0246 00       		.byte	0
+ 566              		.section	.debug_abbrev,"",%progbits
+ 567              	.Ldebug_abbrev0:
+ 568 0000 01       		.uleb128 0x1
+ 569 0001 11       		.uleb128 0x11
+ 570 0002 01       		.byte	0x1
+ 571 0003 25       		.uleb128 0x25
+ 572 0004 0E       		.uleb128 0xe
+ 573 0005 13       		.uleb128 0x13
+ 574 0006 0B       		.uleb128 0xb
+ 575 0007 03       		.uleb128 0x3
+ 576 0008 0E       		.uleb128 0xe
+ 577 0009 1B       		.uleb128 0x1b
+ 578 000a 0E       		.uleb128 0xe
+ 579 000b 55       		.uleb128 0x55
+ 580 000c 17       		.uleb128 0x17
+ 581 000d 11       		.uleb128 0x11
+ 582 000e 01       		.uleb128 0x1
+ 583 000f 10       		.uleb128 0x10
+ 584 0010 17       		.uleb128 0x17
+ 585 0011 00       		.byte	0
+ 586 0012 00       		.byte	0
+ 587 0013 02       		.uleb128 0x2
+ 588 0014 24       		.uleb128 0x24
+ 589 0015 00       		.byte	0
+ 590 0016 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 14
+
+
+ 591 0017 0B       		.uleb128 0xb
+ 592 0018 3E       		.uleb128 0x3e
+ 593 0019 0B       		.uleb128 0xb
+ 594 001a 03       		.uleb128 0x3
+ 595 001b 0E       		.uleb128 0xe
+ 596 001c 00       		.byte	0
+ 597 001d 00       		.byte	0
+ 598 001e 03       		.uleb128 0x3
+ 599 001f 16       		.uleb128 0x16
+ 600 0020 00       		.byte	0
+ 601 0021 03       		.uleb128 0x3
+ 602 0022 0E       		.uleb128 0xe
+ 603 0023 3A       		.uleb128 0x3a
+ 604 0024 0B       		.uleb128 0xb
+ 605 0025 3B       		.uleb128 0x3b
+ 606 0026 0B       		.uleb128 0xb
+ 607 0027 49       		.uleb128 0x49
+ 608 0028 13       		.uleb128 0x13
+ 609 0029 00       		.byte	0
+ 610 002a 00       		.byte	0
+ 611 002b 04       		.uleb128 0x4
+ 612 002c 24       		.uleb128 0x24
+ 613 002d 00       		.byte	0
+ 614 002e 0B       		.uleb128 0xb
+ 615 002f 0B       		.uleb128 0xb
+ 616 0030 3E       		.uleb128 0x3e
+ 617 0031 0B       		.uleb128 0xb
+ 618 0032 03       		.uleb128 0x3
+ 619 0033 08       		.uleb128 0x8
+ 620 0034 00       		.byte	0
+ 621 0035 00       		.byte	0
+ 622 0036 05       		.uleb128 0x5
+ 623 0037 16       		.uleb128 0x16
+ 624 0038 00       		.byte	0
+ 625 0039 03       		.uleb128 0x3
+ 626 003a 0E       		.uleb128 0xe
+ 627 003b 3A       		.uleb128 0x3a
+ 628 003c 0B       		.uleb128 0xb
+ 629 003d 3B       		.uleb128 0x3b
+ 630 003e 05       		.uleb128 0x5
+ 631 003f 49       		.uleb128 0x49
+ 632 0040 13       		.uleb128 0x13
+ 633 0041 00       		.byte	0
+ 634 0042 00       		.byte	0
+ 635 0043 06       		.uleb128 0x6
+ 636 0044 0F       		.uleb128 0xf
+ 637 0045 00       		.byte	0
+ 638 0046 0B       		.uleb128 0xb
+ 639 0047 0B       		.uleb128 0xb
+ 640 0048 49       		.uleb128 0x49
+ 641 0049 13       		.uleb128 0x13
+ 642 004a 00       		.byte	0
+ 643 004b 00       		.byte	0
+ 644 004c 07       		.uleb128 0x7
+ 645 004d 26       		.uleb128 0x26
+ 646 004e 00       		.byte	0
+ 647 004f 49       		.uleb128 0x49
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 15
+
+
+ 648 0050 13       		.uleb128 0x13
+ 649 0051 00       		.byte	0
+ 650 0052 00       		.byte	0
+ 651 0053 08       		.uleb128 0x8
+ 652 0054 35       		.uleb128 0x35
+ 653 0055 00       		.byte	0
+ 654 0056 49       		.uleb128 0x49
+ 655 0057 13       		.uleb128 0x13
+ 656 0058 00       		.byte	0
+ 657 0059 00       		.byte	0
+ 658 005a 09       		.uleb128 0x9
+ 659 005b 2E       		.uleb128 0x2e
+ 660 005c 00       		.byte	0
+ 661 005d 3F       		.uleb128 0x3f
+ 662 005e 19       		.uleb128 0x19
+ 663 005f 03       		.uleb128 0x3
+ 664 0060 0E       		.uleb128 0xe
+ 665 0061 3A       		.uleb128 0x3a
+ 666 0062 0B       		.uleb128 0xb
+ 667 0063 3B       		.uleb128 0x3b
+ 668 0064 0B       		.uleb128 0xb
+ 669 0065 11       		.uleb128 0x11
+ 670 0066 01       		.uleb128 0x1
+ 671 0067 12       		.uleb128 0x12
+ 672 0068 06       		.uleb128 0x6
+ 673 0069 40       		.uleb128 0x40
+ 674 006a 18       		.uleb128 0x18
+ 675 006b 9642     		.uleb128 0x2116
+ 676 006d 19       		.uleb128 0x19
+ 677 006e 00       		.byte	0
+ 678 006f 00       		.byte	0
+ 679 0070 0A       		.uleb128 0xa
+ 680 0071 2E       		.uleb128 0x2e
+ 681 0072 01       		.byte	0x1
+ 682 0073 3F       		.uleb128 0x3f
+ 683 0074 19       		.uleb128 0x19
+ 684 0075 03       		.uleb128 0x3
+ 685 0076 0E       		.uleb128 0xe
+ 686 0077 3A       		.uleb128 0x3a
+ 687 0078 0B       		.uleb128 0xb
+ 688 0079 3B       		.uleb128 0x3b
+ 689 007a 0B       		.uleb128 0xb
+ 690 007b 11       		.uleb128 0x11
+ 691 007c 01       		.uleb128 0x1
+ 692 007d 12       		.uleb128 0x12
+ 693 007e 06       		.uleb128 0x6
+ 694 007f 40       		.uleb128 0x40
+ 695 0080 18       		.uleb128 0x18
+ 696 0081 9642     		.uleb128 0x2116
+ 697 0083 19       		.uleb128 0x19
+ 698 0084 01       		.uleb128 0x1
+ 699 0085 13       		.uleb128 0x13
+ 700 0086 00       		.byte	0
+ 701 0087 00       		.byte	0
+ 702 0088 0B       		.uleb128 0xb
+ 703 0089 34       		.uleb128 0x34
+ 704 008a 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 16
+
+
+ 705 008b 03       		.uleb128 0x3
+ 706 008c 0E       		.uleb128 0xe
+ 707 008d 3A       		.uleb128 0x3a
+ 708 008e 0B       		.uleb128 0xb
+ 709 008f 3B       		.uleb128 0x3b
+ 710 0090 0B       		.uleb128 0xb
+ 711 0091 49       		.uleb128 0x49
+ 712 0092 13       		.uleb128 0x13
+ 713 0093 02       		.uleb128 0x2
+ 714 0094 18       		.uleb128 0x18
+ 715 0095 00       		.byte	0
+ 716 0096 00       		.byte	0
+ 717 0097 0C       		.uleb128 0xc
+ 718 0098 0B       		.uleb128 0xb
+ 719 0099 01       		.byte	0x1
+ 720 009a 11       		.uleb128 0x11
+ 721 009b 01       		.uleb128 0x1
+ 722 009c 12       		.uleb128 0x12
+ 723 009d 06       		.uleb128 0x6
+ 724 009e 00       		.byte	0
+ 725 009f 00       		.byte	0
+ 726 00a0 0D       		.uleb128 0xd
+ 727 00a1 34       		.uleb128 0x34
+ 728 00a2 00       		.byte	0
+ 729 00a3 03       		.uleb128 0x3
+ 730 00a4 08       		.uleb128 0x8
+ 731 00a5 3A       		.uleb128 0x3a
+ 732 00a6 0B       		.uleb128 0xb
+ 733 00a7 3B       		.uleb128 0x3b
+ 734 00a8 0B       		.uleb128 0xb
+ 735 00a9 49       		.uleb128 0x49
+ 736 00aa 13       		.uleb128 0x13
+ 737 00ab 02       		.uleb128 0x2
+ 738 00ac 18       		.uleb128 0x18
+ 739 00ad 00       		.byte	0
+ 740 00ae 00       		.byte	0
+ 741 00af 0E       		.uleb128 0xe
+ 742 00b0 01       		.uleb128 0x1
+ 743 00b1 01       		.byte	0x1
+ 744 00b2 49       		.uleb128 0x49
+ 745 00b3 13       		.uleb128 0x13
+ 746 00b4 01       		.uleb128 0x1
+ 747 00b5 13       		.uleb128 0x13
+ 748 00b6 00       		.byte	0
+ 749 00b7 00       		.byte	0
+ 750 00b8 0F       		.uleb128 0xf
+ 751 00b9 21       		.uleb128 0x21
+ 752 00ba 00       		.byte	0
+ 753 00bb 49       		.uleb128 0x49
+ 754 00bc 13       		.uleb128 0x13
+ 755 00bd 2F       		.uleb128 0x2f
+ 756 00be 0B       		.uleb128 0xb
+ 757 00bf 00       		.byte	0
+ 758 00c0 00       		.byte	0
+ 759 00c1 10       		.uleb128 0x10
+ 760 00c2 2E       		.uleb128 0x2e
+ 761 00c3 01       		.byte	0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 17
+
+
+ 762 00c4 3F       		.uleb128 0x3f
+ 763 00c5 19       		.uleb128 0x19
+ 764 00c6 03       		.uleb128 0x3
+ 765 00c7 0E       		.uleb128 0xe
+ 766 00c8 3A       		.uleb128 0x3a
+ 767 00c9 0B       		.uleb128 0xb
+ 768 00ca 3B       		.uleb128 0x3b
+ 769 00cb 0B       		.uleb128 0xb
+ 770 00cc 27       		.uleb128 0x27
+ 771 00cd 19       		.uleb128 0x19
+ 772 00ce 11       		.uleb128 0x11
+ 773 00cf 01       		.uleb128 0x1
+ 774 00d0 12       		.uleb128 0x12
+ 775 00d1 06       		.uleb128 0x6
+ 776 00d2 40       		.uleb128 0x40
+ 777 00d3 18       		.uleb128 0x18
+ 778 00d4 9642     		.uleb128 0x2116
+ 779 00d6 19       		.uleb128 0x19
+ 780 00d7 01       		.uleb128 0x1
+ 781 00d8 13       		.uleb128 0x13
+ 782 00d9 00       		.byte	0
+ 783 00da 00       		.byte	0
+ 784 00db 11       		.uleb128 0x11
+ 785 00dc 05       		.uleb128 0x5
+ 786 00dd 00       		.byte	0
+ 787 00de 03       		.uleb128 0x3
+ 788 00df 0E       		.uleb128 0xe
+ 789 00e0 3A       		.uleb128 0x3a
+ 790 00e1 0B       		.uleb128 0xb
+ 791 00e2 3B       		.uleb128 0x3b
+ 792 00e3 0B       		.uleb128 0xb
+ 793 00e4 49       		.uleb128 0x49
+ 794 00e5 13       		.uleb128 0x13
+ 795 00e6 02       		.uleb128 0x2
+ 796 00e7 18       		.uleb128 0x18
+ 797 00e8 00       		.byte	0
+ 798 00e9 00       		.byte	0
+ 799 00ea 12       		.uleb128 0x12
+ 800 00eb 05       		.uleb128 0x5
+ 801 00ec 00       		.byte	0
+ 802 00ed 03       		.uleb128 0x3
+ 803 00ee 08       		.uleb128 0x8
+ 804 00ef 3A       		.uleb128 0x3a
+ 805 00f0 0B       		.uleb128 0xb
+ 806 00f1 3B       		.uleb128 0x3b
+ 807 00f2 0B       		.uleb128 0xb
+ 808 00f3 49       		.uleb128 0x49
+ 809 00f4 13       		.uleb128 0x13
+ 810 00f5 02       		.uleb128 0x2
+ 811 00f6 18       		.uleb128 0x18
+ 812 00f7 00       		.byte	0
+ 813 00f8 00       		.byte	0
+ 814 00f9 13       		.uleb128 0x13
+ 815 00fa 34       		.uleb128 0x34
+ 816 00fb 00       		.byte	0
+ 817 00fc 03       		.uleb128 0x3
+ 818 00fd 0E       		.uleb128 0xe
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 18
+
+
+ 819 00fe 3A       		.uleb128 0x3a
+ 820 00ff 0B       		.uleb128 0xb
+ 821 0100 3B       		.uleb128 0x3b
+ 822 0101 05       		.uleb128 0x5
+ 823 0102 49       		.uleb128 0x49
+ 824 0103 13       		.uleb128 0x13
+ 825 0104 3F       		.uleb128 0x3f
+ 826 0105 19       		.uleb128 0x19
+ 827 0106 3C       		.uleb128 0x3c
+ 828 0107 19       		.uleb128 0x19
+ 829 0108 00       		.byte	0
+ 830 0109 00       		.byte	0
+ 831 010a 14       		.uleb128 0x14
+ 832 010b 34       		.uleb128 0x34
+ 833 010c 00       		.byte	0
+ 834 010d 03       		.uleb128 0x3
+ 835 010e 0E       		.uleb128 0xe
+ 836 010f 3A       		.uleb128 0x3a
+ 837 0110 0B       		.uleb128 0xb
+ 838 0111 3B       		.uleb128 0x3b
+ 839 0112 0B       		.uleb128 0xb
+ 840 0113 49       		.uleb128 0x49
+ 841 0114 13       		.uleb128 0x13
+ 842 0115 3F       		.uleb128 0x3f
+ 843 0116 19       		.uleb128 0x19
+ 844 0117 02       		.uleb128 0x2
+ 845 0118 18       		.uleb128 0x18
+ 846 0119 00       		.byte	0
+ 847 011a 00       		.byte	0
+ 848 011b 00       		.byte	0
+ 849              		.section	.debug_aranges,"",%progbits
+ 850 0000 34000000 		.4byte	0x34
+ 851 0004 0200     		.2byte	0x2
+ 852 0006 00000000 		.4byte	.Ldebug_info0
+ 853 000a 04       		.byte	0x4
+ 854 000b 00       		.byte	0
+ 855 000c 0000     		.2byte	0
+ 856 000e 0000     		.2byte	0
+ 857 0010 00000000 		.4byte	.LFB64
+ 858 0014 10000000 		.4byte	.LFE64-.LFB64
+ 859 0018 00000000 		.4byte	.LFB65
+ 860 001c 74000000 		.4byte	.LFE65-.LFB65
+ 861 0020 00000000 		.4byte	.LFB66
+ 862 0024 44000000 		.4byte	.LFE66-.LFB66
+ 863 0028 00000000 		.4byte	.LFB67
+ 864 002c 40000000 		.4byte	.LFE67-.LFB67
+ 865 0030 00000000 		.4byte	0
+ 866 0034 00000000 		.4byte	0
+ 867              		.section	.debug_ranges,"",%progbits
+ 868              	.Ldebug_ranges0:
+ 869 0000 00000000 		.4byte	.LFB64
+ 870 0004 10000000 		.4byte	.LFE64
+ 871 0008 00000000 		.4byte	.LFB65
+ 872 000c 74000000 		.4byte	.LFE65
+ 873 0010 00000000 		.4byte	.LFB66
+ 874 0014 44000000 		.4byte	.LFE66
+ 875 0018 00000000 		.4byte	.LFB67
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 19
+
+
+ 876 001c 40000000 		.4byte	.LFE67
+ 877 0020 00000000 		.4byte	0
+ 878 0024 00000000 		.4byte	0
+ 879              		.section	.debug_line,"",%progbits
+ 880              	.Ldebug_line0:
+ 881 0000 CE010000 		.section	.debug_str,"MS",%progbits,1
+ 881      02005C01 
+ 881      00000201 
+ 881      FB0E0D00 
+ 881      01010101 
+ 882              	.LASF4:
+ 883 0000 5F5F7569 		.ascii	"__uint8_t\000"
+ 883      6E74385F 
+ 883      7400
+ 884              	.LASF33:
+ 885 000a 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 885      43313120 
+ 885      352E342E 
+ 885      31203230 
+ 885      31363036 
+ 886 003d 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 886      20726576 
+ 886      6973696F 
+ 886      6E203233 
+ 886      37373135 
+ 887 0070 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 887      66756E63 
+ 887      74696F6E 
+ 887      2D736563 
+ 887      74696F6E 
+ 888              	.LASF36:
+ 889 0098 7573625F 		.ascii	"usb_uart_init\000"
+ 889      75617274 
+ 889      5F696E69 
+ 889      7400
+ 890              	.LASF31:
+ 891 00a6 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 891      72745F65 
+ 891      7865635F 
+ 891      6D6F7469 
+ 891      6F6E5F6F 
+ 892              	.LASF5:
+ 893 00c2 5F5F696E 		.ascii	"__int32_t\000"
+ 893      7433325F 
+ 893      7400
+ 894              	.LASF3:
+ 895 00cc 73686F72 		.ascii	"short unsigned int\000"
+ 895      7420756E 
+ 895      7369676E 
+ 895      65642069 
+ 895      6E7400
+ 896              	.LASF24:
+ 897 00df 64617461 		.ascii	"data\000"
+ 897      00
+ 898              	.LASF37:
+ 899 00e4 7573625F 		.ascii	"usb_uart_check\000"
+ 899      75617274 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 20
+
+
+ 899      5F636865 
+ 899      636B00
+ 900              	.LASF15:
+ 901 00f3 666C6F61 		.ascii	"float\000"
+ 901      7400
+ 902              	.LASF28:
+ 903 00f9 7379735F 		.ascii	"sys_probe_state\000"
+ 903      70726F62 
+ 903      655F7374 
+ 903      61746500 
+ 904              	.LASF0:
+ 905 0109 7369676E 		.ascii	"signed char\000"
+ 905      65642063 
+ 905      68617200 
+ 906              	.LASF1:
+ 907 0115 756E7369 		.ascii	"unsigned char\000"
+ 907      676E6564 
+ 907      20636861 
+ 907      7200
+ 908              	.LASF23:
+ 909 0123 7573625F 		.ascii	"usb_uart_PutString\000"
+ 909      75617274 
+ 909      5F507574 
+ 909      53747269 
+ 909      6E6700
+ 910              	.LASF7:
+ 911 0136 6C6F6E67 		.ascii	"long unsigned int\000"
+ 911      20756E73 
+ 911      69676E65 
+ 911      6420696E 
+ 911      7400
+ 912              	.LASF26:
+ 913 0148 7379735F 		.ascii	"sys_position\000"
+ 913      706F7369 
+ 913      74696F6E 
+ 913      00
+ 914              	.LASF25:
+ 915 0155 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 915      52784275 
+ 915      66666572 
+ 915      00
+ 916              	.LASF16:
+ 917 0162 646F7562 		.ascii	"double\000"
+ 917      6C6500
+ 918              	.LASF30:
+ 919 0169 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 919      72745F65 
+ 919      7865635F 
+ 919      616C6172 
+ 919      6D00
+ 920              	.LASF32:
+ 921 017b 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 921      72745F65 
+ 921      7865635F 
+ 921      61636365 
+ 921      73736F72 
+ 922              	.LASF14:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 21
+
+
+ 923 019a 75696E74 		.ascii	"uint16\000"
+ 923      313600
+ 924              	.LASF22:
+ 925 01a1 7573625F 		.ascii	"usb_uart_write\000"
+ 925      75617274 
+ 925      5F777269 
+ 925      746500
+ 926              	.LASF10:
+ 927 01b0 756E7369 		.ascii	"unsigned int\000"
+ 927      676E6564 
+ 927      20696E74 
+ 927      00
+ 928              	.LASF9:
+ 929 01bd 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 929      206C6F6E 
+ 929      6720756E 
+ 929      7369676E 
+ 929      65642069 
+ 930              	.LASF11:
+ 931 01d4 75696E74 		.ascii	"uint8_t\000"
+ 931      385F7400 
+ 932              	.LASF12:
+ 933 01dc 696E7433 		.ascii	"int32_t\000"
+ 933      325F7400 
+ 934              	.LASF19:
+ 935 01e4 73697A65 		.ascii	"sizetype\000"
+ 935      74797065 
+ 935      00
+ 936              	.LASF8:
+ 937 01ed 6C6F6E67 		.ascii	"long long int\000"
+ 937      206C6F6E 
+ 937      6720696E 
+ 937      7400
+ 938              	.LASF35:
+ 939 01fb 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 939      73657273 
+ 939      5C626172 
+ 939      746F5C44 
+ 939      726F7062 
+ 940 0228 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 940      5553425F 
+ 940      4E617469 
+ 940      76652E63 
+ 940      7964736E 
+ 941              	.LASF17:
+ 942 023d 63686172 		.ascii	"char\000"
+ 942      00
+ 943              	.LASF34:
+ 944 0242 7573625F 		.ascii	"usb_uart.c\000"
+ 944      75617274 
+ 944      2E6300
+ 945              	.LASF20:
+ 946 024d 636F756E 		.ascii	"count\000"
+ 946      7400
+ 947              	.LASF2:
+ 948 0253 73686F72 		.ascii	"short int\000"
+ 948      7420696E 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc8rv2Lh.s 			page 22
+
+
+ 948      7400
+ 949              	.LASF21:
+ 950 025d 62756666 		.ascii	"buffer\000"
+ 950      657200
+ 951              	.LASF13:
+ 952 0264 75696E74 		.ascii	"uint8\000"
+ 952      3800
+ 953              	.LASF6:
+ 954 026a 6C6F6E67 		.ascii	"long int\000"
+ 954      20696E74 
+ 954      00
+ 955              	.LASF18:
+ 956 0273 6C6F6E67 		.ascii	"long double\000"
+ 956      20646F75 
+ 956      626C6500 
+ 957              	.LASF27:
+ 958 027f 7379735F 		.ascii	"sys_probe_position\000"
+ 958      70726F62 
+ 958      655F706F 
+ 958      73697469 
+ 958      6F6E00
+ 959              	.LASF29:
+ 960 0292 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 960      72745F65 
+ 960      7865635F 
+ 960      73746174 
+ 960      6500
+ 961              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

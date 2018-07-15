@@ -1,0 +1,2399 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"print.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.section	.text.printString,"ax",%progbits
+  27              		.align	2
+  28              		.global	printString
+  29              		.thumb
+  30              		.thumb_func
+  31              		.type	printString, %function
+  32              	printString:
+  33              	.LFB64:
+  34              		.file 1 "print.c"
+   1:print.c       **** /*
+   2:print.c       ****   print.c - Functions for formatting output strings
+   3:print.c       ****   Part of Grbl
+   4:print.c       **** 
+   5:print.c       ****   Copyright (c) 2011-2015 Sungeun K. Jeon
+   6:print.c       ****   Copyright (c) 2009-2011 Simen Svale Skogsrud
+   7:print.c       ****       Updated For PSOC BJD 2017
+   8:print.c       **** 
+   9:print.c       ****   Grbl is free software: you can redistribute it and/or modify
+  10:print.c       ****   it under the terms of the GNU General Public License as published by
+  11:print.c       ****   the Free Software Foundation, either version 3 of the License, or
+  12:print.c       ****   (at your option) any later version.
+  13:print.c       **** 
+  14:print.c       ****   Grbl is distributed in the hope that it will be useful,
+  15:print.c       ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:print.c       ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:print.c       ****   GNU General Public License for more details.
+  18:print.c       **** 
+  19:print.c       ****   You should have received a copy of the GNU General Public License
+  20:print.c       ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  21:print.c       **** */
+  22:print.c       **** #include "grbl.h"
+  23:print.c       **** 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 2
+
+
+  24:print.c       **** 
+  25:print.c       **** 
+  26:print.c       **** //PSOC Map these functions to PSoC
+  27:print.c       **** void printString(const char *s)
+  28:print.c       **** { 
+  35              		.loc 1 28 0
+  36              		.cfi_startproc
+  37              		@ args = 0, pretend = 0, frame = 8
+  38              		@ frame_needed = 1, uses_anonymous_args = 0
+  39 0000 80B5     		push	{r7, lr}
+  40              		.cfi_def_cfa_offset 8
+  41              		.cfi_offset 7, -8
+  42              		.cfi_offset 14, -4
+  43 0002 82B0     		sub	sp, sp, #8
+  44              		.cfi_def_cfa_offset 16
+  45 0004 00AF     		add	r7, sp, #0
+  46              		.cfi_def_cfa_register 7
+  47 0006 7860     		str	r0, [r7, #4]
+  29:print.c       ****   usb_uart_PutString(s);
+  48              		.loc 1 29 0
+  49 0008 7868     		ldr	r0, [r7, #4]
+  50 000a FFF7FEFF 		bl	usb_uart_PutString
+  30:print.c       **** }
+  51              		.loc 1 30 0
+  52 000e 00BF     		nop
+  53 0010 0837     		adds	r7, r7, #8
+  54              		.cfi_def_cfa_offset 8
+  55 0012 BD46     		mov	sp, r7
+  56              		.cfi_def_cfa_register 13
+  57              		@ sp needed
+  58 0014 80BD     		pop	{r7, pc}
+  59              		.cfi_endproc
+  60              	.LFE64:
+  61              		.size	printString, .-printString
+  62 0016 00BF     		.section	.text.printPgmString,"ax",%progbits
+  63              		.align	2
+  64              		.global	printPgmString
+  65              		.thumb
+  66              		.thumb_func
+  67              		.type	printPgmString, %function
+  68              	printPgmString:
+  69              	.LFB65:
+  31:print.c       **** 
+  32:print.c       **** // Print a string stored in PGM-memory
+  33:print.c       **** void printPgmString(const char *s)
+  34:print.c       **** { 
+  70              		.loc 1 34 0
+  71              		.cfi_startproc
+  72              		@ args = 0, pretend = 0, frame = 8
+  73              		@ frame_needed = 1, uses_anonymous_args = 0
+  74 0000 80B5     		push	{r7, lr}
+  75              		.cfi_def_cfa_offset 8
+  76              		.cfi_offset 7, -8
+  77              		.cfi_offset 14, -4
+  78 0002 82B0     		sub	sp, sp, #8
+  79              		.cfi_def_cfa_offset 16
+  80 0004 00AF     		add	r7, sp, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 3
+
+
+  81              		.cfi_def_cfa_register 7
+  82 0006 7860     		str	r0, [r7, #4]
+  35:print.c       ****   usb_uart_PutString(s);
+  83              		.loc 1 35 0
+  84 0008 7868     		ldr	r0, [r7, #4]
+  85 000a FFF7FEFF 		bl	usb_uart_PutString
+  36:print.c       **** }
+  86              		.loc 1 36 0
+  87 000e 00BF     		nop
+  88 0010 0837     		adds	r7, r7, #8
+  89              		.cfi_def_cfa_offset 8
+  90 0012 BD46     		mov	sp, r7
+  91              		.cfi_def_cfa_register 13
+  92              		@ sp needed
+  93 0014 80BD     		pop	{r7, pc}
+  94              		.cfi_endproc
+  95              	.LFE65:
+  96              		.size	printPgmString, .-printPgmString
+  97 0016 00BF     		.section	.text.print_uint8_base10,"ax",%progbits
+  98              		.align	2
+  99              		.global	print_uint8_base10
+ 100              		.thumb
+ 101              		.thumb_func
+ 102              		.type	print_uint8_base10, %function
+ 103              	print_uint8_base10:
+ 104              	.LFB66:
+  37:print.c       **** 
+  38:print.c       **** // Prints an uint8 variable in base 10.
+  39:print.c       **** void print_uint8_base10(uint8_t n)
+  40:print.c       **** {
+ 105              		.loc 1 40 0
+ 106              		.cfi_startproc
+ 107              		@ args = 0, pretend = 0, frame = 16
+ 108              		@ frame_needed = 1, uses_anonymous_args = 0
+ 109 0000 80B5     		push	{r7, lr}
+ 110              		.cfi_def_cfa_offset 8
+ 111              		.cfi_offset 7, -8
+ 112              		.cfi_offset 14, -4
+ 113 0002 84B0     		sub	sp, sp, #16
+ 114              		.cfi_def_cfa_offset 24
+ 115 0004 00AF     		add	r7, sp, #0
+ 116              		.cfi_def_cfa_register 7
+ 117 0006 0346     		mov	r3, r0
+ 118 0008 FB71     		strb	r3, [r7, #7]
+  41:print.c       ****   uint8_t digit_a = 0;
+ 119              		.loc 1 41 0
+ 120 000a 0023     		movs	r3, #0
+ 121 000c FB73     		strb	r3, [r7, #15]
+  42:print.c       ****   uint8_t digit_b = 0;
+ 122              		.loc 1 42 0
+ 123 000e 0023     		movs	r3, #0
+ 124 0010 BB73     		strb	r3, [r7, #14]
+  43:print.c       ****   if (n >= 100) { // 100-255
+ 125              		.loc 1 43 0
+ 126 0012 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 127 0014 632B     		cmp	r3, #99
+ 128 0016 12D9     		bls	.L4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 4
+
+
+  44:print.c       ****     digit_a = '0' + n % 10;
+ 129              		.loc 1 44 0
+ 130 0018 FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 131 001a 204B     		ldr	r3, .L9
+ 132 001c A3FB0213 		umull	r1, r3, r3, r2
+ 133 0020 D908     		lsrs	r1, r3, #3
+ 134 0022 0B46     		mov	r3, r1
+ 135 0024 9B00     		lsls	r3, r3, #2
+ 136 0026 0B44     		add	r3, r3, r1
+ 137 0028 5B00     		lsls	r3, r3, #1
+ 138 002a D31A     		subs	r3, r2, r3
+ 139 002c DBB2     		uxtb	r3, r3
+ 140 002e 3033     		adds	r3, r3, #48
+ 141 0030 FB73     		strb	r3, [r7, #15]
+  45:print.c       ****     n /= 10;
+ 142              		.loc 1 45 0
+ 143 0032 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 144 0034 194A     		ldr	r2, .L9
+ 145 0036 A2FB0323 		umull	r2, r3, r2, r3
+ 146 003a DB08     		lsrs	r3, r3, #3
+ 147 003c FB71     		strb	r3, [r7, #7]
+ 148              	.L4:
+  46:print.c       ****   }
+  47:print.c       ****   if (n >= 10) { // 10-99
+ 149              		.loc 1 47 0
+ 150 003e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 151 0040 092B     		cmp	r3, #9
+ 152 0042 12D9     		bls	.L5
+  48:print.c       ****     digit_b = '0' + n % 10;
+ 153              		.loc 1 48 0
+ 154 0044 FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 155 0046 154B     		ldr	r3, .L9
+ 156 0048 A3FB0213 		umull	r1, r3, r3, r2
+ 157 004c D908     		lsrs	r1, r3, #3
+ 158 004e 0B46     		mov	r3, r1
+ 159 0050 9B00     		lsls	r3, r3, #2
+ 160 0052 0B44     		add	r3, r3, r1
+ 161 0054 5B00     		lsls	r3, r3, #1
+ 162 0056 D31A     		subs	r3, r2, r3
+ 163 0058 DBB2     		uxtb	r3, r3
+ 164 005a 3033     		adds	r3, r3, #48
+ 165 005c BB73     		strb	r3, [r7, #14]
+  49:print.c       ****     n /= 10;
+ 166              		.loc 1 49 0
+ 167 005e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 168 0060 0E4A     		ldr	r2, .L9
+ 169 0062 A2FB0323 		umull	r2, r3, r2, r3
+ 170 0066 DB08     		lsrs	r3, r3, #3
+ 171 0068 FB71     		strb	r3, [r7, #7]
+ 172              	.L5:
+  50:print.c       ****   }
+  51:print.c       ****   serial_write('0' + n);
+ 173              		.loc 1 51 0
+ 174 006a FB79     		ldrb	r3, [r7, #7]
+ 175 006c 3033     		adds	r3, r3, #48
+ 176 006e DBB2     		uxtb	r3, r3
+ 177 0070 1846     		mov	r0, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 5
+
+
+ 178 0072 FFF7FEFF 		bl	serial_write
+  52:print.c       ****   if (digit_b) { serial_write(digit_b); }
+ 179              		.loc 1 52 0
+ 180 0076 BB7B     		ldrb	r3, [r7, #14]	@ zero_extendqisi2
+ 181 0078 002B     		cmp	r3, #0
+ 182 007a 03D0     		beq	.L6
+ 183              		.loc 1 52 0 is_stmt 0 discriminator 1
+ 184 007c BB7B     		ldrb	r3, [r7, #14]	@ zero_extendqisi2
+ 185 007e 1846     		mov	r0, r3
+ 186 0080 FFF7FEFF 		bl	serial_write
+ 187              	.L6:
+  53:print.c       ****   if (digit_a) { serial_write(digit_a); }
+ 188              		.loc 1 53 0 is_stmt 1
+ 189 0084 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 190 0086 002B     		cmp	r3, #0
+ 191 0088 03D0     		beq	.L8
+ 192              		.loc 1 53 0 is_stmt 0 discriminator 1
+ 193 008a FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 194 008c 1846     		mov	r0, r3
+ 195 008e FFF7FEFF 		bl	serial_write
+ 196              	.L8:
+  54:print.c       **** }
+ 197              		.loc 1 54 0 is_stmt 1
+ 198 0092 00BF     		nop
+ 199 0094 1037     		adds	r7, r7, #16
+ 200              		.cfi_def_cfa_offset 8
+ 201 0096 BD46     		mov	sp, r7
+ 202              		.cfi_def_cfa_register 13
+ 203              		@ sp needed
+ 204 0098 80BD     		pop	{r7, pc}
+ 205              	.L10:
+ 206 009a 00BF     		.align	2
+ 207              	.L9:
+ 208 009c CDCCCCCC 		.word	-858993459
+ 209              		.cfi_endproc
+ 210              	.LFE66:
+ 211              		.size	print_uint8_base10, .-print_uint8_base10
+ 212              		.section	.text.print_uint8_base2_ndigit,"ax",%progbits
+ 213              		.align	2
+ 214              		.global	print_uint8_base2_ndigit
+ 215              		.thumb
+ 216              		.thumb_func
+ 217              		.type	print_uint8_base2_ndigit, %function
+ 218              	print_uint8_base2_ndigit:
+ 219              	.LFB67:
+  55:print.c       **** 
+  56:print.c       **** 
+  57:print.c       **** // Prints an uint8 variable in base 2 with desired number of desired digits.
+  58:print.c       **** void print_uint8_base2_ndigit(uint8_t n, uint8_t digits) {
+ 220              		.loc 1 58 0
+ 221              		.cfi_startproc
+ 222              		@ args = 0, pretend = 0, frame = 24
+ 223              		@ frame_needed = 1, uses_anonymous_args = 0
+ 224 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 225              		.cfi_def_cfa_offset 24
+ 226              		.cfi_offset 4, -24
+ 227              		.cfi_offset 5, -20
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 6
+
+
+ 228              		.cfi_offset 6, -16
+ 229              		.cfi_offset 7, -12
+ 230              		.cfi_offset 8, -8
+ 231              		.cfi_offset 14, -4
+ 232 0004 86B0     		sub	sp, sp, #24
+ 233              		.cfi_def_cfa_offset 48
+ 234 0006 00AF     		add	r7, sp, #0
+ 235              		.cfi_def_cfa_register 7
+ 236 0008 0246     		mov	r2, r0
+ 237 000a FA71     		strb	r2, [r7, #7]
+ 238 000c 0A46     		mov	r2, r1
+ 239 000e BA71     		strb	r2, [r7, #6]
+ 240              		.loc 1 58 0
+ 241 0010 6A46     		mov	r2, sp
+ 242 0012 9046     		mov	r8, r2
+  59:print.c       ****   unsigned char buf[digits];
+ 243              		.loc 1 59 0
+ 244 0014 B879     		ldrb	r0, [r7, #6]	@ zero_extendqisi2
+ 245 0016 0246     		mov	r2, r0
+ 246 0018 013A     		subs	r2, r2, #1
+ 247 001a 3A61     		str	r2, [r7, #16]
+ 248 001c C1B2     		uxtb	r1, r0
+ 249 001e 4FF00002 		mov	r2, #0
+ 250 0022 D600     		lsls	r6, r2, #3
+ 251 0024 46EA5176 		orr	r6, r6, r1, lsr #29
+ 252 0028 CD00     		lsls	r5, r1, #3
+ 253 002a C1B2     		uxtb	r1, r0
+ 254 002c 4FF00002 		mov	r2, #0
+ 255 0030 D400     		lsls	r4, r2, #3
+ 256 0032 44EA5174 		orr	r4, r4, r1, lsr #29
+ 257 0036 CB00     		lsls	r3, r1, #3
+ 258 0038 0346     		mov	r3, r0
+ 259 003a 0733     		adds	r3, r3, #7
+ 260 003c DB08     		lsrs	r3, r3, #3
+ 261 003e DB00     		lsls	r3, r3, #3
+ 262 0040 ADEB030D 		sub	sp, sp, r3
+ 263 0044 6B46     		mov	r3, sp
+ 264 0046 0033     		adds	r3, r3, #0
+ 265 0048 FB60     		str	r3, [r7, #12]
+  60:print.c       ****   uint8_t i = 0;
+ 266              		.loc 1 60 0
+ 267 004a 0023     		movs	r3, #0
+ 268 004c FB75     		strb	r3, [r7, #23]
+  61:print.c       **** 
+  62:print.c       ****   for (; i < digits; i++) {
+ 269              		.loc 1 62 0
+ 270 004e 0CE0     		b	.L12
+ 271              	.L13:
+  63:print.c       ****       buf[i] = n % 2 ;
+ 272              		.loc 1 63 0 discriminator 2
+ 273 0050 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 274 0052 FA79     		ldrb	r2, [r7, #7]
+ 275 0054 02F00102 		and	r2, r2, #1
+ 276 0058 D1B2     		uxtb	r1, r2
+ 277 005a FA68     		ldr	r2, [r7, #12]
+ 278 005c D154     		strb	r1, [r2, r3]
+  64:print.c       ****       n /= 2;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 7
+
+
+ 279              		.loc 1 64 0 discriminator 2
+ 280 005e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 281 0060 5B08     		lsrs	r3, r3, #1
+ 282 0062 FB71     		strb	r3, [r7, #7]
+  62:print.c       ****       buf[i] = n % 2 ;
+ 283              		.loc 1 62 0 discriminator 2
+ 284 0064 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 285 0066 0133     		adds	r3, r3, #1
+ 286 0068 FB75     		strb	r3, [r7, #23]
+ 287              	.L12:
+  62:print.c       ****       buf[i] = n % 2 ;
+ 288              		.loc 1 62 0 is_stmt 0 discriminator 1
+ 289 006a FA7D     		ldrb	r2, [r7, #23]	@ zero_extendqisi2
+ 290 006c BB79     		ldrb	r3, [r7, #6]	@ zero_extendqisi2
+ 291 006e 9A42     		cmp	r2, r3
+ 292 0070 EED3     		bcc	.L13
+  65:print.c       ****   }
+  66:print.c       **** 
+  67:print.c       ****   for (; i > 0; i--)
+ 293              		.loc 1 67 0 is_stmt 1
+ 294 0072 0BE0     		b	.L14
+ 295              	.L15:
+  68:print.c       ****       serial_write('0' + buf[i - 1]);
+ 296              		.loc 1 68 0 discriminator 2
+ 297 0074 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 298 0076 013B     		subs	r3, r3, #1
+ 299 0078 FA68     		ldr	r2, [r7, #12]
+ 300 007a D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
+ 301 007c 3033     		adds	r3, r3, #48
+ 302 007e DBB2     		uxtb	r3, r3
+ 303 0080 1846     		mov	r0, r3
+ 304 0082 FFF7FEFF 		bl	serial_write
+  67:print.c       ****       serial_write('0' + buf[i - 1]);
+ 305              		.loc 1 67 0 discriminator 2
+ 306 0086 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 307 0088 013B     		subs	r3, r3, #1
+ 308 008a FB75     		strb	r3, [r7, #23]
+ 309              	.L14:
+  67:print.c       ****       serial_write('0' + buf[i - 1]);
+ 310              		.loc 1 67 0 is_stmt 0 discriminator 1
+ 311 008c FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 312 008e 002B     		cmp	r3, #0
+ 313 0090 F0D1     		bne	.L15
+ 314 0092 C546     		mov	sp, r8
+  69:print.c       **** }
+ 315              		.loc 1 69 0 is_stmt 1
+ 316 0094 00BF     		nop
+ 317 0096 1837     		adds	r7, r7, #24
+ 318              		.cfi_def_cfa_offset 24
+ 319 0098 BD46     		mov	sp, r7
+ 320              		.cfi_def_cfa_register 13
+ 321              		@ sp needed
+ 322 009a BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 323              		.cfi_endproc
+ 324              	.LFE67:
+ 325              		.size	print_uint8_base2_ndigit, .-print_uint8_base2_ndigit
+ 326 009e 00BF     		.section	.text.print_uint32_base10,"ax",%progbits
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 8
+
+
+ 327              		.align	2
+ 328              		.global	print_uint32_base10
+ 329              		.thumb
+ 330              		.thumb_func
+ 331              		.type	print_uint32_base10, %function
+ 332              	print_uint32_base10:
+ 333              	.LFB68:
+  70:print.c       **** 
+  71:print.c       **** 
+  72:print.c       **** void print_uint32_base10(uint32_t n)
+  73:print.c       **** {
+ 334              		.loc 1 73 0
+ 335              		.cfi_startproc
+ 336              		@ args = 0, pretend = 0, frame = 24
+ 337              		@ frame_needed = 1, uses_anonymous_args = 0
+ 338 0000 80B5     		push	{r7, lr}
+ 339              		.cfi_def_cfa_offset 8
+ 340              		.cfi_offset 7, -8
+ 341              		.cfi_offset 14, -4
+ 342 0002 86B0     		sub	sp, sp, #24
+ 343              		.cfi_def_cfa_offset 32
+ 344 0004 00AF     		add	r7, sp, #0
+ 345              		.cfi_def_cfa_register 7
+ 346 0006 7860     		str	r0, [r7, #4]
+  74:print.c       ****   if (n == 0) {
+ 347              		.loc 1 74 0
+ 348 0008 7B68     		ldr	r3, [r7, #4]
+ 349 000a 002B     		cmp	r3, #0
+ 350 000c 03D1     		bne	.L17
+  75:print.c       ****     serial_write('0');
+ 351              		.loc 1 75 0
+ 352 000e 3020     		movs	r0, #48
+ 353 0010 FFF7FEFF 		bl	serial_write
+ 354 0014 32E0     		b	.L16
+ 355              	.L17:
+  76:print.c       ****     return;
+  77:print.c       ****   }
+  78:print.c       **** 
+  79:print.c       ****   unsigned char buf[10];
+  80:print.c       ****   uint8_t i = 0;
+ 356              		.loc 1 80 0
+ 357 0016 0023     		movs	r3, #0
+ 358 0018 FB75     		strb	r3, [r7, #23]
+  81:print.c       **** 
+  82:print.c       ****   while (n > 0) {
+ 359              		.loc 1 82 0
+ 360 001a 19E0     		b	.L19
+ 361              	.L20:
+  83:print.c       ****     buf[i++] = n % 10;
+ 362              		.loc 1 83 0
+ 363 001c FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 364 001e 5A1C     		adds	r2, r3, #1
+ 365 0020 FA75     		strb	r2, [r7, #23]
+ 366 0022 1846     		mov	r0, r3
+ 367 0024 7968     		ldr	r1, [r7, #4]
+ 368 0026 174B     		ldr	r3, .L23
+ 369 0028 A3FB0123 		umull	r2, r3, r3, r1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 9
+
+
+ 370 002c DA08     		lsrs	r2, r3, #3
+ 371 002e 1346     		mov	r3, r2
+ 372 0030 9B00     		lsls	r3, r3, #2
+ 373 0032 1344     		add	r3, r3, r2
+ 374 0034 5B00     		lsls	r3, r3, #1
+ 375 0036 CA1A     		subs	r2, r1, r3
+ 376 0038 D2B2     		uxtb	r2, r2
+ 377 003a 07F11803 		add	r3, r7, #24
+ 378 003e 0344     		add	r3, r3, r0
+ 379 0040 03F80C2C 		strb	r2, [r3, #-12]
+  84:print.c       ****     n /= 10;
+ 380              		.loc 1 84 0
+ 381 0044 7B68     		ldr	r3, [r7, #4]
+ 382 0046 0F4A     		ldr	r2, .L23
+ 383 0048 A2FB0323 		umull	r2, r3, r2, r3
+ 384 004c DB08     		lsrs	r3, r3, #3
+ 385 004e 7B60     		str	r3, [r7, #4]
+ 386              	.L19:
+  82:print.c       ****     buf[i++] = n % 10;
+ 387              		.loc 1 82 0
+ 388 0050 7B68     		ldr	r3, [r7, #4]
+ 389 0052 002B     		cmp	r3, #0
+ 390 0054 E2D1     		bne	.L20
+  85:print.c       ****   }
+  86:print.c       **** 
+  87:print.c       ****   for (; i > 0; i--)
+ 391              		.loc 1 87 0
+ 392 0056 0EE0     		b	.L21
+ 393              	.L22:
+  88:print.c       ****     serial_write('0' + buf[i-1]);
+ 394              		.loc 1 88 0 discriminator 2
+ 395 0058 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 396 005a 013B     		subs	r3, r3, #1
+ 397 005c 07F11802 		add	r2, r7, #24
+ 398 0060 1344     		add	r3, r3, r2
+ 399 0062 13F80C3C 		ldrb	r3, [r3, #-12]	@ zero_extendqisi2
+ 400 0066 3033     		adds	r3, r3, #48
+ 401 0068 DBB2     		uxtb	r3, r3
+ 402 006a 1846     		mov	r0, r3
+ 403 006c FFF7FEFF 		bl	serial_write
+  87:print.c       ****     serial_write('0' + buf[i-1]);
+ 404              		.loc 1 87 0 discriminator 2
+ 405 0070 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 406 0072 013B     		subs	r3, r3, #1
+ 407 0074 FB75     		strb	r3, [r7, #23]
+ 408              	.L21:
+  87:print.c       ****     serial_write('0' + buf[i-1]);
+ 409              		.loc 1 87 0 is_stmt 0 discriminator 1
+ 410 0076 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 411 0078 002B     		cmp	r3, #0
+ 412 007a EDD1     		bne	.L22
+ 413              	.L16:
+  89:print.c       **** }
+ 414              		.loc 1 89 0 is_stmt 1
+ 415 007c 1837     		adds	r7, r7, #24
+ 416              		.cfi_def_cfa_offset 8
+ 417 007e BD46     		mov	sp, r7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 10
+
+
+ 418              		.cfi_def_cfa_register 13
+ 419              		@ sp needed
+ 420 0080 80BD     		pop	{r7, pc}
+ 421              	.L24:
+ 422 0082 00BF     		.align	2
+ 423              	.L23:
+ 424 0084 CDCCCCCC 		.word	-858993459
+ 425              		.cfi_endproc
+ 426              	.LFE68:
+ 427              		.size	print_uint32_base10, .-print_uint32_base10
+ 428              		.section	.text.printInteger,"ax",%progbits
+ 429              		.align	2
+ 430              		.global	printInteger
+ 431              		.thumb
+ 432              		.thumb_func
+ 433              		.type	printInteger, %function
+ 434              	printInteger:
+ 435              	.LFB69:
+  90:print.c       **** 
+  91:print.c       **** 
+  92:print.c       **** void printInteger(long n)
+  93:print.c       **** {
+ 436              		.loc 1 93 0
+ 437              		.cfi_startproc
+ 438              		@ args = 0, pretend = 0, frame = 8
+ 439              		@ frame_needed = 1, uses_anonymous_args = 0
+ 440 0000 80B5     		push	{r7, lr}
+ 441              		.cfi_def_cfa_offset 8
+ 442              		.cfi_offset 7, -8
+ 443              		.cfi_offset 14, -4
+ 444 0002 82B0     		sub	sp, sp, #8
+ 445              		.cfi_def_cfa_offset 16
+ 446 0004 00AF     		add	r7, sp, #0
+ 447              		.cfi_def_cfa_register 7
+ 448 0006 7860     		str	r0, [r7, #4]
+  94:print.c       ****   if (n < 0) {
+ 449              		.loc 1 94 0
+ 450 0008 7B68     		ldr	r3, [r7, #4]
+ 451 000a 002B     		cmp	r3, #0
+ 452 000c 08DA     		bge	.L26
+  95:print.c       ****     serial_write('-');
+ 453              		.loc 1 95 0
+ 454 000e 2D20     		movs	r0, #45
+ 455 0010 FFF7FEFF 		bl	serial_write
+  96:print.c       ****     print_uint32_base10(-n);
+ 456              		.loc 1 96 0
+ 457 0014 7B68     		ldr	r3, [r7, #4]
+ 458 0016 5B42     		negs	r3, r3
+ 459 0018 1846     		mov	r0, r3
+ 460 001a FFF7FEFF 		bl	print_uint32_base10
+  97:print.c       ****   } else {
+  98:print.c       ****     print_uint32_base10(n);
+  99:print.c       ****   }
+ 100:print.c       **** }
+ 461              		.loc 1 100 0
+ 462 001e 03E0     		b	.L28
+ 463              	.L26:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 11
+
+
+  98:print.c       ****   }
+ 464              		.loc 1 98 0
+ 465 0020 7B68     		ldr	r3, [r7, #4]
+ 466 0022 1846     		mov	r0, r3
+ 467 0024 FFF7FEFF 		bl	print_uint32_base10
+ 468              	.L28:
+ 469              		.loc 1 100 0
+ 470 0028 00BF     		nop
+ 471 002a 0837     		adds	r7, r7, #8
+ 472              		.cfi_def_cfa_offset 8
+ 473 002c BD46     		mov	sp, r7
+ 474              		.cfi_def_cfa_register 13
+ 475              		@ sp needed
+ 476 002e 80BD     		pop	{r7, pc}
+ 477              		.cfi_endproc
+ 478              	.LFE69:
+ 479              		.size	printInteger, .-printInteger
+ 480              		.global	__aeabi_fcmplt
+ 481              		.global	__aeabi_fmul
+ 482              		.global	__aeabi_fadd
+ 483              		.global	__aeabi_f2iz
+ 484              		.section	.text.printFloat,"ax",%progbits
+ 485              		.align	2
+ 486              		.global	printFloat
+ 487              		.thumb
+ 488              		.thumb_func
+ 489              		.type	printFloat, %function
+ 490              	printFloat:
+ 491              	.LFB70:
+ 101:print.c       **** 
+ 102:print.c       **** 
+ 103:print.c       **** // Convert float to string by immediately converting to a long integer, which contains
+ 104:print.c       **** // more digits than a float. Number of decimal places, which are tracked by a counter,
+ 105:print.c       **** // may be set by the user. The integer is then efficiently converted to a string.
+ 106:print.c       **** // NOTE: AVR '%' and '/' integer operations are very efficient. Bitshifting speed-up
+ 107:print.c       **** // techniques are actually just slightly slower. Found this out the hard way.
+ 108:print.c       **** void printFloat(float n, uint8_t decimal_places)
+ 109:print.c       **** {
+ 492              		.loc 1 109 0
+ 493              		.cfi_startproc
+ 494              		@ args = 0, pretend = 0, frame = 32
+ 495              		@ frame_needed = 1, uses_anonymous_args = 0
+ 496 0000 80B5     		push	{r7, lr}
+ 497              		.cfi_def_cfa_offset 8
+ 498              		.cfi_offset 7, -8
+ 499              		.cfi_offset 14, -4
+ 500 0002 88B0     		sub	sp, sp, #32
+ 501              		.cfi_def_cfa_offset 40
+ 502 0004 00AF     		add	r7, sp, #0
+ 503              		.cfi_def_cfa_register 7
+ 504 0006 7860     		str	r0, [r7, #4]	@ float
+ 505 0008 0B46     		mov	r3, r1
+ 506 000a FB70     		strb	r3, [r7, #3]
+ 110:print.c       ****   if (n < 0) {
+ 507              		.loc 1 110 0
+ 508 000c 4FF00001 		mov	r1, #0
+ 509 0010 7868     		ldr	r0, [r7, #4]	@ float
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 12
+
+
+ 510 0012 FFF7FEFF 		bl	__aeabi_fcmplt
+ 511 0016 0346     		mov	r3, r0
+ 512 0018 002B     		cmp	r3, #0
+ 513 001a 06D0     		beq	.L30
+ 111:print.c       ****     serial_write('-');
+ 514              		.loc 1 111 0
+ 515 001c 2D20     		movs	r0, #45
+ 516 001e FFF7FEFF 		bl	serial_write
+ 112:print.c       ****     n = -n;
+ 517              		.loc 1 112 0
+ 518 0022 7B68     		ldr	r3, [r7, #4]
+ 519 0024 83F00043 		eor	r3, r3, #-2147483648
+ 520 0028 7B60     		str	r3, [r7, #4]	@ float
+ 521              	.L30:
+ 113:print.c       ****   }
+ 114:print.c       **** 
+ 115:print.c       ****   uint8_t decimals = decimal_places;
+ 522              		.loc 1 115 0
+ 523 002a FB78     		ldrb	r3, [r7, #3]
+ 524 002c FB77     		strb	r3, [r7, #31]
+ 116:print.c       ****   while (decimals >= 2) { // Quickly convert values expected to be E0 to E-4.
+ 525              		.loc 1 116 0
+ 526 002e 08E0     		b	.L32
+ 527              	.L33:
+ 117:print.c       ****     n *= 100;
+ 528              		.loc 1 117 0
+ 529 0030 3C49     		ldr	r1, .L44
+ 530 0032 7868     		ldr	r0, [r7, #4]	@ float
+ 531 0034 FFF7FEFF 		bl	__aeabi_fmul
+ 532 0038 0346     		mov	r3, r0
+ 533 003a 7B60     		str	r3, [r7, #4]	@ float
+ 118:print.c       ****     decimals -= 2;
+ 534              		.loc 1 118 0
+ 535 003c FB7F     		ldrb	r3, [r7, #31]
+ 536 003e 023B     		subs	r3, r3, #2
+ 537 0040 FB77     		strb	r3, [r7, #31]
+ 538              	.L32:
+ 116:print.c       ****   while (decimals >= 2) { // Quickly convert values expected to be E0 to E-4.
+ 539              		.loc 1 116 0
+ 540 0042 FB7F     		ldrb	r3, [r7, #31]	@ zero_extendqisi2
+ 541 0044 012B     		cmp	r3, #1
+ 542 0046 F3D8     		bhi	.L33
+ 119:print.c       ****   }
+ 120:print.c       ****   if (decimals) { n *= 10; }
+ 543              		.loc 1 120 0
+ 544 0048 FB7F     		ldrb	r3, [r7, #31]	@ zero_extendqisi2
+ 545 004a 002B     		cmp	r3, #0
+ 546 004c 05D0     		beq	.L34
+ 547              		.loc 1 120 0 is_stmt 0 discriminator 1
+ 548 004e 3649     		ldr	r1, .L44+4
+ 549 0050 7868     		ldr	r0, [r7, #4]	@ float
+ 550 0052 FFF7FEFF 		bl	__aeabi_fmul
+ 551 0056 0346     		mov	r3, r0
+ 552 0058 7B60     		str	r3, [r7, #4]	@ float
+ 553              	.L34:
+ 121:print.c       ****   n += 0.5; // Add rounding factor. Ensures carryover through entire value.
+ 554              		.loc 1 121 0 is_stmt 1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 13
+
+
+ 555 005a 4FF07C51 		mov	r1, #1056964608
+ 556 005e 7868     		ldr	r0, [r7, #4]	@ float
+ 557 0060 FFF7FEFF 		bl	__aeabi_fadd
+ 558 0064 0346     		mov	r3, r0
+ 559 0066 7B60     		str	r3, [r7, #4]	@ float
+ 122:print.c       **** 
+ 123:print.c       ****   // Generate digits backwards and store in string.
+ 124:print.c       ****   unsigned char buf[13];
+ 125:print.c       ****   uint8_t i = 0;
+ 560              		.loc 1 125 0
+ 561 0068 0023     		movs	r3, #0
+ 562 006a BB77     		strb	r3, [r7, #30]
+ 126:print.c       ****   uint32_t a = (long)n;
+ 563              		.loc 1 126 0
+ 564 006c 7868     		ldr	r0, [r7, #4]	@ float
+ 565 006e FFF7FEFF 		bl	__aeabi_f2iz
+ 566 0072 0346     		mov	r3, r0
+ 567 0074 BB61     		str	r3, [r7, #24]
+ 127:print.c       ****   while(a > 0) {
+ 568              		.loc 1 127 0
+ 569 0076 1BE0     		b	.L35
+ 570              	.L36:
+ 128:print.c       ****     buf[i++] = (a % 10) + '0'; // Get digit
+ 571              		.loc 1 128 0
+ 572 0078 BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 573 007a 5A1C     		adds	r2, r3, #1
+ 574 007c BA77     		strb	r2, [r7, #30]
+ 575 007e 1846     		mov	r0, r3
+ 576 0080 B969     		ldr	r1, [r7, #24]
+ 577 0082 2A4B     		ldr	r3, .L44+8
+ 578 0084 A3FB0123 		umull	r2, r3, r3, r1
+ 579 0088 DA08     		lsrs	r2, r3, #3
+ 580 008a 1346     		mov	r3, r2
+ 581 008c 9B00     		lsls	r3, r3, #2
+ 582 008e 1344     		add	r3, r3, r2
+ 583 0090 5B00     		lsls	r3, r3, #1
+ 584 0092 CA1A     		subs	r2, r1, r3
+ 585 0094 D3B2     		uxtb	r3, r2
+ 586 0096 3033     		adds	r3, r3, #48
+ 587 0098 DAB2     		uxtb	r2, r3
+ 588 009a 07F12003 		add	r3, r7, #32
+ 589 009e 0344     		add	r3, r3, r0
+ 590 00a0 03F8182C 		strb	r2, [r3, #-24]
+ 129:print.c       ****     a /= 10;
+ 591              		.loc 1 129 0
+ 592 00a4 BB69     		ldr	r3, [r7, #24]
+ 593 00a6 214A     		ldr	r2, .L44+8
+ 594 00a8 A2FB0323 		umull	r2, r3, r2, r3
+ 595 00ac DB08     		lsrs	r3, r3, #3
+ 596 00ae BB61     		str	r3, [r7, #24]
+ 597              	.L35:
+ 127:print.c       ****   while(a > 0) {
+ 598              		.loc 1 127 0
+ 599 00b0 BB69     		ldr	r3, [r7, #24]
+ 600 00b2 002B     		cmp	r3, #0
+ 601 00b4 E0D1     		bne	.L36
+ 130:print.c       ****   }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 14
+
+
+ 131:print.c       ****   while (i < decimal_places) {
+ 602              		.loc 1 131 0
+ 603 00b6 08E0     		b	.L37
+ 604              	.L38:
+ 132:print.c       ****      buf[i++] = '0'; // Fill in zeros to decimal point for (n < 1)
+ 605              		.loc 1 132 0
+ 606 00b8 BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 607 00ba 5A1C     		adds	r2, r3, #1
+ 608 00bc BA77     		strb	r2, [r7, #30]
+ 609 00be 07F12002 		add	r2, r7, #32
+ 610 00c2 1344     		add	r3, r3, r2
+ 611 00c4 3022     		movs	r2, #48
+ 612 00c6 03F8182C 		strb	r2, [r3, #-24]
+ 613              	.L37:
+ 131:print.c       ****      buf[i++] = '0'; // Fill in zeros to decimal point for (n < 1)
+ 614              		.loc 1 131 0
+ 615 00ca BA7F     		ldrb	r2, [r7, #30]	@ zero_extendqisi2
+ 616 00cc FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 617 00ce 9A42     		cmp	r2, r3
+ 618 00d0 F2D3     		bcc	.L38
+ 133:print.c       ****   }
+ 134:print.c       ****   if (i == decimal_places) { // Fill in leading zero, if needed.
+ 619              		.loc 1 134 0
+ 620 00d2 BA7F     		ldrb	r2, [r7, #30]	@ zero_extendqisi2
+ 621 00d4 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 622 00d6 9A42     		cmp	r2, r3
+ 623 00d8 1DD1     		bne	.L40
+ 135:print.c       ****     buf[i++] = '0';
+ 624              		.loc 1 135 0
+ 625 00da BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 626 00dc 5A1C     		adds	r2, r3, #1
+ 627 00de BA77     		strb	r2, [r7, #30]
+ 628 00e0 07F12002 		add	r2, r7, #32
+ 629 00e4 1344     		add	r3, r3, r2
+ 630 00e6 3022     		movs	r2, #48
+ 631 00e8 03F8182C 		strb	r2, [r3, #-24]
+ 136:print.c       ****   }
+ 137:print.c       **** 
+ 138:print.c       ****   // Print the generated string.
+ 139:print.c       ****   for (; i > 0; i--) {
+ 632              		.loc 1 139 0
+ 633 00ec 13E0     		b	.L40
+ 634              	.L42:
+ 140:print.c       ****     if (i == decimal_places) { serial_write('.'); } // Insert decimal point in right place.
+ 635              		.loc 1 140 0
+ 636 00ee BA7F     		ldrb	r2, [r7, #30]	@ zero_extendqisi2
+ 637 00f0 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 638 00f2 9A42     		cmp	r2, r3
+ 639 00f4 02D1     		bne	.L41
+ 640              		.loc 1 140 0 is_stmt 0 discriminator 1
+ 641 00f6 2E20     		movs	r0, #46
+ 642 00f8 FFF7FEFF 		bl	serial_write
+ 643              	.L41:
+ 141:print.c       ****     serial_write(buf[i-1]);
+ 644              		.loc 1 141 0 is_stmt 1
+ 645 00fc BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 646 00fe 013B     		subs	r3, r3, #1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 15
+
+
+ 647 0100 07F12002 		add	r2, r7, #32
+ 648 0104 1344     		add	r3, r3, r2
+ 649 0106 13F8183C 		ldrb	r3, [r3, #-24]	@ zero_extendqisi2
+ 650 010a 1846     		mov	r0, r3
+ 651 010c FFF7FEFF 		bl	serial_write
+ 139:print.c       ****     if (i == decimal_places) { serial_write('.'); } // Insert decimal point in right place.
+ 652              		.loc 1 139 0
+ 653 0110 BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 654 0112 013B     		subs	r3, r3, #1
+ 655 0114 BB77     		strb	r3, [r7, #30]
+ 656              	.L40:
+ 139:print.c       ****     if (i == decimal_places) { serial_write('.'); } // Insert decimal point in right place.
+ 657              		.loc 1 139 0 is_stmt 0 discriminator 1
+ 658 0116 BB7F     		ldrb	r3, [r7, #30]	@ zero_extendqisi2
+ 659 0118 002B     		cmp	r3, #0
+ 660 011a E8D1     		bne	.L42
+ 142:print.c       ****   }
+ 143:print.c       **** }
+ 661              		.loc 1 143 0 is_stmt 1
+ 662 011c 00BF     		nop
+ 663 011e 2037     		adds	r7, r7, #32
+ 664              		.cfi_def_cfa_offset 8
+ 665 0120 BD46     		mov	sp, r7
+ 666              		.cfi_def_cfa_register 13
+ 667              		@ sp needed
+ 668 0122 80BD     		pop	{r7, pc}
+ 669              	.L45:
+ 670              		.align	2
+ 671              	.L44:
+ 672 0124 0000C842 		.word	1120403456
+ 673 0128 00002041 		.word	1092616192
+ 674 012c CDCCCCCC 		.word	-858993459
+ 675              		.cfi_endproc
+ 676              	.LFE70:
+ 677              		.size	printFloat, .-printFloat
+ 678              		.global	__aeabi_f2d
+ 679              		.global	__aeabi_dmul
+ 680              		.global	__aeabi_d2f
+ 681              		.section	.text.printFloat_CoordValue,"ax",%progbits
+ 682              		.align	2
+ 683              		.global	printFloat_CoordValue
+ 684              		.thumb
+ 685              		.thumb_func
+ 686              		.type	printFloat_CoordValue, %function
+ 687              	printFloat_CoordValue:
+ 688              	.LFB71:
+ 144:print.c       **** 
+ 145:print.c       **** 
+ 146:print.c       **** // Floating value printing handlers for special variables types used in Grbl and are defined
+ 147:print.c       **** // in the config.h.
+ 148:print.c       **** //  - CoordValue: Handles all position or coordinate values in inches or mm reporting.
+ 149:print.c       **** //  - RateValue: Handles feed rate and current velocity in inches or mm reporting.
+ 150:print.c       **** void printFloat_CoordValue(float n) {
+ 689              		.loc 1 150 0
+ 690              		.cfi_startproc
+ 691              		@ args = 0, pretend = 0, frame = 8
+ 692              		@ frame_needed = 1, uses_anonymous_args = 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 16
+
+
+ 693 0000 90B5     		push	{r4, r7, lr}
+ 694              		.cfi_def_cfa_offset 12
+ 695              		.cfi_offset 4, -12
+ 696              		.cfi_offset 7, -8
+ 697              		.cfi_offset 14, -4
+ 698 0002 83B0     		sub	sp, sp, #12
+ 699              		.cfi_def_cfa_offset 24
+ 700 0004 00AF     		add	r7, sp, #0
+ 701              		.cfi_def_cfa_register 7
+ 702 0006 7860     		str	r0, [r7, #4]	@ float
+ 151:print.c       ****   if (bit_istrue(settings.flags,BITFLAG_REPORT_INCHES)) {
+ 703              		.loc 1 151 0
+ 704 0008 134B     		ldr	r3, .L50+8
+ 705 000a 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 706 000e 03F00103 		and	r3, r3, #1
+ 707 0012 002B     		cmp	r3, #0
+ 708 0014 13D0     		beq	.L47
+ 152:print.c       ****     printFloat(n*INCH_PER_MM,N_DECIMAL_COORDVALUE_INCH);
+ 709              		.loc 1 152 0
+ 710 0016 7868     		ldr	r0, [r7, #4]	@ float
+ 711 0018 FFF7FEFF 		bl	__aeabi_f2d
+ 712 001c 0CA3     		adr	r3, .L50
+ 713 001e D3E90023 		ldrd	r2, [r3]
+ 714 0022 FFF7FEFF 		bl	__aeabi_dmul
+ 715 0026 0346     		mov	r3, r0
+ 716 0028 0C46     		mov	r4, r1
+ 717 002a 1846     		mov	r0, r3
+ 718 002c 2146     		mov	r1, r4
+ 719 002e FFF7FEFF 		bl	__aeabi_d2f
+ 720 0032 0346     		mov	r3, r0
+ 721 0034 0421     		movs	r1, #4
+ 722 0036 1846     		mov	r0, r3
+ 723 0038 FFF7FEFF 		bl	printFloat
+ 153:print.c       ****   } else {
+ 154:print.c       ****     printFloat(n,N_DECIMAL_COORDVALUE_MM);
+ 155:print.c       ****   }
+ 156:print.c       **** }
+ 724              		.loc 1 156 0
+ 725 003c 03E0     		b	.L49
+ 726              	.L47:
+ 154:print.c       ****   }
+ 727              		.loc 1 154 0
+ 728 003e 0321     		movs	r1, #3
+ 729 0040 7868     		ldr	r0, [r7, #4]	@ float
+ 730 0042 FFF7FEFF 		bl	printFloat
+ 731              	.L49:
+ 732              		.loc 1 156 0
+ 733 0046 00BF     		nop
+ 734 0048 0C37     		adds	r7, r7, #12
+ 735              		.cfi_def_cfa_offset 12
+ 736 004a BD46     		mov	sp, r7
+ 737              		.cfi_def_cfa_register 13
+ 738              		@ sp needed
+ 739 004c 90BD     		pop	{r4, r7, pc}
+ 740              	.L51:
+ 741 004e 00BF     		.align	3
+ 742              	.L50:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 17
+
+
+ 743 0050 6568E157 		.word	1474390117
+ 744 0054 5128A43F 		.word	1067722833
+ 745 0058 00000000 		.word	settings
+ 746              		.cfi_endproc
+ 747              	.LFE71:
+ 748              		.size	printFloat_CoordValue, .-printFloat_CoordValue
+ 749              		.section	.text.printFloat_RateValue,"ax",%progbits
+ 750              		.align	2
+ 751              		.global	printFloat_RateValue
+ 752              		.thumb
+ 753              		.thumb_func
+ 754              		.type	printFloat_RateValue, %function
+ 755              	printFloat_RateValue:
+ 756              	.LFB72:
+ 157:print.c       **** 
+ 158:print.c       **** void printFloat_RateValue(float n) {
+ 757              		.loc 1 158 0
+ 758              		.cfi_startproc
+ 759              		@ args = 0, pretend = 0, frame = 8
+ 760              		@ frame_needed = 1, uses_anonymous_args = 0
+ 761 0000 90B5     		push	{r4, r7, lr}
+ 762              		.cfi_def_cfa_offset 12
+ 763              		.cfi_offset 4, -12
+ 764              		.cfi_offset 7, -8
+ 765              		.cfi_offset 14, -4
+ 766 0002 83B0     		sub	sp, sp, #12
+ 767              		.cfi_def_cfa_offset 24
+ 768 0004 00AF     		add	r7, sp, #0
+ 769              		.cfi_def_cfa_register 7
+ 770 0006 7860     		str	r0, [r7, #4]	@ float
+ 159:print.c       ****   if (bit_istrue(settings.flags,BITFLAG_REPORT_INCHES)) {
+ 771              		.loc 1 159 0
+ 772 0008 134B     		ldr	r3, .L56+8
+ 773 000a 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 774 000e 03F00103 		and	r3, r3, #1
+ 775 0012 002B     		cmp	r3, #0
+ 776 0014 13D0     		beq	.L53
+ 160:print.c       ****     printFloat(n*INCH_PER_MM,N_DECIMAL_RATEVALUE_INCH);
+ 777              		.loc 1 160 0
+ 778 0016 7868     		ldr	r0, [r7, #4]	@ float
+ 779 0018 FFF7FEFF 		bl	__aeabi_f2d
+ 780 001c 0CA3     		adr	r3, .L56
+ 781 001e D3E90023 		ldrd	r2, [r3]
+ 782 0022 FFF7FEFF 		bl	__aeabi_dmul
+ 783 0026 0346     		mov	r3, r0
+ 784 0028 0C46     		mov	r4, r1
+ 785 002a 1846     		mov	r0, r3
+ 786 002c 2146     		mov	r1, r4
+ 787 002e FFF7FEFF 		bl	__aeabi_d2f
+ 788 0032 0346     		mov	r3, r0
+ 789 0034 0121     		movs	r1, #1
+ 790 0036 1846     		mov	r0, r3
+ 791 0038 FFF7FEFF 		bl	printFloat
+ 161:print.c       ****   } else {
+ 162:print.c       ****     printFloat(n,N_DECIMAL_RATEVALUE_MM);
+ 163:print.c       ****   }
+ 164:print.c       **** }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 18
+
+
+ 792              		.loc 1 164 0
+ 793 003c 03E0     		b	.L55
+ 794              	.L53:
+ 162:print.c       ****   }
+ 795              		.loc 1 162 0
+ 796 003e 0021     		movs	r1, #0
+ 797 0040 7868     		ldr	r0, [r7, #4]	@ float
+ 798 0042 FFF7FEFF 		bl	printFloat
+ 799              	.L55:
+ 800              		.loc 1 164 0
+ 801 0046 00BF     		nop
+ 802 0048 0C37     		adds	r7, r7, #12
+ 803              		.cfi_def_cfa_offset 12
+ 804 004a BD46     		mov	sp, r7
+ 805              		.cfi_def_cfa_register 13
+ 806              		@ sp needed
+ 807 004c 90BD     		pop	{r4, r7, pc}
+ 808              	.L57:
+ 809 004e 00BF     		.align	3
+ 810              	.L56:
+ 811 0050 6568E157 		.word	1474390117
+ 812 0054 5128A43F 		.word	1067722833
+ 813 0058 00000000 		.word	settings
+ 814              		.cfi_endproc
+ 815              	.LFE72:
+ 816              		.size	printFloat_RateValue, .-printFloat_RateValue
+ 817              		.text
+ 818              	.Letext0:
+ 819              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 820              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 821              		.file 4 "settings.h"
+ 822              		.file 5 "Generated_Source\\PSoC5/core_cm3.h"
+ 823              		.file 6 "system.h"
+ 824              		.section	.debug_info,"",%progbits
+ 825              	.Ldebug_info0:
+ 826 0000 A4040000 		.4byte	0x4a4
+ 827 0004 0400     		.2byte	0x4
+ 828 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 829 000a 04       		.byte	0x4
+ 830 000b 01       		.uleb128 0x1
+ 831 000c 59000000 		.4byte	.LASF65
+ 832 0010 0C       		.byte	0xc
+ 833 0011 3E000000 		.4byte	.LASF66
+ 834 0015 89030000 		.4byte	.LASF67
+ 835 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 836 001d 00000000 		.4byte	0
+ 837 0021 00000000 		.4byte	.Ldebug_line0
+ 838 0025 02       		.uleb128 0x2
+ 839 0026 01       		.byte	0x1
+ 840 0027 06       		.byte	0x6
+ 841 0028 F1010000 		.4byte	.LASF0
+ 842 002c 03       		.uleb128 0x3
+ 843 002d 9C010000 		.4byte	.LASF3
+ 844 0031 02       		.byte	0x2
+ 845 0032 1D       		.byte	0x1d
+ 846 0033 37000000 		.4byte	0x37
+ 847 0037 02       		.uleb128 0x2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 19
+
+
+ 848 0038 01       		.byte	0x1
+ 849 0039 08       		.byte	0x8
+ 850 003a E3010000 		.4byte	.LASF1
+ 851 003e 02       		.uleb128 0x2
+ 852 003f 02       		.byte	0x2
+ 853 0040 05       		.byte	0x5
+ 854 0041 46000000 		.4byte	.LASF2
+ 855 0045 03       		.uleb128 0x3
+ 856 0046 F2000000 		.4byte	.LASF4
+ 857 004a 02       		.byte	0x2
+ 858 004b 2B       		.byte	0x2b
+ 859 004c 50000000 		.4byte	0x50
+ 860 0050 02       		.uleb128 0x2
+ 861 0051 02       		.byte	0x2
+ 862 0052 07       		.byte	0x7
+ 863 0053 8D020000 		.4byte	.LASF5
+ 864 0057 03       		.uleb128 0x3
+ 865 0058 69030000 		.4byte	.LASF6
+ 866 005c 02       		.byte	0x2
+ 867 005d 3F       		.byte	0x3f
+ 868 005e 62000000 		.4byte	0x62
+ 869 0062 02       		.uleb128 0x2
+ 870 0063 04       		.byte	0x4
+ 871 0064 05       		.byte	0x5
+ 872 0065 86010000 		.4byte	.LASF7
+ 873 0069 03       		.uleb128 0x3
+ 874 006a E7000000 		.4byte	.LASF8
+ 875 006e 02       		.byte	0x2
+ 876 006f 41       		.byte	0x41
+ 877 0070 74000000 		.4byte	0x74
+ 878 0074 02       		.uleb128 0x2
+ 879 0075 04       		.byte	0x4
+ 880 0076 07       		.byte	0x7
+ 881 0077 39020000 		.4byte	.LASF9
+ 882 007b 02       		.uleb128 0x2
+ 883 007c 08       		.byte	0x8
+ 884 007d 05       		.byte	0x5
+ 885 007e 58010000 		.4byte	.LASF10
+ 886 0082 02       		.uleb128 0x2
+ 887 0083 08       		.byte	0x8
+ 888 0084 07       		.byte	0x7
+ 889 0085 03020000 		.4byte	.LASF11
+ 890 0089 04       		.uleb128 0x4
+ 891 008a 04       		.byte	0x4
+ 892 008b 05       		.byte	0x5
+ 893 008c 696E7400 		.ascii	"int\000"
+ 894 0090 02       		.uleb128 0x2
+ 895 0091 04       		.byte	0x4
+ 896 0092 07       		.byte	0x7
+ 897 0093 23020000 		.4byte	.LASF12
+ 898 0097 03       		.uleb128 0x3
+ 899 0098 1C010000 		.4byte	.LASF13
+ 900 009c 03       		.byte	0x3
+ 901 009d 18       		.byte	0x18
+ 902 009e 2C000000 		.4byte	0x2c
+ 903 00a2 03       		.uleb128 0x3
+ 904 00a3 30020000 		.4byte	.LASF14
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 20
+
+
+ 905 00a7 03       		.byte	0x3
+ 906 00a8 24       		.byte	0x24
+ 907 00a9 45000000 		.4byte	0x45
+ 908 00ad 03       		.uleb128 0x3
+ 909 00ae B5020000 		.4byte	.LASF15
+ 910 00b2 03       		.byte	0x3
+ 911 00b3 2C       		.byte	0x2c
+ 912 00b4 57000000 		.4byte	0x57
+ 913 00b8 03       		.uleb128 0x3
+ 914 00b9 1A020000 		.4byte	.LASF16
+ 915 00bd 03       		.byte	0x3
+ 916 00be 30       		.byte	0x30
+ 917 00bf 69000000 		.4byte	0x69
+ 918 00c3 02       		.uleb128 0x2
+ 919 00c4 04       		.byte	0x4
+ 920 00c5 04       		.byte	0x4
+ 921 00c6 49010000 		.4byte	.LASF17
+ 922 00ca 02       		.uleb128 0x2
+ 923 00cb 08       		.byte	0x8
+ 924 00cc 04       		.byte	0x4
+ 925 00cd 1C030000 		.4byte	.LASF18
+ 926 00d1 02       		.uleb128 0x2
+ 927 00d2 01       		.byte	0x1
+ 928 00d3 08       		.byte	0x8
+ 929 00d4 A0020000 		.4byte	.LASF19
+ 930 00d8 02       		.uleb128 0x2
+ 931 00d9 08       		.byte	0x8
+ 932 00da 04       		.byte	0x4
+ 933 00db C7010000 		.4byte	.LASF20
+ 934 00df 02       		.uleb128 0x2
+ 935 00e0 04       		.byte	0x4
+ 936 00e1 07       		.byte	0x7
+ 937 00e2 50000000 		.4byte	.LASF21
+ 938 00e6 05       		.uleb128 0x5
+ 939 00e7 04       		.byte	0x4
+ 940 00e8 EC000000 		.4byte	0xec
+ 941 00ec 06       		.uleb128 0x6
+ 942 00ed D1000000 		.4byte	0xd1
+ 943 00f1 07       		.uleb128 0x7
+ 944 00f2 97000000 		.4byte	0x97
+ 945 00f6 08       		.uleb128 0x8
+ 946 00f7 5C       		.byte	0x5c
+ 947 00f8 04       		.byte	0x4
+ 948 00f9 4F       		.byte	0x4f
+ 949 00fa E3010000 		.4byte	0x1e3
+ 950 00fe 09       		.uleb128 0x9
+ 951 00ff 8F010000 		.4byte	.LASF22
+ 952 0103 04       		.byte	0x4
+ 953 0104 51       		.byte	0x51
+ 954 0105 E3010000 		.4byte	0x1e3
+ 955 0109 00       		.byte	0
+ 956 010a 09       		.uleb128 0x9
+ 957 010b 07040000 		.4byte	.LASF23
+ 958 010f 04       		.byte	0x4
+ 959 0110 52       		.byte	0x52
+ 960 0111 E3010000 		.4byte	0x1e3
+ 961 0115 0C       		.byte	0xc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 21
+
+
+ 962 0116 09       		.uleb128 0x9
+ 963 0117 31000000 		.4byte	.LASF24
+ 964 011b 04       		.byte	0x4
+ 965 011c 53       		.byte	0x53
+ 966 011d E3010000 		.4byte	0x1e3
+ 967 0121 18       		.byte	0x18
+ 968 0122 09       		.uleb128 0x9
+ 969 0123 7E030000 		.4byte	.LASF25
+ 970 0127 04       		.byte	0x4
+ 971 0128 54       		.byte	0x54
+ 972 0129 E3010000 		.4byte	0x1e3
+ 973 012d 24       		.byte	0x24
+ 974 012e 09       		.uleb128 0x9
+ 975 012f EA020000 		.4byte	.LASF26
+ 976 0133 04       		.byte	0x4
+ 977 0134 57       		.byte	0x57
+ 978 0135 97000000 		.4byte	0x97
+ 979 0139 30       		.byte	0x30
+ 980 013a 09       		.uleb128 0x9
+ 981 013b 40040000 		.4byte	.LASF27
+ 982 013f 04       		.byte	0x4
+ 983 0140 58       		.byte	0x58
+ 984 0141 97000000 		.4byte	0x97
+ 985 0145 31       		.byte	0x31
+ 986 0146 09       		.uleb128 0x9
+ 987 0147 A5020000 		.4byte	.LASF28
+ 988 014b 04       		.byte	0x4
+ 989 014c 59       		.byte	0x59
+ 990 014d 97000000 		.4byte	0x97
+ 991 0151 32       		.byte	0x32
+ 992 0152 09       		.uleb128 0x9
+ 993 0153 FD000000 		.4byte	.LASF29
+ 994 0157 04       		.byte	0x4
+ 995 0158 5A       		.byte	0x5a
+ 996 0159 97000000 		.4byte	0x97
+ 997 015d 33       		.byte	0x33
+ 998 015e 09       		.uleb128 0x9
+ 999 015f 7A020000 		.4byte	.LASF30
+ 1000 0163 04       		.byte	0x4
+ 1001 0164 5B       		.byte	0x5b
+ 1002 0165 97000000 		.4byte	0x97
+ 1003 0169 34       		.byte	0x34
+ 1004 016a 09       		.uleb128 0x9
+ 1005 016b 66010000 		.4byte	.LASF31
+ 1006 016f 04       		.byte	0x4
+ 1007 0170 5C       		.byte	0x5c
+ 1008 0171 C3000000 		.4byte	0xc3
+ 1009 0175 38       		.byte	0x38
+ 1010 0176 09       		.uleb128 0x9
+ 1011 0177 B9010000 		.4byte	.LASF32
+ 1012 017b 04       		.byte	0x4
+ 1013 017c 5D       		.byte	0x5d
+ 1014 017d C3000000 		.4byte	0xc3
+ 1015 0181 3C       		.byte	0x3c
+ 1016 0182 09       		.uleb128 0x9
+ 1017 0183 BD020000 		.4byte	.LASF33
+ 1018 0187 04       		.byte	0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 22
+
+
+ 1019 0188 5F       		.byte	0x5f
+ 1020 0189 C3000000 		.4byte	0xc3
+ 1021 018d 40       		.byte	0x40
+ 1022 018e 09       		.uleb128 0x9
+ 1023 018f 48030000 		.4byte	.LASF34
+ 1024 0193 04       		.byte	0x4
+ 1025 0194 60       		.byte	0x60
+ 1026 0195 C3000000 		.4byte	0xc3
+ 1027 0199 44       		.byte	0x44
+ 1028 019a 09       		.uleb128 0x9
+ 1029 019b FD010000 		.4byte	.LASF35
+ 1030 019f 04       		.byte	0x4
+ 1031 01a0 62       		.byte	0x62
+ 1032 01a1 97000000 		.4byte	0x97
+ 1033 01a5 48       		.byte	0x48
+ 1034 01a6 09       		.uleb128 0x9
+ 1035 01a7 D3010000 		.4byte	.LASF36
+ 1036 01ab 04       		.byte	0x4
+ 1037 01ac 64       		.byte	0x64
+ 1038 01ad 97000000 		.4byte	0x97
+ 1039 01b1 49       		.byte	0x49
+ 1040 01b2 09       		.uleb128 0x9
+ 1041 01b3 CB030000 		.4byte	.LASF37
+ 1042 01b7 04       		.byte	0x4
+ 1043 01b8 65       		.byte	0x65
+ 1044 01b9 C3000000 		.4byte	0xc3
+ 1045 01bd 4C       		.byte	0x4c
+ 1046 01be 09       		.uleb128 0x9
+ 1047 01bf 23030000 		.4byte	.LASF38
+ 1048 01c3 04       		.byte	0x4
+ 1049 01c4 66       		.byte	0x66
+ 1050 01c5 C3000000 		.4byte	0xc3
+ 1051 01c9 50       		.byte	0x50
+ 1052 01ca 09       		.uleb128 0x9
+ 1053 01cb D4020000 		.4byte	.LASF39
+ 1054 01cf 04       		.byte	0x4
+ 1055 01d0 67       		.byte	0x67
+ 1056 01d1 A2000000 		.4byte	0xa2
+ 1057 01d5 54       		.byte	0x54
+ 1058 01d6 09       		.uleb128 0x9
+ 1059 01d7 24010000 		.4byte	.LASF40
+ 1060 01db 04       		.byte	0x4
+ 1061 01dc 68       		.byte	0x68
+ 1062 01dd C3000000 		.4byte	0xc3
+ 1063 01e1 58       		.byte	0x58
+ 1064 01e2 00       		.byte	0
+ 1065 01e3 0A       		.uleb128 0xa
+ 1066 01e4 C3000000 		.4byte	0xc3
+ 1067 01e8 F3010000 		.4byte	0x1f3
+ 1068 01ec 0B       		.uleb128 0xb
+ 1069 01ed DF000000 		.4byte	0xdf
+ 1070 01f1 02       		.byte	0x2
+ 1071 01f2 00       		.byte	0
+ 1072 01f3 03       		.uleb128 0x3
+ 1073 01f4 EF030000 		.4byte	.LASF41
+ 1074 01f8 04       		.byte	0x4
+ 1075 01f9 69       		.byte	0x69
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 23
+
+
+ 1076 01fa F6000000 		.4byte	0xf6
+ 1077 01fe 0C       		.uleb128 0xc
+ 1078 01ff A6010000 		.4byte	.LASF42
+ 1079 0203 01       		.byte	0x1
+ 1080 0204 1B       		.byte	0x1b
+ 1081 0205 00000000 		.4byte	.LFB64
+ 1082 0209 16000000 		.4byte	.LFE64-.LFB64
+ 1083 020d 01       		.uleb128 0x1
+ 1084 020e 9C       		.byte	0x9c
+ 1085 020f 20020000 		.4byte	0x220
+ 1086 0213 0D       		.uleb128 0xd
+ 1087 0214 7300     		.ascii	"s\000"
+ 1088 0216 01       		.byte	0x1
+ 1089 0217 1B       		.byte	0x1b
+ 1090 0218 E6000000 		.4byte	0xe6
+ 1091 021c 02       		.uleb128 0x2
+ 1092 021d 91       		.byte	0x91
+ 1093 021e 74       		.sleb128 -12
+ 1094 021f 00       		.byte	0
+ 1095 0220 0C       		.uleb128 0xc
+ 1096 0221 0D030000 		.4byte	.LASF43
+ 1097 0225 01       		.byte	0x1
+ 1098 0226 21       		.byte	0x21
+ 1099 0227 00000000 		.4byte	.LFB65
+ 1100 022b 16000000 		.4byte	.LFE65-.LFB65
+ 1101 022f 01       		.uleb128 0x1
+ 1102 0230 9C       		.byte	0x9c
+ 1103 0231 42020000 		.4byte	0x242
+ 1104 0235 0D       		.uleb128 0xd
+ 1105 0236 7300     		.ascii	"s\000"
+ 1106 0238 01       		.byte	0x1
+ 1107 0239 21       		.byte	0x21
+ 1108 023a E6000000 		.4byte	0xe6
+ 1109 023e 02       		.uleb128 0x2
+ 1110 023f 91       		.byte	0x91
+ 1111 0240 74       		.sleb128 -12
+ 1112 0241 00       		.byte	0
+ 1113 0242 0C       		.uleb128 0xc
+ 1114 0243 DC030000 		.4byte	.LASF44
+ 1115 0247 01       		.byte	0x1
+ 1116 0248 27       		.byte	0x27
+ 1117 0249 00000000 		.4byte	.LFB66
+ 1118 024d A0000000 		.4byte	.LFE66-.LFB66
+ 1119 0251 01       		.uleb128 0x1
+ 1120 0252 9C       		.byte	0x9c
+ 1121 0253 80020000 		.4byte	0x280
+ 1122 0257 0D       		.uleb128 0xd
+ 1123 0258 6E00     		.ascii	"n\000"
+ 1124 025a 01       		.byte	0x1
+ 1125 025b 27       		.byte	0x27
+ 1126 025c 97000000 		.4byte	0x97
+ 1127 0260 02       		.uleb128 0x2
+ 1128 0261 91       		.byte	0x91
+ 1129 0262 6F       		.sleb128 -17
+ 1130 0263 0E       		.uleb128 0xe
+ 1131 0264 10040000 		.4byte	.LASF45
+ 1132 0268 01       		.byte	0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 24
+
+
+ 1133 0269 29       		.byte	0x29
+ 1134 026a 97000000 		.4byte	0x97
+ 1135 026e 02       		.uleb128 0x2
+ 1136 026f 91       		.byte	0x91
+ 1137 0270 77       		.sleb128 -9
+ 1138 0271 0E       		.uleb128 0xe
+ 1139 0272 14010000 		.4byte	.LASF46
+ 1140 0276 01       		.byte	0x1
+ 1141 0277 2A       		.byte	0x2a
+ 1142 0278 97000000 		.4byte	0x97
+ 1143 027c 02       		.uleb128 0x2
+ 1144 027d 91       		.byte	0x91
+ 1145 027e 76       		.sleb128 -10
+ 1146 027f 00       		.byte	0
+ 1147 0280 0C       		.uleb128 0xc
+ 1148 0281 50030000 		.4byte	.LASF47
+ 1149 0285 01       		.byte	0x1
+ 1150 0286 3A       		.byte	0x3a
+ 1151 0287 00000000 		.4byte	.LFB67
+ 1152 028b 9E000000 		.4byte	.LFE67-.LFB67
+ 1153 028f 01       		.uleb128 0x1
+ 1154 0290 9C       		.byte	0x9c
+ 1155 0291 CB020000 		.4byte	0x2cb
+ 1156 0295 0D       		.uleb128 0xd
+ 1157 0296 6E00     		.ascii	"n\000"
+ 1158 0298 01       		.byte	0x1
+ 1159 0299 3A       		.byte	0x3a
+ 1160 029a 97000000 		.4byte	0x97
+ 1161 029e 02       		.uleb128 0x2
+ 1162 029f 91       		.byte	0x91
+ 1163 02a0 57       		.sleb128 -41
+ 1164 02a1 0F       		.uleb128 0xf
+ 1165 02a2 B2010000 		.4byte	.LASF48
+ 1166 02a6 01       		.byte	0x1
+ 1167 02a7 3A       		.byte	0x3a
+ 1168 02a8 97000000 		.4byte	0x97
+ 1169 02ac 02       		.uleb128 0x2
+ 1170 02ad 91       		.byte	0x91
+ 1171 02ae 56       		.sleb128 -42
+ 1172 02af 10       		.uleb128 0x10
+ 1173 02b0 62756600 		.ascii	"buf\000"
+ 1174 02b4 01       		.byte	0x1
+ 1175 02b5 3B       		.byte	0x3b
+ 1176 02b6 CB020000 		.4byte	0x2cb
+ 1177 02ba 03       		.uleb128 0x3
+ 1178 02bb 91       		.byte	0x91
+ 1179 02bc 5C       		.sleb128 -36
+ 1180 02bd 06       		.byte	0x6
+ 1181 02be 10       		.uleb128 0x10
+ 1182 02bf 6900     		.ascii	"i\000"
+ 1183 02c1 01       		.byte	0x1
+ 1184 02c2 3C       		.byte	0x3c
+ 1185 02c3 97000000 		.4byte	0x97
+ 1186 02c7 02       		.uleb128 0x2
+ 1187 02c8 91       		.byte	0x91
+ 1188 02c9 67       		.sleb128 -25
+ 1189 02ca 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 25
+
+
+ 1190 02cb 0A       		.uleb128 0xa
+ 1191 02cc 37000000 		.4byte	0x37
+ 1192 02d0 DE020000 		.4byte	0x2de
+ 1193 02d4 11       		.uleb128 0x11
+ 1194 02d5 DF000000 		.4byte	0xdf
+ 1195 02d9 03       		.uleb128 0x3
+ 1196 02da 91       		.byte	0x91
+ 1197 02db 60       		.sleb128 -32
+ 1198 02dc 06       		.byte	0x6
+ 1199 02dd 00       		.byte	0
+ 1200 02de 0C       		.uleb128 0xc
+ 1201 02df 34030000 		.4byte	.LASF49
+ 1202 02e3 01       		.byte	0x1
+ 1203 02e4 48       		.byte	0x48
+ 1204 02e5 00000000 		.4byte	.LFB68
+ 1205 02e9 88000000 		.4byte	.LFE68-.LFB68
+ 1206 02ed 01       		.uleb128 0x1
+ 1207 02ee 9C       		.byte	0x9c
+ 1208 02ef 1A030000 		.4byte	0x31a
+ 1209 02f3 0D       		.uleb128 0xd
+ 1210 02f4 6E00     		.ascii	"n\000"
+ 1211 02f6 01       		.byte	0x1
+ 1212 02f7 48       		.byte	0x48
+ 1213 02f8 B8000000 		.4byte	0xb8
+ 1214 02fc 02       		.uleb128 0x2
+ 1215 02fd 91       		.byte	0x91
+ 1216 02fe 64       		.sleb128 -28
+ 1217 02ff 10       		.uleb128 0x10
+ 1218 0300 62756600 		.ascii	"buf\000"
+ 1219 0304 01       		.byte	0x1
+ 1220 0305 4F       		.byte	0x4f
+ 1221 0306 1A030000 		.4byte	0x31a
+ 1222 030a 02       		.uleb128 0x2
+ 1223 030b 91       		.byte	0x91
+ 1224 030c 6C       		.sleb128 -20
+ 1225 030d 10       		.uleb128 0x10
+ 1226 030e 6900     		.ascii	"i\000"
+ 1227 0310 01       		.byte	0x1
+ 1228 0311 50       		.byte	0x50
+ 1229 0312 97000000 		.4byte	0x97
+ 1230 0316 02       		.uleb128 0x2
+ 1231 0317 91       		.byte	0x91
+ 1232 0318 77       		.sleb128 -9
+ 1233 0319 00       		.byte	0
+ 1234 031a 0A       		.uleb128 0xa
+ 1235 031b 37000000 		.4byte	0x37
+ 1236 031f 2A030000 		.4byte	0x32a
+ 1237 0323 0B       		.uleb128 0xb
+ 1238 0324 DF000000 		.4byte	0xdf
+ 1239 0328 09       		.byte	0x9
+ 1240 0329 00       		.byte	0
+ 1241 032a 0C       		.uleb128 0xc
+ 1242 032b 3C010000 		.4byte	.LASF50
+ 1243 032f 01       		.byte	0x1
+ 1244 0330 5C       		.byte	0x5c
+ 1245 0331 00000000 		.4byte	.LFB69
+ 1246 0335 30000000 		.4byte	.LFE69-.LFB69
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 26
+
+
+ 1247 0339 01       		.uleb128 0x1
+ 1248 033a 9C       		.byte	0x9c
+ 1249 033b 4C030000 		.4byte	0x34c
+ 1250 033f 0D       		.uleb128 0xd
+ 1251 0340 6E00     		.ascii	"n\000"
+ 1252 0342 01       		.byte	0x1
+ 1253 0343 5C       		.byte	0x5c
+ 1254 0344 62000000 		.4byte	0x62
+ 1255 0348 02       		.uleb128 0x2
+ 1256 0349 91       		.byte	0x91
+ 1257 034a 74       		.sleb128 -12
+ 1258 034b 00       		.byte	0
+ 1259 034c 0C       		.uleb128 0xc
+ 1260 034d 73030000 		.4byte	.LASF51
+ 1261 0351 01       		.byte	0x1
+ 1262 0352 6C       		.byte	0x6c
+ 1263 0353 00000000 		.4byte	.LFB70
+ 1264 0357 30010000 		.4byte	.LFE70-.LFB70
+ 1265 035b 01       		.uleb128 0x1
+ 1266 035c 9C       		.byte	0x9c
+ 1267 035d B0030000 		.4byte	0x3b0
+ 1268 0361 0D       		.uleb128 0xd
+ 1269 0362 6E00     		.ascii	"n\000"
+ 1270 0364 01       		.byte	0x1
+ 1271 0365 6C       		.byte	0x6c
+ 1272 0366 C3000000 		.4byte	0xc3
+ 1273 036a 02       		.uleb128 0x2
+ 1274 036b 91       		.byte	0x91
+ 1275 036c 5C       		.sleb128 -36
+ 1276 036d 0F       		.uleb128 0xf
+ 1277 036e C5020000 		.4byte	.LASF52
+ 1278 0372 01       		.byte	0x1
+ 1279 0373 6C       		.byte	0x6c
+ 1280 0374 97000000 		.4byte	0x97
+ 1281 0378 02       		.uleb128 0x2
+ 1282 0379 91       		.byte	0x91
+ 1283 037a 5B       		.sleb128 -37
+ 1284 037b 0E       		.uleb128 0xe
+ 1285 037c 33010000 		.4byte	.LASF53
+ 1286 0380 01       		.byte	0x1
+ 1287 0381 73       		.byte	0x73
+ 1288 0382 97000000 		.4byte	0x97
+ 1289 0386 02       		.uleb128 0x2
+ 1290 0387 91       		.byte	0x91
+ 1291 0388 77       		.sleb128 -9
+ 1292 0389 10       		.uleb128 0x10
+ 1293 038a 62756600 		.ascii	"buf\000"
+ 1294 038e 01       		.byte	0x1
+ 1295 038f 7C       		.byte	0x7c
+ 1296 0390 B0030000 		.4byte	0x3b0
+ 1297 0394 02       		.uleb128 0x2
+ 1298 0395 91       		.byte	0x91
+ 1299 0396 60       		.sleb128 -32
+ 1300 0397 10       		.uleb128 0x10
+ 1301 0398 6900     		.ascii	"i\000"
+ 1302 039a 01       		.byte	0x1
+ 1303 039b 7D       		.byte	0x7d
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 27
+
+
+ 1304 039c 97000000 		.4byte	0x97
+ 1305 03a0 02       		.uleb128 0x2
+ 1306 03a1 91       		.byte	0x91
+ 1307 03a2 76       		.sleb128 -10
+ 1308 03a3 10       		.uleb128 0x10
+ 1309 03a4 6100     		.ascii	"a\000"
+ 1310 03a6 01       		.byte	0x1
+ 1311 03a7 7E       		.byte	0x7e
+ 1312 03a8 B8000000 		.4byte	0xb8
+ 1313 03ac 02       		.uleb128 0x2
+ 1314 03ad 91       		.byte	0x91
+ 1315 03ae 70       		.sleb128 -16
+ 1316 03af 00       		.byte	0
+ 1317 03b0 0A       		.uleb128 0xa
+ 1318 03b1 37000000 		.4byte	0x37
+ 1319 03b5 C0030000 		.4byte	0x3c0
+ 1320 03b9 0B       		.uleb128 0xb
+ 1321 03ba DF000000 		.4byte	0xdf
+ 1322 03be 0C       		.byte	0xc
+ 1323 03bf 00       		.byte	0
+ 1324 03c0 0C       		.uleb128 0xc
+ 1325 03c1 2A040000 		.4byte	.LASF54
+ 1326 03c5 01       		.byte	0x1
+ 1327 03c6 96       		.byte	0x96
+ 1328 03c7 00000000 		.4byte	.LFB71
+ 1329 03cb 5C000000 		.4byte	.LFE71-.LFB71
+ 1330 03cf 01       		.uleb128 0x1
+ 1331 03d0 9C       		.byte	0x9c
+ 1332 03d1 E2030000 		.4byte	0x3e2
+ 1333 03d5 0D       		.uleb128 0xd
+ 1334 03d6 6E00     		.ascii	"n\000"
+ 1335 03d8 01       		.byte	0x1
+ 1336 03d9 96       		.byte	0x96
+ 1337 03da C3000000 		.4byte	0xc3
+ 1338 03de 02       		.uleb128 0x2
+ 1339 03df 91       		.byte	0x91
+ 1340 03e0 6C       		.sleb128 -20
+ 1341 03e1 00       		.byte	0
+ 1342 03e2 0C       		.uleb128 0xc
+ 1343 03e3 51040000 		.4byte	.LASF55
+ 1344 03e7 01       		.byte	0x1
+ 1345 03e8 9E       		.byte	0x9e
+ 1346 03e9 00000000 		.4byte	.LFB72
+ 1347 03ed 5C000000 		.4byte	.LFE72-.LFB72
+ 1348 03f1 01       		.uleb128 0x1
+ 1349 03f2 9C       		.byte	0x9c
+ 1350 03f3 04040000 		.4byte	0x404
+ 1351 03f7 0D       		.uleb128 0xd
+ 1352 03f8 6E00     		.ascii	"n\000"
+ 1353 03fa 01       		.byte	0x1
+ 1354 03fb 9E       		.byte	0x9e
+ 1355 03fc C3000000 		.4byte	0xc3
+ 1356 0400 02       		.uleb128 0x2
+ 1357 0401 91       		.byte	0x91
+ 1358 0402 6C       		.sleb128 -20
+ 1359 0403 00       		.byte	0
+ 1360 0404 12       		.uleb128 0x12
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 28
+
+
+ 1361 0405 FA030000 		.4byte	.LASF56
+ 1362 0409 05       		.byte	0x5
+ 1363 040a 1207     		.2byte	0x712
+ 1364 040c 10040000 		.4byte	0x410
+ 1365 0410 07       		.uleb128 0x7
+ 1366 0411 AD000000 		.4byte	0xad
+ 1367 0415 13       		.uleb128 0x13
+ 1368 0416 4F010000 		.4byte	.LASF57
+ 1369 041a 04       		.byte	0x4
+ 1370 041b 6A       		.byte	0x6a
+ 1371 041c F3010000 		.4byte	0x1f3
+ 1372 0420 0A       		.uleb128 0xa
+ 1373 0421 AD000000 		.4byte	0xad
+ 1374 0425 30040000 		.4byte	0x430
+ 1375 0429 0B       		.uleb128 0xb
+ 1376 042a DF000000 		.4byte	0xdf
+ 1377 042e 02       		.byte	0x2
+ 1378 042f 00       		.byte	0
+ 1379 0430 14       		.uleb128 0x14
+ 1380 0431 79010000 		.4byte	.LASF58
+ 1381 0435 06       		.byte	0x6
+ 1382 0436 96       		.byte	0x96
+ 1383 0437 20040000 		.4byte	0x420
+ 1384 043b 05       		.uleb128 0x5
+ 1385 043c 03       		.byte	0x3
+ 1386 043d 00000000 		.4byte	sys_position
+ 1387 0441 14       		.uleb128 0x14
+ 1388 0442 4B020000 		.4byte	.LASF59
+ 1389 0446 06       		.byte	0x6
+ 1390 0447 97       		.byte	0x97
+ 1391 0448 20040000 		.4byte	0x420
+ 1392 044c 05       		.uleb128 0x5
+ 1393 044d 03       		.byte	0x3
+ 1394 044e 00000000 		.4byte	sys_probe_position
+ 1395 0452 14       		.uleb128 0x14
+ 1396 0453 FD020000 		.4byte	.LASF60
+ 1397 0457 06       		.byte	0x6
+ 1398 0458 99       		.byte	0x99
+ 1399 0459 F1000000 		.4byte	0xf1
+ 1400 045d 05       		.uleb128 0x5
+ 1401 045e 03       		.byte	0x3
+ 1402 045f 00000000 		.4byte	sys_probe_state
+ 1403 0463 14       		.uleb128 0x14
+ 1404 0464 18040000 		.4byte	.LASF61
+ 1405 0468 06       		.byte	0x6
+ 1406 0469 9A       		.byte	0x9a
+ 1407 046a F1000000 		.4byte	0xf1
+ 1408 046e 05       		.uleb128 0x5
+ 1409 046f 03       		.byte	0x3
+ 1410 0470 00000000 		.4byte	sys_rt_exec_state
+ 1411 0474 14       		.uleb128 0x14
+ 1412 0475 00000000 		.4byte	.LASF62
+ 1413 0479 06       		.byte	0x6
+ 1414 047a 9B       		.byte	0x9b
+ 1415 047b F1000000 		.4byte	0xf1
+ 1416 047f 05       		.uleb128 0x5
+ 1417 0480 03       		.byte	0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 29
+
+
+ 1418 0481 00000000 		.4byte	sys_rt_exec_alarm
+ 1419 0485 14       		.uleb128 0x14
+ 1420 0486 5E020000 		.4byte	.LASF63
+ 1421 048a 06       		.byte	0x6
+ 1422 048b 9C       		.byte	0x9c
+ 1423 048c F1000000 		.4byte	0xf1
+ 1424 0490 05       		.uleb128 0x5
+ 1425 0491 03       		.byte	0x3
+ 1426 0492 00000000 		.4byte	sys_rt_exec_motion_override
+ 1427 0496 14       		.uleb128 0x14
+ 1428 0497 12000000 		.4byte	.LASF64
+ 1429 049b 06       		.byte	0x6
+ 1430 049c 9D       		.byte	0x9d
+ 1431 049d F1000000 		.4byte	0xf1
+ 1432 04a1 05       		.uleb128 0x5
+ 1433 04a2 03       		.byte	0x3
+ 1434 04a3 00000000 		.4byte	sys_rt_exec_accessory_override
+ 1435 04a7 00       		.byte	0
+ 1436              		.section	.debug_abbrev,"",%progbits
+ 1437              	.Ldebug_abbrev0:
+ 1438 0000 01       		.uleb128 0x1
+ 1439 0001 11       		.uleb128 0x11
+ 1440 0002 01       		.byte	0x1
+ 1441 0003 25       		.uleb128 0x25
+ 1442 0004 0E       		.uleb128 0xe
+ 1443 0005 13       		.uleb128 0x13
+ 1444 0006 0B       		.uleb128 0xb
+ 1445 0007 03       		.uleb128 0x3
+ 1446 0008 0E       		.uleb128 0xe
+ 1447 0009 1B       		.uleb128 0x1b
+ 1448 000a 0E       		.uleb128 0xe
+ 1449 000b 55       		.uleb128 0x55
+ 1450 000c 17       		.uleb128 0x17
+ 1451 000d 11       		.uleb128 0x11
+ 1452 000e 01       		.uleb128 0x1
+ 1453 000f 10       		.uleb128 0x10
+ 1454 0010 17       		.uleb128 0x17
+ 1455 0011 00       		.byte	0
+ 1456 0012 00       		.byte	0
+ 1457 0013 02       		.uleb128 0x2
+ 1458 0014 24       		.uleb128 0x24
+ 1459 0015 00       		.byte	0
+ 1460 0016 0B       		.uleb128 0xb
+ 1461 0017 0B       		.uleb128 0xb
+ 1462 0018 3E       		.uleb128 0x3e
+ 1463 0019 0B       		.uleb128 0xb
+ 1464 001a 03       		.uleb128 0x3
+ 1465 001b 0E       		.uleb128 0xe
+ 1466 001c 00       		.byte	0
+ 1467 001d 00       		.byte	0
+ 1468 001e 03       		.uleb128 0x3
+ 1469 001f 16       		.uleb128 0x16
+ 1470 0020 00       		.byte	0
+ 1471 0021 03       		.uleb128 0x3
+ 1472 0022 0E       		.uleb128 0xe
+ 1473 0023 3A       		.uleb128 0x3a
+ 1474 0024 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 30
+
+
+ 1475 0025 3B       		.uleb128 0x3b
+ 1476 0026 0B       		.uleb128 0xb
+ 1477 0027 49       		.uleb128 0x49
+ 1478 0028 13       		.uleb128 0x13
+ 1479 0029 00       		.byte	0
+ 1480 002a 00       		.byte	0
+ 1481 002b 04       		.uleb128 0x4
+ 1482 002c 24       		.uleb128 0x24
+ 1483 002d 00       		.byte	0
+ 1484 002e 0B       		.uleb128 0xb
+ 1485 002f 0B       		.uleb128 0xb
+ 1486 0030 3E       		.uleb128 0x3e
+ 1487 0031 0B       		.uleb128 0xb
+ 1488 0032 03       		.uleb128 0x3
+ 1489 0033 08       		.uleb128 0x8
+ 1490 0034 00       		.byte	0
+ 1491 0035 00       		.byte	0
+ 1492 0036 05       		.uleb128 0x5
+ 1493 0037 0F       		.uleb128 0xf
+ 1494 0038 00       		.byte	0
+ 1495 0039 0B       		.uleb128 0xb
+ 1496 003a 0B       		.uleb128 0xb
+ 1497 003b 49       		.uleb128 0x49
+ 1498 003c 13       		.uleb128 0x13
+ 1499 003d 00       		.byte	0
+ 1500 003e 00       		.byte	0
+ 1501 003f 06       		.uleb128 0x6
+ 1502 0040 26       		.uleb128 0x26
+ 1503 0041 00       		.byte	0
+ 1504 0042 49       		.uleb128 0x49
+ 1505 0043 13       		.uleb128 0x13
+ 1506 0044 00       		.byte	0
+ 1507 0045 00       		.byte	0
+ 1508 0046 07       		.uleb128 0x7
+ 1509 0047 35       		.uleb128 0x35
+ 1510 0048 00       		.byte	0
+ 1511 0049 49       		.uleb128 0x49
+ 1512 004a 13       		.uleb128 0x13
+ 1513 004b 00       		.byte	0
+ 1514 004c 00       		.byte	0
+ 1515 004d 08       		.uleb128 0x8
+ 1516 004e 13       		.uleb128 0x13
+ 1517 004f 01       		.byte	0x1
+ 1518 0050 0B       		.uleb128 0xb
+ 1519 0051 0B       		.uleb128 0xb
+ 1520 0052 3A       		.uleb128 0x3a
+ 1521 0053 0B       		.uleb128 0xb
+ 1522 0054 3B       		.uleb128 0x3b
+ 1523 0055 0B       		.uleb128 0xb
+ 1524 0056 01       		.uleb128 0x1
+ 1525 0057 13       		.uleb128 0x13
+ 1526 0058 00       		.byte	0
+ 1527 0059 00       		.byte	0
+ 1528 005a 09       		.uleb128 0x9
+ 1529 005b 0D       		.uleb128 0xd
+ 1530 005c 00       		.byte	0
+ 1531 005d 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 31
+
+
+ 1532 005e 0E       		.uleb128 0xe
+ 1533 005f 3A       		.uleb128 0x3a
+ 1534 0060 0B       		.uleb128 0xb
+ 1535 0061 3B       		.uleb128 0x3b
+ 1536 0062 0B       		.uleb128 0xb
+ 1537 0063 49       		.uleb128 0x49
+ 1538 0064 13       		.uleb128 0x13
+ 1539 0065 38       		.uleb128 0x38
+ 1540 0066 0B       		.uleb128 0xb
+ 1541 0067 00       		.byte	0
+ 1542 0068 00       		.byte	0
+ 1543 0069 0A       		.uleb128 0xa
+ 1544 006a 01       		.uleb128 0x1
+ 1545 006b 01       		.byte	0x1
+ 1546 006c 49       		.uleb128 0x49
+ 1547 006d 13       		.uleb128 0x13
+ 1548 006e 01       		.uleb128 0x1
+ 1549 006f 13       		.uleb128 0x13
+ 1550 0070 00       		.byte	0
+ 1551 0071 00       		.byte	0
+ 1552 0072 0B       		.uleb128 0xb
+ 1553 0073 21       		.uleb128 0x21
+ 1554 0074 00       		.byte	0
+ 1555 0075 49       		.uleb128 0x49
+ 1556 0076 13       		.uleb128 0x13
+ 1557 0077 2F       		.uleb128 0x2f
+ 1558 0078 0B       		.uleb128 0xb
+ 1559 0079 00       		.byte	0
+ 1560 007a 00       		.byte	0
+ 1561 007b 0C       		.uleb128 0xc
+ 1562 007c 2E       		.uleb128 0x2e
+ 1563 007d 01       		.byte	0x1
+ 1564 007e 3F       		.uleb128 0x3f
+ 1565 007f 19       		.uleb128 0x19
+ 1566 0080 03       		.uleb128 0x3
+ 1567 0081 0E       		.uleb128 0xe
+ 1568 0082 3A       		.uleb128 0x3a
+ 1569 0083 0B       		.uleb128 0xb
+ 1570 0084 3B       		.uleb128 0x3b
+ 1571 0085 0B       		.uleb128 0xb
+ 1572 0086 27       		.uleb128 0x27
+ 1573 0087 19       		.uleb128 0x19
+ 1574 0088 11       		.uleb128 0x11
+ 1575 0089 01       		.uleb128 0x1
+ 1576 008a 12       		.uleb128 0x12
+ 1577 008b 06       		.uleb128 0x6
+ 1578 008c 40       		.uleb128 0x40
+ 1579 008d 18       		.uleb128 0x18
+ 1580 008e 9642     		.uleb128 0x2116
+ 1581 0090 19       		.uleb128 0x19
+ 1582 0091 01       		.uleb128 0x1
+ 1583 0092 13       		.uleb128 0x13
+ 1584 0093 00       		.byte	0
+ 1585 0094 00       		.byte	0
+ 1586 0095 0D       		.uleb128 0xd
+ 1587 0096 05       		.uleb128 0x5
+ 1588 0097 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 32
+
+
+ 1589 0098 03       		.uleb128 0x3
+ 1590 0099 08       		.uleb128 0x8
+ 1591 009a 3A       		.uleb128 0x3a
+ 1592 009b 0B       		.uleb128 0xb
+ 1593 009c 3B       		.uleb128 0x3b
+ 1594 009d 0B       		.uleb128 0xb
+ 1595 009e 49       		.uleb128 0x49
+ 1596 009f 13       		.uleb128 0x13
+ 1597 00a0 02       		.uleb128 0x2
+ 1598 00a1 18       		.uleb128 0x18
+ 1599 00a2 00       		.byte	0
+ 1600 00a3 00       		.byte	0
+ 1601 00a4 0E       		.uleb128 0xe
+ 1602 00a5 34       		.uleb128 0x34
+ 1603 00a6 00       		.byte	0
+ 1604 00a7 03       		.uleb128 0x3
+ 1605 00a8 0E       		.uleb128 0xe
+ 1606 00a9 3A       		.uleb128 0x3a
+ 1607 00aa 0B       		.uleb128 0xb
+ 1608 00ab 3B       		.uleb128 0x3b
+ 1609 00ac 0B       		.uleb128 0xb
+ 1610 00ad 49       		.uleb128 0x49
+ 1611 00ae 13       		.uleb128 0x13
+ 1612 00af 02       		.uleb128 0x2
+ 1613 00b0 18       		.uleb128 0x18
+ 1614 00b1 00       		.byte	0
+ 1615 00b2 00       		.byte	0
+ 1616 00b3 0F       		.uleb128 0xf
+ 1617 00b4 05       		.uleb128 0x5
+ 1618 00b5 00       		.byte	0
+ 1619 00b6 03       		.uleb128 0x3
+ 1620 00b7 0E       		.uleb128 0xe
+ 1621 00b8 3A       		.uleb128 0x3a
+ 1622 00b9 0B       		.uleb128 0xb
+ 1623 00ba 3B       		.uleb128 0x3b
+ 1624 00bb 0B       		.uleb128 0xb
+ 1625 00bc 49       		.uleb128 0x49
+ 1626 00bd 13       		.uleb128 0x13
+ 1627 00be 02       		.uleb128 0x2
+ 1628 00bf 18       		.uleb128 0x18
+ 1629 00c0 00       		.byte	0
+ 1630 00c1 00       		.byte	0
+ 1631 00c2 10       		.uleb128 0x10
+ 1632 00c3 34       		.uleb128 0x34
+ 1633 00c4 00       		.byte	0
+ 1634 00c5 03       		.uleb128 0x3
+ 1635 00c6 08       		.uleb128 0x8
+ 1636 00c7 3A       		.uleb128 0x3a
+ 1637 00c8 0B       		.uleb128 0xb
+ 1638 00c9 3B       		.uleb128 0x3b
+ 1639 00ca 0B       		.uleb128 0xb
+ 1640 00cb 49       		.uleb128 0x49
+ 1641 00cc 13       		.uleb128 0x13
+ 1642 00cd 02       		.uleb128 0x2
+ 1643 00ce 18       		.uleb128 0x18
+ 1644 00cf 00       		.byte	0
+ 1645 00d0 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 33
+
+
+ 1646 00d1 11       		.uleb128 0x11
+ 1647 00d2 21       		.uleb128 0x21
+ 1648 00d3 00       		.byte	0
+ 1649 00d4 49       		.uleb128 0x49
+ 1650 00d5 13       		.uleb128 0x13
+ 1651 00d6 2F       		.uleb128 0x2f
+ 1652 00d7 18       		.uleb128 0x18
+ 1653 00d8 00       		.byte	0
+ 1654 00d9 00       		.byte	0
+ 1655 00da 12       		.uleb128 0x12
+ 1656 00db 34       		.uleb128 0x34
+ 1657 00dc 00       		.byte	0
+ 1658 00dd 03       		.uleb128 0x3
+ 1659 00de 0E       		.uleb128 0xe
+ 1660 00df 3A       		.uleb128 0x3a
+ 1661 00e0 0B       		.uleb128 0xb
+ 1662 00e1 3B       		.uleb128 0x3b
+ 1663 00e2 05       		.uleb128 0x5
+ 1664 00e3 49       		.uleb128 0x49
+ 1665 00e4 13       		.uleb128 0x13
+ 1666 00e5 3F       		.uleb128 0x3f
+ 1667 00e6 19       		.uleb128 0x19
+ 1668 00e7 3C       		.uleb128 0x3c
+ 1669 00e8 19       		.uleb128 0x19
+ 1670 00e9 00       		.byte	0
+ 1671 00ea 00       		.byte	0
+ 1672 00eb 13       		.uleb128 0x13
+ 1673 00ec 34       		.uleb128 0x34
+ 1674 00ed 00       		.byte	0
+ 1675 00ee 03       		.uleb128 0x3
+ 1676 00ef 0E       		.uleb128 0xe
+ 1677 00f0 3A       		.uleb128 0x3a
+ 1678 00f1 0B       		.uleb128 0xb
+ 1679 00f2 3B       		.uleb128 0x3b
+ 1680 00f3 0B       		.uleb128 0xb
+ 1681 00f4 49       		.uleb128 0x49
+ 1682 00f5 13       		.uleb128 0x13
+ 1683 00f6 3F       		.uleb128 0x3f
+ 1684 00f7 19       		.uleb128 0x19
+ 1685 00f8 3C       		.uleb128 0x3c
+ 1686 00f9 19       		.uleb128 0x19
+ 1687 00fa 00       		.byte	0
+ 1688 00fb 00       		.byte	0
+ 1689 00fc 14       		.uleb128 0x14
+ 1690 00fd 34       		.uleb128 0x34
+ 1691 00fe 00       		.byte	0
+ 1692 00ff 03       		.uleb128 0x3
+ 1693 0100 0E       		.uleb128 0xe
+ 1694 0101 3A       		.uleb128 0x3a
+ 1695 0102 0B       		.uleb128 0xb
+ 1696 0103 3B       		.uleb128 0x3b
+ 1697 0104 0B       		.uleb128 0xb
+ 1698 0105 49       		.uleb128 0x49
+ 1699 0106 13       		.uleb128 0x13
+ 1700 0107 3F       		.uleb128 0x3f
+ 1701 0108 19       		.uleb128 0x19
+ 1702 0109 02       		.uleb128 0x2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 34
+
+
+ 1703 010a 18       		.uleb128 0x18
+ 1704 010b 00       		.byte	0
+ 1705 010c 00       		.byte	0
+ 1706 010d 00       		.byte	0
+ 1707              		.section	.debug_aranges,"",%progbits
+ 1708 0000 5C000000 		.4byte	0x5c
+ 1709 0004 0200     		.2byte	0x2
+ 1710 0006 00000000 		.4byte	.Ldebug_info0
+ 1711 000a 04       		.byte	0x4
+ 1712 000b 00       		.byte	0
+ 1713 000c 0000     		.2byte	0
+ 1714 000e 0000     		.2byte	0
+ 1715 0010 00000000 		.4byte	.LFB64
+ 1716 0014 16000000 		.4byte	.LFE64-.LFB64
+ 1717 0018 00000000 		.4byte	.LFB65
+ 1718 001c 16000000 		.4byte	.LFE65-.LFB65
+ 1719 0020 00000000 		.4byte	.LFB66
+ 1720 0024 A0000000 		.4byte	.LFE66-.LFB66
+ 1721 0028 00000000 		.4byte	.LFB67
+ 1722 002c 9E000000 		.4byte	.LFE67-.LFB67
+ 1723 0030 00000000 		.4byte	.LFB68
+ 1724 0034 88000000 		.4byte	.LFE68-.LFB68
+ 1725 0038 00000000 		.4byte	.LFB69
+ 1726 003c 30000000 		.4byte	.LFE69-.LFB69
+ 1727 0040 00000000 		.4byte	.LFB70
+ 1728 0044 30010000 		.4byte	.LFE70-.LFB70
+ 1729 0048 00000000 		.4byte	.LFB71
+ 1730 004c 5C000000 		.4byte	.LFE71-.LFB71
+ 1731 0050 00000000 		.4byte	.LFB72
+ 1732 0054 5C000000 		.4byte	.LFE72-.LFB72
+ 1733 0058 00000000 		.4byte	0
+ 1734 005c 00000000 		.4byte	0
+ 1735              		.section	.debug_ranges,"",%progbits
+ 1736              	.Ldebug_ranges0:
+ 1737 0000 00000000 		.4byte	.LFB64
+ 1738 0004 16000000 		.4byte	.LFE64
+ 1739 0008 00000000 		.4byte	.LFB65
+ 1740 000c 16000000 		.4byte	.LFE65
+ 1741 0010 00000000 		.4byte	.LFB66
+ 1742 0014 A0000000 		.4byte	.LFE66
+ 1743 0018 00000000 		.4byte	.LFB67
+ 1744 001c 9E000000 		.4byte	.LFE67
+ 1745 0020 00000000 		.4byte	.LFB68
+ 1746 0024 88000000 		.4byte	.LFE68
+ 1747 0028 00000000 		.4byte	.LFB69
+ 1748 002c 30000000 		.4byte	.LFE69
+ 1749 0030 00000000 		.4byte	.LFB70
+ 1750 0034 30010000 		.4byte	.LFE70
+ 1751 0038 00000000 		.4byte	.LFB71
+ 1752 003c 5C000000 		.4byte	.LFE71
+ 1753 0040 00000000 		.4byte	.LFB72
+ 1754 0044 5C000000 		.4byte	.LFE72
+ 1755 0048 00000000 		.4byte	0
+ 1756 004c 00000000 		.4byte	0
+ 1757              		.section	.debug_line,"",%progbits
+ 1758              	.Ldebug_line0:
+ 1759 0000 95020000 		.section	.debug_str,"MS",%progbits,1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 35
+
+
+ 1759      02005A01 
+ 1759      00000201 
+ 1759      FB0E0D00 
+ 1759      01010101 
+ 1760              	.LASF62:
+ 1761 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 1761      72745F65 
+ 1761      7865635F 
+ 1761      616C6172 
+ 1761      6D00
+ 1762              	.LASF64:
+ 1763 0012 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 1763      72745F65 
+ 1763      7865635F 
+ 1763      61636365 
+ 1763      73736F72 
+ 1764              	.LASF24:
+ 1765 0031 61636365 		.ascii	"acceleration\000"
+ 1765      6C657261 
+ 1765      74696F6E 
+ 1765      00
+ 1766              	.LASF66:
+ 1767 003e 7072696E 		.ascii	"print.c\000"
+ 1767      742E6300 
+ 1768              	.LASF2:
+ 1769 0046 73686F72 		.ascii	"short int\000"
+ 1769      7420696E 
+ 1769      7400
+ 1770              	.LASF21:
+ 1771 0050 73697A65 		.ascii	"sizetype\000"
+ 1771      74797065 
+ 1771      00
+ 1772              	.LASF65:
+ 1773 0059 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1773      43313120 
+ 1773      352E342E 
+ 1773      31203230 
+ 1773      31363036 
+ 1774 008c 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 1774      20726576 
+ 1774      6973696F 
+ 1774      6E203233 
+ 1774      37373135 
+ 1775 00bf 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 1775      66756E63 
+ 1775      74696F6E 
+ 1775      2D736563 
+ 1775      74696F6E 
+ 1776              	.LASF8:
+ 1777 00e7 5F5F7569 		.ascii	"__uint32_t\000"
+ 1777      6E743332 
+ 1777      5F7400
+ 1778              	.LASF4:
+ 1779 00f2 5F5F7569 		.ascii	"__uint16_t\000"
+ 1779      6E743136 
+ 1779      5F7400
+ 1780              	.LASF29:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 36
+
+
+ 1781 00fd 73746570 		.ascii	"stepper_idle_lock_time\000"
+ 1781      7065725F 
+ 1781      69646C65 
+ 1781      5F6C6F63 
+ 1781      6B5F7469 
+ 1782              	.LASF46:
+ 1783 0114 64696769 		.ascii	"digit_b\000"
+ 1783      745F6200 
+ 1784              	.LASF13:
+ 1785 011c 75696E74 		.ascii	"uint8_t\000"
+ 1785      385F7400 
+ 1786              	.LASF40:
+ 1787 0124 686F6D69 		.ascii	"homing_pulloff\000"
+ 1787      6E675F70 
+ 1787      756C6C6F 
+ 1787      666600
+ 1788              	.LASF53:
+ 1789 0133 64656369 		.ascii	"decimals\000"
+ 1789      6D616C73 
+ 1789      00
+ 1790              	.LASF50:
+ 1791 013c 7072696E 		.ascii	"printInteger\000"
+ 1791      74496E74 
+ 1791      65676572 
+ 1791      00
+ 1792              	.LASF17:
+ 1793 0149 666C6F61 		.ascii	"float\000"
+ 1793      7400
+ 1794              	.LASF57:
+ 1795 014f 73657474 		.ascii	"settings\000"
+ 1795      696E6773 
+ 1795      00
+ 1796              	.LASF10:
+ 1797 0158 6C6F6E67 		.ascii	"long long int\000"
+ 1797      206C6F6E 
+ 1797      6720696E 
+ 1797      7400
+ 1798              	.LASF31:
+ 1799 0166 6A756E63 		.ascii	"junction_deviation\000"
+ 1799      74696F6E 
+ 1799      5F646576 
+ 1799      69617469 
+ 1799      6F6E00
+ 1800              	.LASF58:
+ 1801 0179 7379735F 		.ascii	"sys_position\000"
+ 1801      706F7369 
+ 1801      74696F6E 
+ 1801      00
+ 1802              	.LASF7:
+ 1803 0186 6C6F6E67 		.ascii	"long int\000"
+ 1803      20696E74 
+ 1803      00
+ 1804              	.LASF22:
+ 1805 018f 73746570 		.ascii	"steps_per_mm\000"
+ 1805      735F7065 
+ 1805      725F6D6D 
+ 1805      00
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 37
+
+
+ 1806              	.LASF3:
+ 1807 019c 5F5F7569 		.ascii	"__uint8_t\000"
+ 1807      6E74385F 
+ 1807      7400
+ 1808              	.LASF42:
+ 1809 01a6 7072696E 		.ascii	"printString\000"
+ 1809      74537472 
+ 1809      696E6700 
+ 1810              	.LASF48:
+ 1811 01b2 64696769 		.ascii	"digits\000"
+ 1811      747300
+ 1812              	.LASF32:
+ 1813 01b9 6172635F 		.ascii	"arc_tolerance\000"
+ 1813      746F6C65 
+ 1813      72616E63 
+ 1813      6500
+ 1814              	.LASF20:
+ 1815 01c7 6C6F6E67 		.ascii	"long double\000"
+ 1815      20646F75 
+ 1815      626C6500 
+ 1816              	.LASF36:
+ 1817 01d3 686F6D69 		.ascii	"homing_dir_mask\000"
+ 1817      6E675F64 
+ 1817      69725F6D 
+ 1817      61736B00 
+ 1818              	.LASF1:
+ 1819 01e3 756E7369 		.ascii	"unsigned char\000"
+ 1819      676E6564 
+ 1819      20636861 
+ 1819      7200
+ 1820              	.LASF0:
+ 1821 01f1 7369676E 		.ascii	"signed char\000"
+ 1821      65642063 
+ 1821      68617200 
+ 1822              	.LASF35:
+ 1823 01fd 666C6167 		.ascii	"flags\000"
+ 1823      7300
+ 1824              	.LASF11:
+ 1825 0203 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1825      206C6F6E 
+ 1825      6720756E 
+ 1825      7369676E 
+ 1825      65642069 
+ 1826              	.LASF16:
+ 1827 021a 75696E74 		.ascii	"uint32_t\000"
+ 1827      33325F74 
+ 1827      00
+ 1828              	.LASF12:
+ 1829 0223 756E7369 		.ascii	"unsigned int\000"
+ 1829      676E6564 
+ 1829      20696E74 
+ 1829      00
+ 1830              	.LASF14:
+ 1831 0230 75696E74 		.ascii	"uint16_t\000"
+ 1831      31365F74 
+ 1831      00
+ 1832              	.LASF9:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 38
+
+
+ 1833 0239 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1833      20756E73 
+ 1833      69676E65 
+ 1833      6420696E 
+ 1833      7400
+ 1834              	.LASF59:
+ 1835 024b 7379735F 		.ascii	"sys_probe_position\000"
+ 1835      70726F62 
+ 1835      655F706F 
+ 1835      73697469 
+ 1835      6F6E00
+ 1836              	.LASF63:
+ 1837 025e 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 1837      72745F65 
+ 1837      7865635F 
+ 1837      6D6F7469 
+ 1837      6F6E5F6F 
+ 1838              	.LASF30:
+ 1839 027a 73746174 		.ascii	"status_report_mask\000"
+ 1839      75735F72 
+ 1839      65706F72 
+ 1839      745F6D61 
+ 1839      736B00
+ 1840              	.LASF5:
+ 1841 028d 73686F72 		.ascii	"short unsigned int\000"
+ 1841      7420756E 
+ 1841      7369676E 
+ 1841      65642069 
+ 1841      6E7400
+ 1842              	.LASF19:
+ 1843 02a0 63686172 		.ascii	"char\000"
+ 1843      00
+ 1844              	.LASF28:
+ 1845 02a5 6469725F 		.ascii	"dir_invert_mask\000"
+ 1845      696E7665 
+ 1845      72745F6D 
+ 1845      61736B00 
+ 1846              	.LASF15:
+ 1847 02b5 696E7433 		.ascii	"int32_t\000"
+ 1847      325F7400 
+ 1848              	.LASF33:
+ 1849 02bd 72706D5F 		.ascii	"rpm_max\000"
+ 1849      6D617800 
+ 1850              	.LASF52:
+ 1851 02c5 64656369 		.ascii	"decimal_places\000"
+ 1851      6D616C5F 
+ 1851      706C6163 
+ 1851      657300
+ 1852              	.LASF39:
+ 1853 02d4 686F6D69 		.ascii	"homing_debounce_delay\000"
+ 1853      6E675F64 
+ 1853      65626F75 
+ 1853      6E63655F 
+ 1853      64656C61 
+ 1854              	.LASF26:
+ 1855 02ea 70756C73 		.ascii	"pulse_microseconds\000"
+ 1855      655F6D69 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 39
+
+
+ 1855      63726F73 
+ 1855      65636F6E 
+ 1855      647300
+ 1856              	.LASF60:
+ 1857 02fd 7379735F 		.ascii	"sys_probe_state\000"
+ 1857      70726F62 
+ 1857      655F7374 
+ 1857      61746500 
+ 1858              	.LASF43:
+ 1859 030d 7072696E 		.ascii	"printPgmString\000"
+ 1859      7450676D 
+ 1859      53747269 
+ 1859      6E6700
+ 1860              	.LASF18:
+ 1861 031c 646F7562 		.ascii	"double\000"
+ 1861      6C6500
+ 1862              	.LASF38:
+ 1863 0323 686F6D69 		.ascii	"homing_seek_rate\000"
+ 1863      6E675F73 
+ 1863      65656B5F 
+ 1863      72617465 
+ 1863      00
+ 1864              	.LASF49:
+ 1865 0334 7072696E 		.ascii	"print_uint32_base10\000"
+ 1865      745F7569 
+ 1865      6E743332 
+ 1865      5F626173 
+ 1865      65313000 
+ 1866              	.LASF34:
+ 1867 0348 72706D5F 		.ascii	"rpm_min\000"
+ 1867      6D696E00 
+ 1868              	.LASF47:
+ 1869 0350 7072696E 		.ascii	"print_uint8_base2_ndigit\000"
+ 1869      745F7569 
+ 1869      6E74385F 
+ 1869      62617365 
+ 1869      325F6E64 
+ 1870              	.LASF6:
+ 1871 0369 5F5F696E 		.ascii	"__int32_t\000"
+ 1871      7433325F 
+ 1871      7400
+ 1872              	.LASF51:
+ 1873 0373 7072696E 		.ascii	"printFloat\000"
+ 1873      74466C6F 
+ 1873      617400
+ 1874              	.LASF25:
+ 1875 037e 6D61785F 		.ascii	"max_travel\000"
+ 1875      74726176 
+ 1875      656C00
+ 1876              	.LASF67:
+ 1877 0389 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 1877      73657273 
+ 1877      5C626172 
+ 1877      746F5C44 
+ 1877      726F7062 
+ 1878 03b6 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 1878      5553425F 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cctvgFCF.s 			page 40
+
+
+ 1878      4E617469 
+ 1878      76652E63 
+ 1878      7964736E 
+ 1879              	.LASF37:
+ 1880 03cb 686F6D69 		.ascii	"homing_feed_rate\000"
+ 1880      6E675F66 
+ 1880      6565645F 
+ 1880      72617465 
+ 1880      00
+ 1881              	.LASF44:
+ 1882 03dc 7072696E 		.ascii	"print_uint8_base10\000"
+ 1882      745F7569 
+ 1882      6E74385F 
+ 1882      62617365 
+ 1882      313000
+ 1883              	.LASF41:
+ 1884 03ef 73657474 		.ascii	"settings_t\000"
+ 1884      696E6773 
+ 1884      5F7400
+ 1885              	.LASF56:
+ 1886 03fa 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 1886      52784275 
+ 1886      66666572 
+ 1886      00
+ 1887              	.LASF23:
+ 1888 0407 6D61785F 		.ascii	"max_rate\000"
+ 1888      72617465 
+ 1888      00
+ 1889              	.LASF45:
+ 1890 0410 64696769 		.ascii	"digit_a\000"
+ 1890      745F6100 
+ 1891              	.LASF61:
+ 1892 0418 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 1892      72745F65 
+ 1892      7865635F 
+ 1892      73746174 
+ 1892      6500
+ 1893              	.LASF54:
+ 1894 042a 7072696E 		.ascii	"printFloat_CoordValue\000"
+ 1894      74466C6F 
+ 1894      61745F43 
+ 1894      6F6F7264 
+ 1894      56616C75 
+ 1895              	.LASF27:
+ 1896 0440 73746570 		.ascii	"step_invert_mask\000"
+ 1896      5F696E76 
+ 1896      6572745F 
+ 1896      6D61736B 
+ 1896      00
+ 1897              	.LASF55:
+ 1898 0451 7072696E 		.ascii	"printFloat_RateValue\000"
+ 1898      74466C6F 
+ 1898      61745F52 
+ 1898      61746556 
+ 1898      616C7565 
+ 1899              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

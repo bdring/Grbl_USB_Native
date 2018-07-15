@@ -1,0 +1,4751 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"system.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.section	.text.system_init,"ax",%progbits
+  27              		.align	2
+  28              		.global	system_init
+  29              		.thumb
+  30              		.thumb_func
+  31              		.type	system_init, %function
+  32              	system_init:
+  33              	.LFB64:
+  34              		.file 1 "system.c"
+   1:system.c      **** /*
+   2:system.c      ****   system.c - Handles system level commands and real-time processes
+   3:system.c      ****   Part of Grbl
+   4:system.c      **** 
+   5:system.c      ****   Copyright (c) 2014-2015 Sungeun K. Jeon  
+   6:system.c      ****       Updated For PSOC BJD 2017
+   7:system.c      **** 
+   8:system.c      ****   Grbl is free software: you can redistribute it and/or modify
+   9:system.c      ****   it under the terms of the GNU General Public License as published by
+  10:system.c      ****   the Free Software Foundation, either version 3 of the License, or
+  11:system.c      ****   (at your option) any later version.
+  12:system.c      **** 
+  13:system.c      ****   Grbl is distributed in the hope that it will be useful,
+  14:system.c      ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  15:system.c      ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  16:system.c      ****   GNU General Public License for more details.
+  17:system.c      **** 
+  18:system.c      ****   You should have received a copy of the GNU General Public License
+  19:system.c      ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  20:system.c      **** */
+  21:system.c      **** 
+  22:system.c      **** #include "grbl.h"
+  23:system.c      **** 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 2
+
+
+  24:system.c      **** void system_init()
+  25:system.c      **** {
+  35              		.loc 1 25 0
+  36              		.cfi_startproc
+  37              		@ args = 0, pretend = 0, frame = 0
+  38              		@ frame_needed = 1, uses_anonymous_args = 0
+  39 0000 80B5     		push	{r7, lr}
+  40              		.cfi_def_cfa_offset 8
+  41              		.cfi_offset 7, -8
+  42              		.cfi_offset 14, -4
+  43 0002 00AF     		add	r7, sp, #0
+  44              		.cfi_def_cfa_register 7
+  26:system.c      ****   // setup of control pins is done in hardware
+  27:system.c      ****   
+  28:system.c      ****   isr_Control_StartEx(control_isr_handler);
+  45              		.loc 1 28 0
+  46 0004 0348     		ldr	r0, .L2
+  47 0006 FFF7FEFF 		bl	isr_Control_StartEx
+  29:system.c      ****   Status_Control_InterruptEnable();
+  48              		.loc 1 29 0
+  49 000a FFF7FEFF 		bl	Status_Control_InterruptEnable
+  30:system.c      ****   
+  31:system.c      **** }
+  50              		.loc 1 31 0
+  51 000e 00BF     		nop
+  52 0010 80BD     		pop	{r7, pc}
+  53              	.L3:
+  54 0012 00BF     		.align	2
+  55              	.L2:
+  56 0014 00000000 		.word	control_isr_handler
+  57              		.cfi_endproc
+  58              	.LFE64:
+  59              		.size	system_init, .-system_init
+  60              		.section	.text.system_control_get_state,"ax",%progbits
+  61              		.align	2
+  62              		.global	system_control_get_state
+  63              		.thumb
+  64              		.thumb_func
+  65              		.type	system_control_get_state, %function
+  66              	system_control_get_state:
+  67              	.LFB65:
+  32:system.c      **** 
+  33:system.c      **** // Returns control pin state as a uint8 bitfield. Each bit indicates the input pin state, where 
+  34:system.c      **** // triggered is 1 and not triggered is 0. Invert mask is applied. Bitfield organization is
+  35:system.c      **** // defined by the CONTROL_PIN_INDEX in the header file.
+  36:system.c      **** uint8_t system_control_get_state()
+  37:system.c      **** {
+  68              		.loc 1 37 0
+  69              		.cfi_startproc
+  70              		@ args = 0, pretend = 0, frame = 0
+  71              		@ frame_needed = 1, uses_anonymous_args = 0
+  72 0000 80B5     		push	{r7, lr}
+  73              		.cfi_def_cfa_offset 8
+  74              		.cfi_offset 7, -8
+  75              		.cfi_offset 14, -4
+  76 0002 00AF     		add	r7, sp, #0
+  77              		.cfi_def_cfa_register 7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 3
+
+
+  38:system.c      ****    /*
+  39:system.c      ****     This is simplified over grbl because the pins are always in the same order
+  40:system.c      ****     in the status register regardless of the placement.  Inverted applications
+  41:system.c      ****     will be handle using a logic NOT
+  42:system.c      ****    */
+  43:system.c      ****    return(Status_Control_Read());  
+  78              		.loc 1 43 0
+  79 0004 FFF7FEFF 		bl	Status_Control_Read
+  80 0008 0346     		mov	r3, r0
+  44:system.c      ****   
+  45:system.c      **** }
+  81              		.loc 1 45 0
+  82 000a 1846     		mov	r0, r3
+  83 000c 80BD     		pop	{r7, pc}
+  84              		.cfi_endproc
+  85              	.LFE65:
+  86              		.size	system_control_get_state, .-system_control_get_state
+  87 000e 00BF     		.section	.text.control_isr_handler,"ax",%progbits
+  88              		.align	2
+  89              		.global	control_isr_handler
+  90              		.thumb
+  91              		.thumb_func
+  92              		.type	control_isr_handler, %function
+  93              	control_isr_handler:
+  94              	.LFB66:
+  46:system.c      **** 
+  47:system.c      **** // Pin change interrupt for pin-out commands, i.e. cycle start, feed hold, and reset. Sets
+  48:system.c      **** // only the realtime command execute variable to have the main program execute these when 
+  49:system.c      **** // its ready. This works exactly like the character-based realtime commands when picked off
+  50:system.c      **** // directly from the incoming serial data stream.
+  51:system.c      **** CY_ISR (control_isr_handler) //ISR(CONTROL_INT_vect) 
+  52:system.c      **** {
+  95              		.loc 1 52 0
+  96              		.cfi_startproc
+  97              		@ args = 0, pretend = 0, frame = 8
+  98              		@ frame_needed = 1, uses_anonymous_args = 0
+  99 0000 80B5     		push	{r7, lr}
+ 100              		.cfi_def_cfa_offset 8
+ 101              		.cfi_offset 7, -8
+ 102              		.cfi_offset 14, -4
+ 103 0002 82B0     		sub	sp, sp, #8
+ 104              		.cfi_def_cfa_offset 16
+ 105 0004 00AF     		add	r7, sp, #0
+ 106              		.cfi_def_cfa_register 7
+  53:system.c      ****   uint8_t pin = system_control_get_state();
+ 107              		.loc 1 53 0
+ 108 0006 FFF7FEFF 		bl	system_control_get_state
+ 109 000a 0346     		mov	r3, r0
+ 110 000c FB71     		strb	r3, [r7, #7]
+  54:system.c      ****   if (pin) {
+ 111              		.loc 1 54 0
+ 112 000e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 113 0010 002B     		cmp	r3, #0
+ 114 0012 22D0     		beq	.L7
+  55:system.c      ****     if (bit_istrue(pin,CONTROL_PIN_INDEX_RESET)) {
+ 115              		.loc 1 55 0
+ 116 0014 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 4
+
+
+ 117 0016 03F00103 		and	r3, r3, #1
+ 118 001a 002B     		cmp	r3, #0
+ 119 001c 02D0     		beq	.L8
+  56:system.c      ****       mc_reset();
+ 120              		.loc 1 56 0
+ 121 001e FFF7FEFF 		bl	mc_reset
+ 122 0022 1AE0     		b	.L7
+ 123              	.L8:
+  57:system.c      ****     } else if (bit_istrue(pin,CONTROL_PIN_INDEX_CYCLE_START)) {
+ 124              		.loc 1 57 0
+ 125 0024 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 126 0026 03F00403 		and	r3, r3, #4
+ 127 002a 002B     		cmp	r3, #0
+ 128 002c 08D0     		beq	.L9
+  58:system.c      ****       bit_true(sys_rt_exec_state, EXEC_CYCLE_START);
+ 129              		.loc 1 58 0
+ 130 002e 0E4B     		ldr	r3, .L10
+ 131 0030 1B78     		ldrb	r3, [r3]
+ 132 0032 DBB2     		uxtb	r3, r3
+ 133 0034 43F00203 		orr	r3, r3, #2
+ 134 0038 DAB2     		uxtb	r2, r3
+ 135 003a 0B4B     		ldr	r3, .L10
+ 136 003c 1A70     		strb	r2, [r3]
+ 137 003e 0CE0     		b	.L7
+ 138              	.L9:
+  59:system.c      ****     #ifndef ENABLE_SAFETY_DOOR_INPUT_PIN
+  60:system.c      ****       } else if (bit_istrue(pin,CONTROL_PIN_INDEX_FEED_HOLD)) {
+ 139              		.loc 1 60 0
+ 140 0040 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 141 0042 03F00203 		and	r3, r3, #2
+ 142 0046 002B     		cmp	r3, #0
+ 143 0048 07D0     		beq	.L7
+  61:system.c      ****         bit_true(sys_rt_exec_state, EXEC_FEED_HOLD);
+ 144              		.loc 1 61 0
+ 145 004a 074B     		ldr	r3, .L10
+ 146 004c 1B78     		ldrb	r3, [r3]
+ 147 004e DBB2     		uxtb	r3, r3
+ 148 0050 43F00803 		orr	r3, r3, #8
+ 149 0054 DAB2     		uxtb	r2, r3
+ 150 0056 044B     		ldr	r3, .L10
+ 151 0058 1A70     		strb	r2, [r3]
+ 152              	.L7:
+  62:system.c      ****     #else
+  63:system.c      ****       } else if (bit_istrue(pin,CONTROL_PIN_INDEX_SAFETY_DOOR)) {
+  64:system.c      ****         bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
+  65:system.c      ****     #endif
+  66:system.c      ****     }
+  67:system.c      ****   }
+  68:system.c      ****     
+  69:system.c      ****   isr_Control_ClearPending();
+ 153              		.loc 1 69 0
+ 154 005a FFF7FEFF 		bl	isr_Control_ClearPending
+  70:system.c      ****   
+  71:system.c      **** }
+ 155              		.loc 1 71 0
+ 156 005e 00BF     		nop
+ 157 0060 0837     		adds	r7, r7, #8
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 5
+
+
+ 158              		.cfi_def_cfa_offset 8
+ 159 0062 BD46     		mov	sp, r7
+ 160              		.cfi_def_cfa_register 13
+ 161              		@ sp needed
+ 162 0064 80BD     		pop	{r7, pc}
+ 163              	.L11:
+ 164 0066 00BF     		.align	2
+ 165              	.L10:
+ 166 0068 00000000 		.word	sys_rt_exec_state
+ 167              		.cfi_endproc
+ 168              	.LFE66:
+ 169              		.size	control_isr_handler, .-control_isr_handler
+ 170              		.section	.text.system_check_safety_door_ajar,"ax",%progbits
+ 171              		.align	2
+ 172              		.global	system_check_safety_door_ajar
+ 173              		.thumb
+ 174              		.thumb_func
+ 175              		.type	system_check_safety_door_ajar, %function
+ 176              	system_check_safety_door_ajar:
+ 177              	.LFB67:
+  72:system.c      **** 
+  73:system.c      **** // Returns if safety door is ajar(T) or closed(F), based on pin state.
+  74:system.c      **** uint8_t system_check_safety_door_ajar()
+  75:system.c      **** {
+ 178              		.loc 1 75 0
+ 179              		.cfi_startproc
+ 180              		@ args = 0, pretend = 0, frame = 0
+ 181              		@ frame_needed = 1, uses_anonymous_args = 0
+ 182              		@ link register save eliminated.
+ 183 0000 80B4     		push	{r7}
+ 184              		.cfi_def_cfa_offset 4
+ 185              		.cfi_offset 7, -4
+ 186 0002 00AF     		add	r7, sp, #0
+ 187              		.cfi_def_cfa_register 7
+  76:system.c      ****   #ifdef ENABLE_SAFETY_DOOR_INPUT_PIN
+  77:system.c      ****     return(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
+  78:system.c      ****   #else
+  79:system.c      ****     return(false); // Input pin not enabled, so just return that it's closed.
+ 188              		.loc 1 79 0
+ 189 0004 0023     		movs	r3, #0
+  80:system.c      ****   #endif
+  81:system.c      **** }
+ 190              		.loc 1 81 0
+ 191 0006 1846     		mov	r0, r3
+ 192 0008 BD46     		mov	sp, r7
+ 193              		.cfi_def_cfa_register 13
+ 194              		@ sp needed
+ 195 000a 80BC     		pop	{r7}
+ 196              		.cfi_restore 7
+ 197              		.cfi_def_cfa_offset 0
+ 198 000c 7047     		bx	lr
+ 199              		.cfi_endproc
+ 200              	.LFE67:
+ 201              		.size	system_check_safety_door_ajar, .-system_check_safety_door_ajar
+ 202 000e 00BF     		.section	.text.system_execute_startup,"ax",%progbits
+ 203              		.align	2
+ 204              		.global	system_execute_startup
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 6
+
+
+ 205              		.thumb
+ 206              		.thumb_func
+ 207              		.type	system_execute_startup, %function
+ 208              	system_execute_startup:
+ 209              	.LFB68:
+  82:system.c      **** 
+  83:system.c      **** 
+  84:system.c      **** // Executes user startup script, if stored.
+  85:system.c      **** void system_execute_startup(char *line)
+  86:system.c      **** {
+ 210              		.loc 1 86 0
+ 211              		.cfi_startproc
+ 212              		@ args = 0, pretend = 0, frame = 16
+ 213              		@ frame_needed = 1, uses_anonymous_args = 0
+ 214 0000 80B5     		push	{r7, lr}
+ 215              		.cfi_def_cfa_offset 8
+ 216              		.cfi_offset 7, -8
+ 217              		.cfi_offset 14, -4
+ 218 0002 84B0     		sub	sp, sp, #16
+ 219              		.cfi_def_cfa_offset 24
+ 220 0004 00AF     		add	r7, sp, #0
+ 221              		.cfi_def_cfa_register 7
+ 222 0006 7860     		str	r0, [r7, #4]
+  87:system.c      ****   uint8_t n;
+  88:system.c      ****   for (n=0; n < N_STARTUP_LINE; n++) {
+ 223              		.loc 1 88 0
+ 224 0008 0023     		movs	r3, #0
+ 225 000a FB73     		strb	r3, [r7, #15]
+ 226 000c 20E0     		b	.L15
+ 227              	.L18:
+  89:system.c      ****     if (!(settings_read_startup_line(n, line))) {
+ 228              		.loc 1 89 0
+ 229 000e FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 230 0010 7968     		ldr	r1, [r7, #4]
+ 231 0012 1846     		mov	r0, r3
+ 232 0014 FFF7FEFF 		bl	settings_read_startup_line
+ 233 0018 0346     		mov	r3, r0
+ 234 001a 002B     		cmp	r3, #0
+ 235 001c 07D1     		bne	.L16
+  90:system.c      ****       line[0] = 0;
+ 236              		.loc 1 90 0
+ 237 001e 7B68     		ldr	r3, [r7, #4]
+ 238 0020 0022     		movs	r2, #0
+ 239 0022 1A70     		strb	r2, [r3]
+  91:system.c      ****       report_execute_startup_message(line,STATUS_SETTING_READ_FAIL);
+ 240              		.loc 1 91 0
+ 241 0024 0721     		movs	r1, #7
+ 242 0026 7868     		ldr	r0, [r7, #4]
+ 243 0028 FFF7FEFF 		bl	report_execute_startup_message
+ 244 002c 0DE0     		b	.L17
+ 245              	.L16:
+  92:system.c      ****     } else {
+  93:system.c      ****       if (line[0] != 0) {
+ 246              		.loc 1 93 0
+ 247 002e 7B68     		ldr	r3, [r7, #4]
+ 248 0030 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 249 0032 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 7
+
+
+ 250 0034 09D0     		beq	.L17
+ 251              	.LBB2:
+  94:system.c      ****         uint8_t status_code = gc_execute_line(line);
+ 252              		.loc 1 94 0
+ 253 0036 7868     		ldr	r0, [r7, #4]
+ 254 0038 FFF7FEFF 		bl	gc_execute_line
+ 255 003c 0346     		mov	r3, r0
+ 256 003e BB73     		strb	r3, [r7, #14]
+  95:system.c      ****         report_execute_startup_message(line,status_code);
+ 257              		.loc 1 95 0
+ 258 0040 BB7B     		ldrb	r3, [r7, #14]	@ zero_extendqisi2
+ 259 0042 1946     		mov	r1, r3
+ 260 0044 7868     		ldr	r0, [r7, #4]
+ 261 0046 FFF7FEFF 		bl	report_execute_startup_message
+ 262              	.L17:
+ 263              	.LBE2:
+  88:system.c      ****     if (!(settings_read_startup_line(n, line))) {
+ 264              		.loc 1 88 0 discriminator 2
+ 265 004a FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 266 004c 0133     		adds	r3, r3, #1
+ 267 004e FB73     		strb	r3, [r7, #15]
+ 268              	.L15:
+  88:system.c      ****     if (!(settings_read_startup_line(n, line))) {
+ 269              		.loc 1 88 0 is_stmt 0 discriminator 1
+ 270 0050 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 271 0052 012B     		cmp	r3, #1
+ 272 0054 DBD9     		bls	.L18
+  96:system.c      ****       }
+  97:system.c      ****     }
+  98:system.c      ****   }
+  99:system.c      **** }
+ 273              		.loc 1 99 0 is_stmt 1
+ 274 0056 00BF     		nop
+ 275 0058 1037     		adds	r7, r7, #16
+ 276              		.cfi_def_cfa_offset 8
+ 277 005a BD46     		mov	sp, r7
+ 278              		.cfi_def_cfa_register 13
+ 279              		@ sp needed
+ 280 005c 80BD     		pop	{r7, pc}
+ 281              		.cfi_endproc
+ 282              	.LFE68:
+ 283              		.size	system_execute_startup, .-system_execute_startup
+ 284              		.global	__aeabi_f2d
+ 285              		.global	__aeabi_d2uiz
+ 286              		.global	__aeabi_fcmpgt
+ 287              		.global	__aeabi_f2uiz
+ 288 005e 00BF     		.section	.text.system_execute_line,"ax",%progbits
+ 289              		.align	2
+ 290              		.global	system_execute_line
+ 291              		.thumb
+ 292              		.thumb_func
+ 293              		.type	system_execute_line, %function
+ 294              	system_execute_line:
+ 295              	.LFB69:
+ 100:system.c      **** 
+ 101:system.c      **** // Directs and executes one line of formatted input from protocol_process. While mostly
+ 102:system.c      **** // incoming streaming g-code blocks, this also executes Grbl internal commands, such as
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 8
+
+
+ 103:system.c      **** // settings, initiating the homing cycle, and toggling switch states. This differs from
+ 104:system.c      **** // the realtime command module by being susceptible to when Grbl is ready to execute the
+ 105:system.c      **** // next line during a cycle, so for switches like block delete, the switch only effects
+ 106:system.c      **** // the lines that are processed afterward, not necessarily real-time during a cycle,
+ 107:system.c      **** // since there are motions already stored in the buffer. However, this 'lag' should not
+ 108:system.c      **** // be an issue, since these commands are not typically used during a cycle.
+ 109:system.c      **** uint8_t system_execute_line(char *line)
+ 110:system.c      **** {
+ 296              		.loc 1 110 0
+ 297              		.cfi_startproc
+ 298              		@ args = 0, pretend = 0, frame = 24
+ 299              		@ frame_needed = 1, uses_anonymous_args = 0
+ 300 0000 90B5     		push	{r4, r7, lr}
+ 301              		.cfi_def_cfa_offset 12
+ 302              		.cfi_offset 4, -12
+ 303              		.cfi_offset 7, -8
+ 304              		.cfi_offset 14, -4
+ 305 0002 87B0     		sub	sp, sp, #28
+ 306              		.cfi_def_cfa_offset 40
+ 307 0004 00AF     		add	r7, sp, #0
+ 308              		.cfi_def_cfa_register 7
+ 309 0006 7860     		str	r0, [r7, #4]
+ 111:system.c      ****   uint8_t char_counter = 1;
+ 310              		.loc 1 111 0
+ 311 0008 0123     		movs	r3, #1
+ 312 000a BB75     		strb	r3, [r7, #22]
+ 112:system.c      ****   uint8_t helper_var = 0; // Helper variable
+ 313              		.loc 1 112 0
+ 314 000c 0023     		movs	r3, #0
+ 315 000e FB75     		strb	r3, [r7, #23]
+ 113:system.c      ****   float parameter, value;
+ 114:system.c      ****   switch( line[char_counter] ) {
+ 316              		.loc 1 114 0
+ 317 0010 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 318 0012 1A46     		mov	r2, r3
+ 319 0014 7B68     		ldr	r3, [r7, #4]
+ 320 0016 1344     		add	r3, r3, r2
+ 321 0018 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 322 001a 432B     		cmp	r3, #67
+ 323 001c 26D0     		beq	.L21
+ 324 001e 432B     		cmp	r3, #67
+ 325 0020 04DC     		bgt	.L22
+ 326 0022 002B     		cmp	r3, #0
+ 327 0024 09D0     		beq	.L23
+ 328 0026 242B     		cmp	r3, #36
+ 329 0028 20D0     		beq	.L21
+ 330 002a 6DE0     		b	.L20
+ 331              	.L22:
+ 332 002c 4A2B     		cmp	r3, #74
+ 333 002e 07D0     		beq	.L24
+ 334 0030 582B     		cmp	r3, #88
+ 335 0032 1BD0     		beq	.L21
+ 336 0034 472B     		cmp	r3, #71
+ 337 0036 19D0     		beq	.L21
+ 338 0038 66E0     		b	.L20
+ 339              	.L23:
+ 115:system.c      ****     case 0 : report_grbl_help(); break;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 9
+
+
+ 340              		.loc 1 115 0
+ 341 003a FFF7FEFF 		bl	report_grbl_help
+ 342 003e 6BE2     		b	.L25
+ 343              	.L24:
+ 116:system.c      ****     case 'J' : // Jogging
+ 117:system.c      ****       // Execute only if in IDLE or JOG states.
+ 118:system.c      ****       if (sys.state != STATE_IDLE && sys.state != STATE_JOG) { return(STATUS_IDLE_ERROR); }
+ 344              		.loc 1 118 0
+ 345 0040 B24B     		ldr	r3, .L97
+ 346 0042 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 347 0044 002B     		cmp	r3, #0
+ 348 0046 05D0     		beq	.L26
+ 349              		.loc 1 118 0 is_stmt 0 discriminator 1
+ 350 0048 B04B     		ldr	r3, .L97
+ 351 004a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 352 004c 202B     		cmp	r3, #32
+ 353 004e 01D0     		beq	.L26
+ 354              		.loc 1 118 0 discriminator 2
+ 355 0050 0823     		movs	r3, #8
+ 356 0052 62E2     		b	.L91
+ 357              	.L26:
+ 119:system.c      ****       if(line[2] != '=') { return(STATUS_INVALID_STATEMENT); }
+ 358              		.loc 1 119 0 is_stmt 1
+ 359 0054 7B68     		ldr	r3, [r7, #4]
+ 360 0056 0233     		adds	r3, r3, #2
+ 361 0058 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 362 005a 3D2B     		cmp	r3, #61
+ 363 005c 01D0     		beq	.L28
+ 364              		.loc 1 119 0 is_stmt 0 discriminator 1
+ 365 005e 0323     		movs	r3, #3
+ 366 0060 5BE2     		b	.L91
+ 367              	.L28:
+ 120:system.c      ****       return(gc_execute_line(line)); // NOTE: $J= is ignored inside g-code parser and used to detec
+ 368              		.loc 1 120 0 is_stmt 1
+ 369 0062 7868     		ldr	r0, [r7, #4]
+ 370 0064 FFF7FEFF 		bl	gc_execute_line
+ 371 0068 0346     		mov	r3, r0
+ 372 006a 56E2     		b	.L91
+ 373              	.L21:
+ 121:system.c      ****       break;
+ 122:system.c      ****     case '$': case 'G': case 'C': case 'X':
+ 123:system.c      ****       if ( line[2] != 0 ) { return(STATUS_INVALID_STATEMENT); }
+ 374              		.loc 1 123 0
+ 375 006c 7B68     		ldr	r3, [r7, #4]
+ 376 006e 0233     		adds	r3, r3, #2
+ 377 0070 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 378 0072 002B     		cmp	r3, #0
+ 379 0074 01D0     		beq	.L29
+ 380              		.loc 1 123 0 is_stmt 0 discriminator 1
+ 381 0076 0323     		movs	r3, #3
+ 382 0078 4FE2     		b	.L91
+ 383              	.L29:
+ 124:system.c      ****       switch( line[1] ) {
+ 384              		.loc 1 124 0 is_stmt 1
+ 385 007a 7B68     		ldr	r3, [r7, #4]
+ 386 007c 0133     		adds	r3, r3, #1
+ 387 007e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 10
+
+
+ 388 0080 432B     		cmp	r3, #67
+ 389 0082 17D0     		beq	.L31
+ 390 0084 432B     		cmp	r3, #67
+ 391 0086 02DC     		bgt	.L32
+ 392 0088 242B     		cmp	r3, #36
+ 393 008a 05D0     		beq	.L33
+ 125:system.c      ****         case '$' : // Prints Grbl settings
+ 126:system.c      ****           if ( sys.state & (STATE_CYCLE | STATE_HOLD) ) { return(STATUS_IDLE_ERROR); } // Block dur
+ 127:system.c      ****           else { report_grbl_settings(); }
+ 128:system.c      ****           break;
+ 129:system.c      ****         case 'G' : // Prints gcode parser state
+ 130:system.c      ****           // TODO: Move this to realtime commands for GUIs to request this data during suspend-stat
+ 131:system.c      ****           report_gcode_modes();
+ 132:system.c      ****           break;
+ 133:system.c      ****         case 'C' : // Set check g-code mode [IDLE/CHECK]
+ 134:system.c      ****           // Perform reset when toggling off. Check g-code mode should only work if Grbl
+ 135:system.c      ****           // is idle and ready, regardless of alarm locks. This is mainly to keep things
+ 136:system.c      ****           // simple and consistent.
+ 137:system.c      ****           if ( sys.state == STATE_CHECK_MODE ) {
+ 138:system.c      ****             mc_reset();
+ 139:system.c      ****             report_feedback_message(MESSAGE_DISABLED);
+ 140:system.c      ****           } else {
+ 141:system.c      ****             if (sys.state) { return(STATUS_IDLE_ERROR); } // Requires no alarm mode.
+ 142:system.c      ****             sys.state = STATE_CHECK_MODE;
+ 143:system.c      ****             report_feedback_message(MESSAGE_ENABLED);
+ 144:system.c      ****           }
+ 145:system.c      ****           break;
+ 146:system.c      ****         case 'X' : // Disable alarm lock [ALARM]
+ 147:system.c      ****           if (sys.state == STATE_ALARM) {
+ 148:system.c      ****             // Block if safety door is ajar.
+ 149:system.c      ****             if (system_check_safety_door_ajar()) { return(STATUS_CHECK_DOOR); }
+ 150:system.c      ****             report_feedback_message(MESSAGE_ALARM_UNLOCK);
+ 151:system.c      ****             sys.state = STATE_IDLE;
+ 152:system.c      ****             // Don't run startup script. Prevents stored moves in startup from causing accidents.
+ 153:system.c      ****           } // Otherwise, no effect.
+ 154:system.c      ****           break;
+ 155:system.c      ****       }
+ 156:system.c      ****       break;
+ 394              		.loc 1 156 0
+ 395 008c 44E2     		b	.L25
+ 396              	.L32:
+ 124:system.c      ****       switch( line[1] ) {
+ 397              		.loc 1 124 0
+ 398 008e 472B     		cmp	r3, #71
+ 399 0090 0DD0     		beq	.L34
+ 400 0092 582B     		cmp	r3, #88
+ 401 0094 25D0     		beq	.L35
+ 402              		.loc 1 156 0
+ 403 0096 3FE2     		b	.L25
+ 404              	.L33:
+ 126:system.c      ****           else { report_grbl_settings(); }
+ 405              		.loc 1 126 0
+ 406 0098 9C4B     		ldr	r3, .L97
+ 407 009a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 408 009c 03F01803 		and	r3, r3, #24
+ 409 00a0 002B     		cmp	r3, #0
+ 410 00a2 01D0     		beq	.L36
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 11
+
+
+ 126:system.c      ****           else { report_grbl_settings(); }
+ 411              		.loc 1 126 0 is_stmt 0 discriminator 1
+ 412 00a4 0823     		movs	r3, #8
+ 413 00a6 38E2     		b	.L91
+ 414              	.L36:
+ 127:system.c      ****           break;
+ 415              		.loc 1 127 0 is_stmt 1
+ 416 00a8 FFF7FEFF 		bl	report_grbl_settings
+ 128:system.c      ****         case 'G' : // Prints gcode parser state
+ 417              		.loc 1 128 0
+ 418 00ac 2BE0     		b	.L30
+ 419              	.L34:
+ 131:system.c      ****           break;
+ 420              		.loc 1 131 0
+ 421 00ae FFF7FEFF 		bl	report_gcode_modes
+ 132:system.c      ****         case 'C' : // Set check g-code mode [IDLE/CHECK]
+ 422              		.loc 1 132 0
+ 423 00b2 28E0     		b	.L30
+ 424              	.L31:
+ 137:system.c      ****             mc_reset();
+ 425              		.loc 1 137 0
+ 426 00b4 954B     		ldr	r3, .L97
+ 427 00b6 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 428 00b8 022B     		cmp	r3, #2
+ 429 00ba 05D1     		bne	.L37
+ 138:system.c      ****             report_feedback_message(MESSAGE_DISABLED);
+ 430              		.loc 1 138 0
+ 431 00bc FFF7FEFF 		bl	mc_reset
+ 139:system.c      ****           } else {
+ 432              		.loc 1 139 0
+ 433 00c0 0520     		movs	r0, #5
+ 434 00c2 FFF7FEFF 		bl	report_feedback_message
+ 145:system.c      ****         case 'X' : // Disable alarm lock [ALARM]
+ 435              		.loc 1 145 0
+ 436 00c6 1EE0     		b	.L30
+ 437              	.L37:
+ 141:system.c      ****             sys.state = STATE_CHECK_MODE;
+ 438              		.loc 1 141 0
+ 439 00c8 904B     		ldr	r3, .L97
+ 440 00ca 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 441 00cc 002B     		cmp	r3, #0
+ 442 00ce 01D0     		beq	.L39
+ 141:system.c      ****             sys.state = STATE_CHECK_MODE;
+ 443              		.loc 1 141 0 is_stmt 0 discriminator 1
+ 444 00d0 0823     		movs	r3, #8
+ 445 00d2 22E2     		b	.L91
+ 446              	.L39:
+ 142:system.c      ****             report_feedback_message(MESSAGE_ENABLED);
+ 447              		.loc 1 142 0 is_stmt 1
+ 448 00d4 8D4B     		ldr	r3, .L97
+ 449 00d6 0222     		movs	r2, #2
+ 450 00d8 1A70     		strb	r2, [r3]
+ 143:system.c      ****           }
+ 451              		.loc 1 143 0
+ 452 00da 0420     		movs	r0, #4
+ 453 00dc FFF7FEFF 		bl	report_feedback_message
+ 145:system.c      ****         case 'X' : // Disable alarm lock [ALARM]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 12
+
+
+ 454              		.loc 1 145 0
+ 455 00e0 11E0     		b	.L30
+ 456              	.L35:
+ 147:system.c      ****             // Block if safety door is ajar.
+ 457              		.loc 1 147 0
+ 458 00e2 8A4B     		ldr	r3, .L97
+ 459 00e4 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 460 00e6 012B     		cmp	r3, #1
+ 461 00e8 0CD1     		bne	.L95
+ 149:system.c      ****             report_feedback_message(MESSAGE_ALARM_UNLOCK);
+ 462              		.loc 1 149 0
+ 463 00ea FFF7FEFF 		bl	system_check_safety_door_ajar
+ 464 00ee 0346     		mov	r3, r0
+ 465 00f0 002B     		cmp	r3, #0
+ 466 00f2 01D0     		beq	.L41
+ 149:system.c      ****             report_feedback_message(MESSAGE_ALARM_UNLOCK);
+ 467              		.loc 1 149 0 is_stmt 0 discriminator 1
+ 468 00f4 0D23     		movs	r3, #13
+ 469 00f6 10E2     		b	.L91
+ 470              	.L41:
+ 150:system.c      ****             sys.state = STATE_IDLE;
+ 471              		.loc 1 150 0 is_stmt 1
+ 472 00f8 0320     		movs	r0, #3
+ 473 00fa FFF7FEFF 		bl	report_feedback_message
+ 151:system.c      ****             // Don't run startup script. Prevents stored moves in startup from causing accidents.
+ 474              		.loc 1 151 0
+ 475 00fe 834B     		ldr	r3, .L97
+ 476 0100 0022     		movs	r2, #0
+ 477 0102 1A70     		strb	r2, [r3]
+ 478              	.L95:
+ 154:system.c      ****       }
+ 479              		.loc 1 154 0
+ 480 0104 00BF     		nop
+ 481              	.L30:
+ 482              		.loc 1 156 0 discriminator 1
+ 483 0106 07E2     		b	.L25
+ 484              	.L20:
+ 157:system.c      ****     default :
+ 158:system.c      ****       // Block any system command that requires the state as IDLE/ALARM. (i.e. EEPROM, homing)
+ 159:system.c      ****       if ( !(sys.state == STATE_IDLE || sys.state == STATE_ALARM) ) { return(STATUS_IDLE_ERROR); }
+ 485              		.loc 1 159 0
+ 486 0108 804B     		ldr	r3, .L97
+ 487 010a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 488 010c 002B     		cmp	r3, #0
+ 489 010e 05D0     		beq	.L42
+ 490              		.loc 1 159 0 is_stmt 0 discriminator 1
+ 491 0110 7E4B     		ldr	r3, .L97
+ 492 0112 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 493 0114 012B     		cmp	r3, #1
+ 494 0116 01D0     		beq	.L42
+ 495              		.loc 1 159 0 discriminator 2
+ 496 0118 0823     		movs	r3, #8
+ 497 011a FEE1     		b	.L91
+ 498              	.L42:
+ 160:system.c      ****       switch( line[1] ) {
+ 499              		.loc 1 160 0 is_stmt 1
+ 500 011c 7B68     		ldr	r3, [r7, #4]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 13
+
+
+ 501 011e 0133     		adds	r3, r3, #1
+ 502 0120 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 503 0122 233B     		subs	r3, r3, #35
+ 504 0124 302B     		cmp	r3, #48
+ 505 0126 00F27481 		bhi	.L43
+ 506 012a 01A2     		adr	r2, .L45
+ 507 012c 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 508              		.p2align 2
+ 509              	.L45:
+ 510 0130 F5010000 		.word	.L44+1
+ 511 0134 13040000 		.word	.L43+1
+ 512 0138 13040000 		.word	.L43+1
+ 513 013c 13040000 		.word	.L43+1
+ 514 0140 13040000 		.word	.L43+1
+ 515 0144 13040000 		.word	.L43+1
+ 516 0148 13040000 		.word	.L43+1
+ 517 014c 13040000 		.word	.L43+1
+ 518 0150 13040000 		.word	.L43+1
+ 519 0154 13040000 		.word	.L43+1
+ 520 0158 13040000 		.word	.L43+1
+ 521 015c 13040000 		.word	.L43+1
+ 522 0160 13040000 		.word	.L43+1
+ 523 0164 13040000 		.word	.L43+1
+ 524 0168 13040000 		.word	.L43+1
+ 525 016c 13040000 		.word	.L43+1
+ 526 0170 13040000 		.word	.L43+1
+ 527 0174 13040000 		.word	.L43+1
+ 528 0178 13040000 		.word	.L43+1
+ 529 017c 13040000 		.word	.L43+1
+ 530 0180 13040000 		.word	.L43+1
+ 531 0184 13040000 		.word	.L43+1
+ 532 0188 13040000 		.word	.L43+1
+ 533 018c 13040000 		.word	.L43+1
+ 534 0190 13040000 		.word	.L43+1
+ 535 0194 13040000 		.word	.L43+1
+ 536 0198 13040000 		.word	.L43+1
+ 537 019c 13040000 		.word	.L43+1
+ 538 01a0 13040000 		.word	.L43+1
+ 539 01a4 13040000 		.word	.L43+1
+ 540 01a8 13040000 		.word	.L43+1
+ 541 01ac 13040000 		.word	.L43+1
+ 542 01b0 13040000 		.word	.L43+1
+ 543 01b4 13040000 		.word	.L43+1
+ 544 01b8 13040000 		.word	.L43+1
+ 545 01bc 13040000 		.word	.L43+1
+ 546 01c0 13040000 		.word	.L43+1
+ 547 01c4 09020000 		.word	.L46+1
+ 548 01c8 CF020000 		.word	.L47+1
+ 549 01cc 13040000 		.word	.L43+1
+ 550 01d0 13040000 		.word	.L43+1
+ 551 01d4 13040000 		.word	.L43+1
+ 552 01d8 13040000 		.word	.L43+1
+ 553 01dc B7030000 		.word	.L48+1
+ 554 01e0 13040000 		.word	.L43+1
+ 555 01e4 13040000 		.word	.L43+1
+ 556 01e8 13040000 		.word	.L43+1
+ 557 01ec 4F030000 		.word	.L49+1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 14
+
+
+ 558 01f0 A5020000 		.word	.L50+1
+ 559              		.p2align 1
+ 560              	.L44:
+ 161:system.c      ****         case '#' : // Print Grbl NGC parameters
+ 162:system.c      ****           if ( line[2] != 0 ) { return(STATUS_INVALID_STATEMENT); }
+ 561              		.loc 1 162 0
+ 562 01f4 7B68     		ldr	r3, [r7, #4]
+ 563 01f6 0233     		adds	r3, r3, #2
+ 564 01f8 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 565 01fa 002B     		cmp	r3, #0
+ 566 01fc 01D0     		beq	.L51
+ 567              		.loc 1 162 0 is_stmt 0 discriminator 1
+ 568 01fe 0323     		movs	r3, #3
+ 569 0200 8BE1     		b	.L91
+ 570              	.L51:
+ 163:system.c      ****           else { report_ngc_parameters(); }
+ 571              		.loc 1 163 0 is_stmt 1
+ 572 0202 FFF7FEFF 		bl	report_ngc_parameters
+ 164:system.c      ****           break;
+ 573              		.loc 1 164 0
+ 574 0206 87E1     		b	.L25
+ 575              	.L46:
+ 165:system.c      ****         case 'H' : // Perform homing cycle [IDLE/ALARM]
+ 166:system.c      ****           if (bit_isfalse(settings.flags,BITFLAG_HOMING_ENABLE)) {return(STATUS_SETTING_DISABLED); 
+ 576              		.loc 1 166 0
+ 577 0208 414B     		ldr	r3, .L97+4
+ 578 020a 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+ 579 020e 03F01003 		and	r3, r3, #16
+ 580 0212 002B     		cmp	r3, #0
+ 581 0214 01D1     		bne	.L52
+ 582              		.loc 1 166 0 is_stmt 0 discriminator 1
+ 583 0216 0523     		movs	r3, #5
+ 584 0218 7FE1     		b	.L91
+ 585              	.L52:
+ 167:system.c      ****           if (system_check_safety_door_ajar()) { return(STATUS_CHECK_DOOR); } // Block if safety do
+ 586              		.loc 1 167 0 is_stmt 1
+ 587 021a FFF7FEFF 		bl	system_check_safety_door_ajar
+ 588 021e 0346     		mov	r3, r0
+ 589 0220 002B     		cmp	r3, #0
+ 590 0222 01D0     		beq	.L53
+ 591              		.loc 1 167 0 is_stmt 0 discriminator 1
+ 592 0224 0D23     		movs	r3, #13
+ 593 0226 78E1     		b	.L91
+ 594              	.L53:
+ 168:system.c      ****           sys.state = STATE_HOMING; // Set system state variable
+ 595              		.loc 1 168 0 is_stmt 1
+ 596 0228 384B     		ldr	r3, .L97
+ 597 022a 0422     		movs	r2, #4
+ 598 022c 1A70     		strb	r2, [r3]
+ 169:system.c      ****           if (line[2] == 0) {
+ 599              		.loc 1 169 0
+ 600 022e 7B68     		ldr	r3, [r7, #4]
+ 601 0230 0233     		adds	r3, r3, #2
+ 602 0232 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 603 0234 002B     		cmp	r3, #0
+ 604 0236 03D1     		bne	.L54
+ 170:system.c      ****             mc_homing_cycle(HOMING_CYCLE_ALL);
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 15
+
+
+ 605              		.loc 1 170 0
+ 606 0238 0020     		movs	r0, #0
+ 607 023a FFF7FEFF 		bl	mc_homing_cycle
+ 608 023e 1DE0     		b	.L55
+ 609              	.L54:
+ 171:system.c      ****           #ifdef HOMING_SINGLE_AXIS_COMMANDS
+ 172:system.c      ****             } else if (line[3] == 0) {
+ 610              		.loc 1 172 0
+ 611 0240 7B68     		ldr	r3, [r7, #4]
+ 612 0242 0333     		adds	r3, r3, #3
+ 613 0244 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 614 0246 002B     		cmp	r3, #0
+ 615 0248 16D1     		bne	.L56
+ 173:system.c      ****               switch (line[2]) {
+ 616              		.loc 1 173 0
+ 617 024a 7B68     		ldr	r3, [r7, #4]
+ 618 024c 0233     		adds	r3, r3, #2
+ 619 024e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 620 0250 592B     		cmp	r3, #89
+ 621 0252 07D0     		beq	.L58
+ 622 0254 5A2B     		cmp	r3, #90
+ 623 0256 09D0     		beq	.L59
+ 624 0258 582B     		cmp	r3, #88
+ 625 025a 0BD1     		bne	.L92
+ 174:system.c      ****                 case 'X': mc_homing_cycle(HOMING_CYCLE_X); break;
+ 626              		.loc 1 174 0
+ 627 025c 0120     		movs	r0, #1
+ 628 025e FFF7FEFF 		bl	mc_homing_cycle
+ 629 0262 0BE0     		b	.L55
+ 630              	.L58:
+ 175:system.c      ****                 case 'Y': mc_homing_cycle(HOMING_CYCLE_Y); break;
+ 631              		.loc 1 175 0
+ 632 0264 0220     		movs	r0, #2
+ 633 0266 FFF7FEFF 		bl	mc_homing_cycle
+ 634 026a 07E0     		b	.L55
+ 635              	.L59:
+ 176:system.c      ****                 case 'Z': mc_homing_cycle(HOMING_CYCLE_Z); break;
+ 636              		.loc 1 176 0
+ 637 026c 0420     		movs	r0, #4
+ 638 026e FFF7FEFF 		bl	mc_homing_cycle
+ 639 0272 03E0     		b	.L55
+ 640              	.L92:
+ 177:system.c      ****                 default: return(STATUS_INVALID_STATEMENT);
+ 641              		.loc 1 177 0
+ 642 0274 0323     		movs	r3, #3
+ 643 0276 50E1     		b	.L91
+ 644              	.L56:
+ 178:system.c      ****               }
+ 179:system.c      ****           #endif
+ 180:system.c      ****           } else { return(STATUS_INVALID_STATEMENT); }
+ 645              		.loc 1 180 0
+ 646 0278 0323     		movs	r3, #3
+ 647 027a 4EE1     		b	.L91
+ 648              	.L55:
+ 181:system.c      ****           if (!sys.abort) {  // Execute startup scripts after successful homing.
+ 649              		.loc 1 181 0
+ 650 027c 234B     		ldr	r3, .L97
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 16
+
+
+ 651 027e 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 652 0280 002B     		cmp	r3, #0
+ 653 0282 40F04881 		bne	.L96
+ 182:system.c      ****             sys.state = STATE_IDLE; // Set to IDLE when complete.
+ 654              		.loc 1 182 0
+ 655 0286 214B     		ldr	r3, .L97
+ 656 0288 0022     		movs	r2, #0
+ 657 028a 1A70     		strb	r2, [r3]
+ 183:system.c      ****             st_go_idle(); // Set steppers to the settings idle state before returning.
+ 658              		.loc 1 183 0
+ 659 028c FFF7FEFF 		bl	st_go_idle
+ 184:system.c      ****             if (line[2] == 0) { system_execute_startup(line); }
+ 660              		.loc 1 184 0
+ 661 0290 7B68     		ldr	r3, [r7, #4]
+ 662 0292 0233     		adds	r3, r3, #2
+ 663 0294 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 664 0296 002B     		cmp	r3, #0
+ 665 0298 40F03D81 		bne	.L96
+ 666              		.loc 1 184 0 is_stmt 0 discriminator 1
+ 667 029c 7868     		ldr	r0, [r7, #4]
+ 668 029e FFF7FEFF 		bl	system_execute_startup
+ 185:system.c      ****           }
+ 186:system.c      ****           break;
+ 669              		.loc 1 186 0 is_stmt 1 discriminator 1
+ 670 02a2 38E1     		b	.L96
+ 671              	.L50:
+ 187:system.c      ****         case 'S' : // Puts Grbl to sleep [IDLE/ALARM]
+ 188:system.c      ****           if ((line[2] != 'L') || (line[3] != 'P') || (line[4] != 0)) { return(STATUS_INVALID_STATE
+ 672              		.loc 1 188 0
+ 673 02a4 7B68     		ldr	r3, [r7, #4]
+ 674 02a6 0233     		adds	r3, r3, #2
+ 675 02a8 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 676 02aa 4C2B     		cmp	r3, #76
+ 677 02ac 09D1     		bne	.L63
+ 678              		.loc 1 188 0 is_stmt 0 discriminator 2
+ 679 02ae 7B68     		ldr	r3, [r7, #4]
+ 680 02b0 0333     		adds	r3, r3, #3
+ 681 02b2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 682 02b4 502B     		cmp	r3, #80
+ 683 02b6 04D1     		bne	.L63
+ 684              		.loc 1 188 0 discriminator 4
+ 685 02b8 7B68     		ldr	r3, [r7, #4]
+ 686 02ba 0433     		adds	r3, r3, #4
+ 687 02bc 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 688 02be 002B     		cmp	r3, #0
+ 689 02c0 01D0     		beq	.L64
+ 690              	.L63:
+ 691              		.loc 1 188 0 discriminator 5
+ 692 02c2 0323     		movs	r3, #3
+ 693 02c4 29E1     		b	.L91
+ 694              	.L64:
+ 189:system.c      ****           system_set_exec_state_flag(EXEC_SLEEP); // Set to execute sleep mode immediately
+ 695              		.loc 1 189 0 is_stmt 1
+ 696 02c6 8020     		movs	r0, #128
+ 697 02c8 FFF7FEFF 		bl	system_set_exec_state_flag
+ 190:system.c      ****           break;
+ 698              		.loc 1 190 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 17
+
+
+ 699 02cc 24E1     		b	.L25
+ 700              	.L47:
+ 191:system.c      ****         case 'I' : // Print or store build info. [IDLE/ALARM]
+ 192:system.c      ****           if ( line[++char_counter] == 0 ) {
+ 701              		.loc 1 192 0
+ 702 02ce BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 703 02d0 0133     		adds	r3, r3, #1
+ 704 02d2 DBB2     		uxtb	r3, r3
+ 705 02d4 BB75     		strb	r3, [r7, #22]
+ 706 02d6 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 707 02d8 1A46     		mov	r2, r3
+ 708 02da 7B68     		ldr	r3, [r7, #4]
+ 709 02dc 1344     		add	r3, r3, r2
+ 710 02de 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 711 02e0 002B     		cmp	r3, #0
+ 712 02e2 06D1     		bne	.L65
+ 193:system.c      ****             settings_read_build_info(line);
+ 713              		.loc 1 193 0
+ 714 02e4 7868     		ldr	r0, [r7, #4]
+ 715 02e6 FFF7FEFF 		bl	settings_read_build_info
+ 194:system.c      ****             report_build_info(line);
+ 716              		.loc 1 194 0
+ 717 02ea 7868     		ldr	r0, [r7, #4]
+ 718 02ec FFF7FEFF 		bl	report_build_info
+ 195:system.c      ****           #ifdef ENABLE_BUILD_INFO_WRITE_COMMAND
+ 196:system.c      ****             } else { // Store startup line [IDLE/ALARM]
+ 197:system.c      ****               if(line[char_counter++] != '=') { return(STATUS_INVALID_STATEMENT); }
+ 198:system.c      ****               helper_var = char_counter; // Set helper variable as counter to start of user info li
+ 199:system.c      ****               do {
+ 200:system.c      ****                 line[char_counter-helper_var] = line[char_counter];
+ 201:system.c      ****               } while (line[char_counter++] != 0);
+ 202:system.c      ****               settings_store_build_info(line);
+ 203:system.c      ****           #endif
+ 204:system.c      ****           }
+ 205:system.c      ****           break;
+ 719              		.loc 1 205 0
+ 720 02f0 12E1     		b	.L25
+ 721              	.L65:
+ 197:system.c      ****               helper_var = char_counter; // Set helper variable as counter to start of user info li
+ 722              		.loc 1 197 0
+ 723 02f2 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 724 02f4 5A1C     		adds	r2, r3, #1
+ 725 02f6 D2B2     		uxtb	r2, r2
+ 726 02f8 BA75     		strb	r2, [r7, #22]
+ 727 02fa 1A46     		mov	r2, r3
+ 728 02fc 7B68     		ldr	r3, [r7, #4]
+ 729 02fe 1344     		add	r3, r3, r2
+ 730 0300 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 731 0302 3D2B     		cmp	r3, #61
+ 732 0304 06D0     		beq	.L67
+ 197:system.c      ****               helper_var = char_counter; // Set helper variable as counter to start of user info li
+ 733              		.loc 1 197 0 is_stmt 0 discriminator 1
+ 734 0306 0323     		movs	r3, #3
+ 735 0308 07E1     		b	.L91
+ 736              	.L98:
+ 737 030a 00BF     		.align	2
+ 738              	.L97:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 18
+
+
+ 739 030c 00000000 		.word	sys
+ 740 0310 00000000 		.word	settings
+ 741              	.L67:
+ 198:system.c      ****               do {
+ 742              		.loc 1 198 0 is_stmt 1
+ 743 0314 BB7D     		ldrb	r3, [r7, #22]
+ 744 0316 FB75     		strb	r3, [r7, #23]
+ 745              	.L68:
+ 200:system.c      ****               } while (line[char_counter++] != 0);
+ 746              		.loc 1 200 0 discriminator 1
+ 747 0318 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 748 031a 1A46     		mov	r2, r3
+ 749 031c FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 750 031e D31A     		subs	r3, r2, r3
+ 751 0320 1A46     		mov	r2, r3
+ 752 0322 7B68     		ldr	r3, [r7, #4]
+ 753 0324 1344     		add	r3, r3, r2
+ 754 0326 BA7D     		ldrb	r2, [r7, #22]	@ zero_extendqisi2
+ 755 0328 1146     		mov	r1, r2
+ 756 032a 7A68     		ldr	r2, [r7, #4]
+ 757 032c 0A44     		add	r2, r2, r1
+ 758 032e 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
+ 759 0330 1A70     		strb	r2, [r3]
+ 201:system.c      ****               settings_store_build_info(line);
+ 760              		.loc 1 201 0 discriminator 1
+ 761 0332 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 762 0334 5A1C     		adds	r2, r3, #1
+ 763 0336 D2B2     		uxtb	r2, r2
+ 764 0338 BA75     		strb	r2, [r7, #22]
+ 765 033a 1A46     		mov	r2, r3
+ 766 033c 7B68     		ldr	r3, [r7, #4]
+ 767 033e 1344     		add	r3, r3, r2
+ 768 0340 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 769 0342 002B     		cmp	r3, #0
+ 770 0344 E8D1     		bne	.L68
+ 202:system.c      ****           #endif
+ 771              		.loc 1 202 0
+ 772 0346 7868     		ldr	r0, [r7, #4]
+ 773 0348 FFF7FEFF 		bl	settings_store_build_info
+ 774              		.loc 1 205 0
+ 775 034c E4E0     		b	.L25
+ 776              	.L49:
+ 206:system.c      ****         case 'R' : // Restore defaults [IDLE/ALARM]
+ 207:system.c      ****           if ((line[2] != 'S') || (line[3] != 'T') || (line[4] != '=') || (line[6] != 0)) { return(
+ 777              		.loc 1 207 0
+ 778 034e 7B68     		ldr	r3, [r7, #4]
+ 779 0350 0233     		adds	r3, r3, #2
+ 780 0352 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 781 0354 532B     		cmp	r3, #83
+ 782 0356 0ED1     		bne	.L69
+ 783              		.loc 1 207 0 is_stmt 0 discriminator 2
+ 784 0358 7B68     		ldr	r3, [r7, #4]
+ 785 035a 0333     		adds	r3, r3, #3
+ 786 035c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 787 035e 542B     		cmp	r3, #84
+ 788 0360 09D1     		bne	.L69
+ 789              		.loc 1 207 0 discriminator 4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 19
+
+
+ 790 0362 7B68     		ldr	r3, [r7, #4]
+ 791 0364 0433     		adds	r3, r3, #4
+ 792 0366 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 793 0368 3D2B     		cmp	r3, #61
+ 794 036a 04D1     		bne	.L69
+ 795              		.loc 1 207 0 discriminator 6
+ 796 036c 7B68     		ldr	r3, [r7, #4]
+ 797 036e 0633     		adds	r3, r3, #6
+ 798 0370 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 799 0372 002B     		cmp	r3, #0
+ 800 0374 01D0     		beq	.L70
+ 801              	.L69:
+ 802              		.loc 1 207 0 discriminator 7
+ 803 0376 0323     		movs	r3, #3
+ 804 0378 CFE0     		b	.L91
+ 805              	.L70:
+ 208:system.c      ****           switch (line[5]) {
+ 806              		.loc 1 208 0 is_stmt 1
+ 807 037a 7B68     		ldr	r3, [r7, #4]
+ 808 037c 0533     		adds	r3, r3, #5
+ 809 037e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 810 0380 242B     		cmp	r3, #36
+ 811 0382 04D0     		beq	.L72
+ 812 0384 2A2B     		cmp	r3, #42
+ 813 0386 0AD0     		beq	.L73
+ 814 0388 232B     		cmp	r3, #35
+ 815 038a 04D0     		beq	.L74
+ 816 038c 0BE0     		b	.L93
+ 817              	.L72:
+ 209:system.c      ****             #ifdef ENABLE_RESTORE_EEPROM_DEFAULT_SETTINGS
+ 210:system.c      ****               case '$': settings_restore(SETTINGS_RESTORE_DEFAULTS); break;
+ 818              		.loc 1 210 0
+ 819 038e 0120     		movs	r0, #1
+ 820 0390 FFF7FEFF 		bl	settings_restore
+ 821 0394 09E0     		b	.L75
+ 822              	.L74:
+ 211:system.c      ****             #endif
+ 212:system.c      ****             #ifdef ENABLE_RESTORE_EEPROM_CLEAR_PARAMETERS
+ 213:system.c      ****               case '#': settings_restore(SETTINGS_RESTORE_PARAMETERS); break;
+ 823              		.loc 1 213 0
+ 824 0396 0220     		movs	r0, #2
+ 825 0398 FFF7FEFF 		bl	settings_restore
+ 826 039c 05E0     		b	.L75
+ 827              	.L73:
+ 214:system.c      ****             #endif
+ 215:system.c      ****             #ifdef ENABLE_RESTORE_EEPROM_WIPE_ALL
+ 216:system.c      ****               case '*': settings_restore(SETTINGS_RESTORE_ALL); break;
+ 828              		.loc 1 216 0
+ 829 039e FF20     		movs	r0, #255
+ 830 03a0 FFF7FEFF 		bl	settings_restore
+ 831 03a4 01E0     		b	.L75
+ 832              	.L93:
+ 217:system.c      ****             #endif
+ 218:system.c      ****             default: return(STATUS_INVALID_STATEMENT);
+ 833              		.loc 1 218 0
+ 834 03a6 0323     		movs	r3, #3
+ 835 03a8 B7E0     		b	.L91
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 20
+
+
+ 836              	.L75:
+ 219:system.c      ****           }
+ 220:system.c      ****           report_feedback_message(MESSAGE_RESTORE_DEFAULTS);
+ 837              		.loc 1 220 0
+ 838 03aa 0920     		movs	r0, #9
+ 839 03ac FFF7FEFF 		bl	report_feedback_message
+ 221:system.c      ****           mc_reset(); // Force reset to ensure settings are initialized correctly.
+ 840              		.loc 1 221 0
+ 841 03b0 FFF7FEFF 		bl	mc_reset
+ 222:system.c      ****           break;
+ 842              		.loc 1 222 0
+ 843 03b4 B0E0     		b	.L25
+ 844              	.L48:
+ 223:system.c      ****         case 'N' : // Startup lines. [IDLE/ALARM]
+ 224:system.c      ****           if ( line[++char_counter] == 0 ) { // Print startup lines
+ 845              		.loc 1 224 0
+ 846 03b6 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 847 03b8 0133     		adds	r3, r3, #1
+ 848 03ba DBB2     		uxtb	r3, r3
+ 849 03bc BB75     		strb	r3, [r7, #22]
+ 850 03be BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 851 03c0 1A46     		mov	r2, r3
+ 852 03c2 7B68     		ldr	r3, [r7, #4]
+ 853 03c4 1344     		add	r3, r3, r2
+ 854 03c6 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 855 03c8 002B     		cmp	r3, #0
+ 856 03ca 1AD1     		bne	.L76
+ 225:system.c      ****             for (helper_var=0; helper_var < N_STARTUP_LINE; helper_var++) {
+ 857              		.loc 1 225 0
+ 858 03cc 0023     		movs	r3, #0
+ 859 03ce FB75     		strb	r3, [r7, #23]
+ 860 03d0 13E0     		b	.L77
+ 861              	.L80:
+ 226:system.c      ****               if (!(settings_read_startup_line(helper_var, line))) {
+ 862              		.loc 1 226 0
+ 863 03d2 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 864 03d4 7968     		ldr	r1, [r7, #4]
+ 865 03d6 1846     		mov	r0, r3
+ 866 03d8 FFF7FEFF 		bl	settings_read_startup_line
+ 867 03dc 0346     		mov	r3, r0
+ 868 03de 002B     		cmp	r3, #0
+ 869 03e0 03D1     		bne	.L78
+ 227:system.c      ****                 report_status_message(STATUS_SETTING_READ_FAIL);
+ 870              		.loc 1 227 0
+ 871 03e2 0720     		movs	r0, #7
+ 872 03e4 FFF7FEFF 		bl	report_status_message
+ 873 03e8 04E0     		b	.L79
+ 874              	.L78:
+ 228:system.c      ****               } else {
+ 229:system.c      ****                 report_startup_line(helper_var,line);
+ 875              		.loc 1 229 0
+ 876 03ea FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 877 03ec 7968     		ldr	r1, [r7, #4]
+ 878 03ee 1846     		mov	r0, r3
+ 879 03f0 FFF7FEFF 		bl	report_startup_line
+ 880              	.L79:
+ 225:system.c      ****               if (!(settings_read_startup_line(helper_var, line))) {
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 21
+
+
+ 881              		.loc 1 225 0 discriminator 2
+ 882 03f4 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 883 03f6 0133     		adds	r3, r3, #1
+ 884 03f8 FB75     		strb	r3, [r7, #23]
+ 885              	.L77:
+ 225:system.c      ****               if (!(settings_read_startup_line(helper_var, line))) {
+ 886              		.loc 1 225 0 is_stmt 0 discriminator 1
+ 887 03fa FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 888 03fc 012B     		cmp	r3, #1
+ 889 03fe E8D9     		bls	.L80
+ 230:system.c      ****               }
+ 231:system.c      ****             }
+ 232:system.c      ****             break;
+ 890              		.loc 1 232 0 is_stmt 1
+ 891 0400 8AE0     		b	.L25
+ 892              	.L76:
+ 233:system.c      ****           } else { // Store startup line [IDLE Only] Prevents motion during ALARM.
+ 234:system.c      ****             if (sys.state != STATE_IDLE) { return(STATUS_IDLE_ERROR); } // Store only when idle.
+ 893              		.loc 1 234 0
+ 894 0402 484B     		ldr	r3, .L99
+ 895 0404 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 896 0406 002B     		cmp	r3, #0
+ 897 0408 01D0     		beq	.L81
+ 898              		.loc 1 234 0 is_stmt 0 discriminator 1
+ 899 040a 0823     		movs	r3, #8
+ 900 040c 85E0     		b	.L91
+ 901              	.L81:
+ 235:system.c      ****             helper_var = true;  // Set helper_var to flag storing method.
+ 902              		.loc 1 235 0 is_stmt 1
+ 903 040e 0123     		movs	r3, #1
+ 904 0410 FB75     		strb	r3, [r7, #23]
+ 905              	.L43:
+ 236:system.c      ****             // No break. Continues into default: to read remaining command characters.
+ 237:system.c      ****           }
+ 238:system.c      ****         default :  // Storing setting methods [IDLE/ALARM]
+ 239:system.c      ****           if(!read_float(line, &char_counter, &parameter)) { return(STATUS_BAD_NUMBER_FORMAT); }
+ 906              		.loc 1 239 0
+ 907 0412 07F11002 		add	r2, r7, #16
+ 908 0416 07F11603 		add	r3, r7, #22
+ 909 041a 1946     		mov	r1, r3
+ 910 041c 7868     		ldr	r0, [r7, #4]
+ 911 041e FFF7FEFF 		bl	read_float
+ 912 0422 0346     		mov	r3, r0
+ 913 0424 002B     		cmp	r3, #0
+ 914 0426 01D1     		bne	.L82
+ 915              		.loc 1 239 0 is_stmt 0 discriminator 1
+ 916 0428 0223     		movs	r3, #2
+ 917 042a 76E0     		b	.L91
+ 918              	.L82:
+ 240:system.c      ****           if(line[char_counter++] != '=') { return(STATUS_INVALID_STATEMENT); }
+ 919              		.loc 1 240 0 is_stmt 1
+ 920 042c BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 921 042e 5A1C     		adds	r2, r3, #1
+ 922 0430 D2B2     		uxtb	r2, r2
+ 923 0432 BA75     		strb	r2, [r7, #22]
+ 924 0434 1A46     		mov	r2, r3
+ 925 0436 7B68     		ldr	r3, [r7, #4]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 22
+
+
+ 926 0438 1344     		add	r3, r3, r2
+ 927 043a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 928 043c 3D2B     		cmp	r3, #61
+ 929 043e 01D0     		beq	.L83
+ 930              		.loc 1 240 0 is_stmt 0 discriminator 1
+ 931 0440 0323     		movs	r3, #3
+ 932 0442 6AE0     		b	.L91
+ 933              	.L83:
+ 241:system.c      ****           if (helper_var) { // Store startup line
+ 934              		.loc 1 241 0 is_stmt 1
+ 935 0444 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 936 0446 002B     		cmp	r3, #0
+ 937 0448 3AD0     		beq	.L84
+ 242:system.c      ****             // Prepare sending gcode block to gcode parser by shifting all characters
+ 243:system.c      ****             helper_var = char_counter; // Set helper variable as counter to start of gcode block
+ 938              		.loc 1 243 0
+ 939 044a BB7D     		ldrb	r3, [r7, #22]
+ 940 044c FB75     		strb	r3, [r7, #23]
+ 941              	.L85:
+ 244:system.c      ****             do {
+ 245:system.c      ****               line[char_counter-helper_var] = line[char_counter];
+ 942              		.loc 1 245 0 discriminator 1
+ 943 044e BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 944 0450 1A46     		mov	r2, r3
+ 945 0452 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 946 0454 D31A     		subs	r3, r2, r3
+ 947 0456 1A46     		mov	r2, r3
+ 948 0458 7B68     		ldr	r3, [r7, #4]
+ 949 045a 1344     		add	r3, r3, r2
+ 950 045c BA7D     		ldrb	r2, [r7, #22]	@ zero_extendqisi2
+ 951 045e 1146     		mov	r1, r2
+ 952 0460 7A68     		ldr	r2, [r7, #4]
+ 953 0462 0A44     		add	r2, r2, r1
+ 954 0464 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
+ 955 0466 1A70     		strb	r2, [r3]
+ 246:system.c      ****             } while (line[char_counter++] != 0);
+ 956              		.loc 1 246 0 discriminator 1
+ 957 0468 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 958 046a 5A1C     		adds	r2, r3, #1
+ 959 046c D2B2     		uxtb	r2, r2
+ 960 046e BA75     		strb	r2, [r7, #22]
+ 961 0470 1A46     		mov	r2, r3
+ 962 0472 7B68     		ldr	r3, [r7, #4]
+ 963 0474 1344     		add	r3, r3, r2
+ 964 0476 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 965 0478 002B     		cmp	r3, #0
+ 966 047a E8D1     		bne	.L85
+ 247:system.c      ****             // Execute gcode block to ensure block is valid.
+ 248:system.c      ****             helper_var = gc_execute_line(line); // Set helper_var to returned status code.
+ 967              		.loc 1 248 0
+ 968 047c 7868     		ldr	r0, [r7, #4]
+ 969 047e FFF7FEFF 		bl	gc_execute_line
+ 970 0482 0346     		mov	r3, r0
+ 971 0484 FB75     		strb	r3, [r7, #23]
+ 249:system.c      ****             if (helper_var) { return(helper_var); }
+ 972              		.loc 1 249 0
+ 973 0486 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 23
+
+
+ 974 0488 002B     		cmp	r3, #0
+ 975 048a 01D0     		beq	.L86
+ 976              		.loc 1 249 0 is_stmt 0 discriminator 1
+ 977 048c FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 978 048e 44E0     		b	.L91
+ 979              	.L86:
+ 250:system.c      ****             else {
+ 251:system.c      ****               helper_var = trunc(parameter); // Set helper_var to int value of parameter
+ 980              		.loc 1 251 0 is_stmt 1
+ 981 0490 3B69     		ldr	r3, [r7, #16]	@ float
+ 982 0492 1846     		mov	r0, r3
+ 983 0494 FFF7FEFF 		bl	__aeabi_f2d
+ 984 0498 0346     		mov	r3, r0
+ 985 049a 0C46     		mov	r4, r1
+ 986 049c 1846     		mov	r0, r3
+ 987 049e 2146     		mov	r1, r4
+ 988 04a0 FFF7FEFF 		bl	trunc
+ 989 04a4 0346     		mov	r3, r0
+ 990 04a6 0C46     		mov	r4, r1
+ 991 04a8 1846     		mov	r0, r3
+ 992 04aa 2146     		mov	r1, r4
+ 993 04ac FFF7FEFF 		bl	__aeabi_d2uiz
+ 994 04b0 0346     		mov	r3, r0
+ 995 04b2 FB75     		strb	r3, [r7, #23]
+ 252:system.c      ****               settings_store_startup_line(helper_var,line);
+ 996              		.loc 1 252 0
+ 997 04b4 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 998 04b6 7968     		ldr	r1, [r7, #4]
+ 999 04b8 1846     		mov	r0, r3
+ 1000 04ba FFF7FEFF 		bl	settings_store_startup_line
+ 1001 04be 2BE0     		b	.L25
+ 1002              	.L84:
+ 253:system.c      ****             }
+ 254:system.c      ****           } else { // Store global setting.
+ 255:system.c      ****             if(!read_float(line, &char_counter, &value)) { return(STATUS_BAD_NUMBER_FORMAT); }
+ 1003              		.loc 1 255 0
+ 1004 04c0 07F10C02 		add	r2, r7, #12
+ 1005 04c4 07F11603 		add	r3, r7, #22
+ 1006 04c8 1946     		mov	r1, r3
+ 1007 04ca 7868     		ldr	r0, [r7, #4]
+ 1008 04cc FFF7FEFF 		bl	read_float
+ 1009 04d0 0346     		mov	r3, r0
+ 1010 04d2 002B     		cmp	r3, #0
+ 1011 04d4 01D1     		bne	.L87
+ 1012              		.loc 1 255 0 is_stmt 0 discriminator 1
+ 1013 04d6 0223     		movs	r3, #2
+ 1014 04d8 1FE0     		b	.L91
+ 1015              	.L87:
+ 256:system.c      ****             if((line[char_counter] != 0) || (parameter > 255)) { return(STATUS_INVALID_STATEMENT); 
+ 1016              		.loc 1 256 0 is_stmt 1
+ 1017 04da BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 1018 04dc 1A46     		mov	r2, r3
+ 1019 04de 7B68     		ldr	r3, [r7, #4]
+ 1020 04e0 1344     		add	r3, r3, r2
+ 1021 04e2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1022 04e4 002B     		cmp	r3, #0
+ 1023 04e6 07D1     		bne	.L88
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 24
+
+
+ 1024              		.loc 1 256 0 is_stmt 0 discriminator 2
+ 1025 04e8 3B69     		ldr	r3, [r7, #16]	@ float
+ 1026 04ea 0F49     		ldr	r1, .L99+4
+ 1027 04ec 1846     		mov	r0, r3
+ 1028 04ee FFF7FEFF 		bl	__aeabi_fcmpgt
+ 1029 04f2 0346     		mov	r3, r0
+ 1030 04f4 002B     		cmp	r3, #0
+ 1031 04f6 01D0     		beq	.L94
+ 1032              	.L88:
+ 1033              		.loc 1 256 0 discriminator 3
+ 1034 04f8 0323     		movs	r3, #3
+ 1035 04fa 0EE0     		b	.L91
+ 1036              	.L94:
+ 257:system.c      ****             return(settings_store_global_setting((uint8_t)parameter, value));
+ 1037              		.loc 1 257 0 is_stmt 1
+ 1038 04fc 3B69     		ldr	r3, [r7, #16]	@ float
+ 1039 04fe 1846     		mov	r0, r3
+ 1040 0500 FFF7FEFF 		bl	__aeabi_f2uiz
+ 1041 0504 0346     		mov	r3, r0
+ 1042 0506 DBB2     		uxtb	r3, r3
+ 1043 0508 FA68     		ldr	r2, [r7, #12]	@ float
+ 1044 050a 1146     		mov	r1, r2
+ 1045 050c 1846     		mov	r0, r3
+ 1046 050e FFF7FEFF 		bl	settings_store_global_setting
+ 1047 0512 0346     		mov	r3, r0
+ 1048 0514 01E0     		b	.L91
+ 1049              	.L96:
+ 186:system.c      ****         case 'S' : // Puts Grbl to sleep [IDLE/ALARM]
+ 1050              		.loc 1 186 0
+ 1051 0516 00BF     		nop
+ 1052              	.L25:
+ 258:system.c      ****           }
+ 259:system.c      ****       }
+ 260:system.c      ****   }
+ 261:system.c      ****   return(STATUS_OK); // If '$' command makes it to here, then everything's ok.
+ 1053              		.loc 1 261 0
+ 1054 0518 0023     		movs	r3, #0
+ 1055              	.L91:
+ 262:system.c      **** }
+ 1056              		.loc 1 262 0 discriminator 3
+ 1057 051a 1846     		mov	r0, r3
+ 1058 051c 1C37     		adds	r7, r7, #28
+ 1059              		.cfi_def_cfa_offset 12
+ 1060 051e BD46     		mov	sp, r7
+ 1061              		.cfi_def_cfa_register 13
+ 1062              		@ sp needed
+ 1063 0520 90BD     		pop	{r4, r7, pc}
+ 1064              	.L100:
+ 1065 0522 00BF     		.align	2
+ 1066              	.L99:
+ 1067 0524 00000000 		.word	sys
+ 1068 0528 00007F43 		.word	1132396544
+ 1069              		.cfi_endproc
+ 1070              	.LFE69:
+ 1071              		.size	system_execute_line, .-system_execute_line
+ 1072              		.section	.text.system_flag_wco_change,"ax",%progbits
+ 1073              		.align	2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 25
+
+
+ 1074              		.global	system_flag_wco_change
+ 1075              		.thumb
+ 1076              		.thumb_func
+ 1077              		.type	system_flag_wco_change, %function
+ 1078              	system_flag_wco_change:
+ 1079              	.LFB70:
+ 263:system.c      **** 
+ 264:system.c      **** 
+ 265:system.c      **** 
+ 266:system.c      **** void system_flag_wco_change()
+ 267:system.c      **** {
+ 1080              		.loc 1 267 0
+ 1081              		.cfi_startproc
+ 1082              		@ args = 0, pretend = 0, frame = 0
+ 1083              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1084 0000 80B5     		push	{r7, lr}
+ 1085              		.cfi_def_cfa_offset 8
+ 1086              		.cfi_offset 7, -8
+ 1087              		.cfi_offset 14, -4
+ 1088 0002 00AF     		add	r7, sp, #0
+ 1089              		.cfi_def_cfa_register 7
+ 268:system.c      ****   #ifdef FORCE_BUFFER_SYNC_DURING_WCO_CHANGE
+ 269:system.c      ****     protocol_buffer_synchronize();
+ 1090              		.loc 1 269 0
+ 1091 0004 FFF7FEFF 		bl	protocol_buffer_synchronize
+ 270:system.c      ****   #endif
+ 271:system.c      ****   sys.report_wco_counter = 0;
+ 1092              		.loc 1 271 0
+ 1093 0008 024B     		ldr	r3, .L102
+ 1094 000a 0022     		movs	r2, #0
+ 1095 000c 1A73     		strb	r2, [r3, #12]
+ 272:system.c      **** }
+ 1096              		.loc 1 272 0
+ 1097 000e 00BF     		nop
+ 1098 0010 80BD     		pop	{r7, pc}
+ 1099              	.L103:
+ 1100 0012 00BF     		.align	2
+ 1101              	.L102:
+ 1102 0014 00000000 		.word	sys
+ 1103              		.cfi_endproc
+ 1104              	.LFE70:
+ 1105              		.size	system_flag_wco_change, .-system_flag_wco_change
+ 1106              		.global	__aeabi_i2f
+ 1107              		.global	__aeabi_fdiv
+ 1108              		.section	.text.system_convert_axis_steps_to_mpos,"ax",%progbits
+ 1109              		.align	2
+ 1110              		.global	system_convert_axis_steps_to_mpos
+ 1111              		.thumb
+ 1112              		.thumb_func
+ 1113              		.type	system_convert_axis_steps_to_mpos, %function
+ 1114              	system_convert_axis_steps_to_mpos:
+ 1115              	.LFB71:
+ 273:system.c      **** 
+ 274:system.c      **** 
+ 275:system.c      **** // Returns machine position of axis 'idx'. Must be sent a 'step' array.
+ 276:system.c      **** // NOTE: If motor steps and machine position are not in the same coordinate frame, this function
+ 277:system.c      **** //   serves as a central place to compute the transformation.
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 26
+
+
+ 278:system.c      **** float system_convert_axis_steps_to_mpos(int32_t *steps, uint8_t idx)
+ 279:system.c      **** {
+ 1116              		.loc 1 279 0
+ 1117              		.cfi_startproc
+ 1118              		@ args = 0, pretend = 0, frame = 16
+ 1119              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1120 0000 80B5     		push	{r7, lr}
+ 1121              		.cfi_def_cfa_offset 8
+ 1122              		.cfi_offset 7, -8
+ 1123              		.cfi_offset 14, -4
+ 1124 0002 84B0     		sub	sp, sp, #16
+ 1125              		.cfi_def_cfa_offset 24
+ 1126 0004 00AF     		add	r7, sp, #0
+ 1127              		.cfi_def_cfa_register 7
+ 1128 0006 7860     		str	r0, [r7, #4]
+ 1129 0008 0B46     		mov	r3, r1
+ 1130 000a FB70     		strb	r3, [r7, #3]
+ 280:system.c      ****   float pos;
+ 281:system.c      ****   #ifdef COREXY
+ 282:system.c      ****     if (idx==X_AXIS) {
+ 1131              		.loc 1 282 0
+ 1132 000c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1133 000e 002B     		cmp	r3, #0
+ 1134 0010 10D1     		bne	.L105
+ 283:system.c      ****       pos = (float)system_convert_corexy_to_x_axis_steps(steps) / settings.steps_per_mm[idx];
+ 1135              		.loc 1 283 0
+ 1136 0012 7868     		ldr	r0, [r7, #4]
+ 1137 0014 FFF7FEFF 		bl	system_convert_corexy_to_x_axis_steps
+ 1138 0018 0346     		mov	r3, r0
+ 1139 001a 1846     		mov	r0, r3
+ 1140 001c FFF7FEFF 		bl	__aeabi_i2f
+ 1141 0020 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1142 0022 194A     		ldr	r2, .L109
+ 1143 0024 52F82330 		ldr	r3, [r2, r3, lsl #2]	@ float
+ 1144 0028 1946     		mov	r1, r3
+ 1145 002a FFF7FEFF 		bl	__aeabi_fdiv
+ 1146 002e 0346     		mov	r3, r0
+ 1147 0030 FB60     		str	r3, [r7, #12]	@ float
+ 1148 0032 24E0     		b	.L106
+ 1149              	.L105:
+ 284:system.c      ****     } else if (idx==Y_AXIS) {
+ 1150              		.loc 1 284 0
+ 1151 0034 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1152 0036 012B     		cmp	r3, #1
+ 1153 0038 10D1     		bne	.L107
+ 285:system.c      ****       pos = (float)system_convert_corexy_to_y_axis_steps(steps) / settings.steps_per_mm[idx];
+ 1154              		.loc 1 285 0
+ 1155 003a 7868     		ldr	r0, [r7, #4]
+ 1156 003c FFF7FEFF 		bl	system_convert_corexy_to_y_axis_steps
+ 1157 0040 0346     		mov	r3, r0
+ 1158 0042 1846     		mov	r0, r3
+ 1159 0044 FFF7FEFF 		bl	__aeabi_i2f
+ 1160 0048 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1161 004a 0F4A     		ldr	r2, .L109
+ 1162 004c 52F82330 		ldr	r3, [r2, r3, lsl #2]	@ float
+ 1163 0050 1946     		mov	r1, r3
+ 1164 0052 FFF7FEFF 		bl	__aeabi_fdiv
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 27
+
+
+ 1165 0056 0346     		mov	r3, r0
+ 1166 0058 FB60     		str	r3, [r7, #12]	@ float
+ 1167 005a 10E0     		b	.L106
+ 1168              	.L107:
+ 286:system.c      ****     } else {
+ 287:system.c      ****       pos = steps[idx]/settings.steps_per_mm[idx];
+ 1169              		.loc 1 287 0
+ 1170 005c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1171 005e 9B00     		lsls	r3, r3, #2
+ 1172 0060 7A68     		ldr	r2, [r7, #4]
+ 1173 0062 1344     		add	r3, r3, r2
+ 1174 0064 1B68     		ldr	r3, [r3]
+ 1175 0066 1846     		mov	r0, r3
+ 1176 0068 FFF7FEFF 		bl	__aeabi_i2f
+ 1177 006c FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 1178 006e 064A     		ldr	r2, .L109
+ 1179 0070 52F82330 		ldr	r3, [r2, r3, lsl #2]	@ float
+ 1180 0074 1946     		mov	r1, r3
+ 1181 0076 FFF7FEFF 		bl	__aeabi_fdiv
+ 1182 007a 0346     		mov	r3, r0
+ 1183 007c FB60     		str	r3, [r7, #12]	@ float
+ 1184              	.L106:
+ 288:system.c      ****     }
+ 289:system.c      ****   #else
+ 290:system.c      ****     pos = steps[idx]/settings.steps_per_mm[idx];
+ 291:system.c      ****   #endif
+ 292:system.c      ****   return(pos);
+ 1185              		.loc 1 292 0
+ 1186 007e FB68     		ldr	r3, [r7, #12]	@ float
+ 293:system.c      **** }
+ 1187              		.loc 1 293 0
+ 1188 0080 1846     		mov	r0, r3
+ 1189 0082 1037     		adds	r7, r7, #16
+ 1190              		.cfi_def_cfa_offset 8
+ 1191 0084 BD46     		mov	sp, r7
+ 1192              		.cfi_def_cfa_register 13
+ 1193              		@ sp needed
+ 1194 0086 80BD     		pop	{r7, pc}
+ 1195              	.L110:
+ 1196              		.align	2
+ 1197              	.L109:
+ 1198 0088 00000000 		.word	settings
+ 1199              		.cfi_endproc
+ 1200              	.LFE71:
+ 1201              		.size	system_convert_axis_steps_to_mpos, .-system_convert_axis_steps_to_mpos
+ 1202              		.section	.text.system_convert_array_steps_to_mpos,"ax",%progbits
+ 1203              		.align	2
+ 1204              		.global	system_convert_array_steps_to_mpos
+ 1205              		.thumb
+ 1206              		.thumb_func
+ 1207              		.type	system_convert_array_steps_to_mpos, %function
+ 1208              	system_convert_array_steps_to_mpos:
+ 1209              	.LFB72:
+ 294:system.c      **** 
+ 295:system.c      **** 
+ 296:system.c      **** void system_convert_array_steps_to_mpos(float *position, int32_t *steps)
+ 297:system.c      **** {
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 28
+
+
+ 1210              		.loc 1 297 0
+ 1211              		.cfi_startproc
+ 1212              		@ args = 0, pretend = 0, frame = 16
+ 1213              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1214 0000 90B5     		push	{r4, r7, lr}
+ 1215              		.cfi_def_cfa_offset 12
+ 1216              		.cfi_offset 4, -12
+ 1217              		.cfi_offset 7, -8
+ 1218              		.cfi_offset 14, -4
+ 1219 0002 85B0     		sub	sp, sp, #20
+ 1220              		.cfi_def_cfa_offset 32
+ 1221 0004 00AF     		add	r7, sp, #0
+ 1222              		.cfi_def_cfa_register 7
+ 1223 0006 7860     		str	r0, [r7, #4]
+ 1224 0008 3960     		str	r1, [r7]
+ 298:system.c      ****   uint8_t idx;
+ 299:system.c      ****   for (idx=0; idx<N_AXIS; idx++) {
+ 1225              		.loc 1 299 0
+ 1226 000a 0023     		movs	r3, #0
+ 1227 000c FB73     		strb	r3, [r7, #15]
+ 1228 000e 0DE0     		b	.L112
+ 1229              	.L113:
+ 300:system.c      ****     position[idx] = system_convert_axis_steps_to_mpos(steps, idx);
+ 1230              		.loc 1 300 0 discriminator 3
+ 1231 0010 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1232 0012 9B00     		lsls	r3, r3, #2
+ 1233 0014 7A68     		ldr	r2, [r7, #4]
+ 1234 0016 D418     		adds	r4, r2, r3
+ 1235 0018 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1236 001a 1946     		mov	r1, r3
+ 1237 001c 3868     		ldr	r0, [r7]
+ 1238 001e FFF7FEFF 		bl	system_convert_axis_steps_to_mpos
+ 1239 0022 0346     		mov	r3, r0
+ 1240 0024 2360     		str	r3, [r4]	@ float
+ 299:system.c      ****     position[idx] = system_convert_axis_steps_to_mpos(steps, idx);
+ 1241              		.loc 1 299 0 discriminator 3
+ 1242 0026 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1243 0028 0133     		adds	r3, r3, #1
+ 1244 002a FB73     		strb	r3, [r7, #15]
+ 1245              	.L112:
+ 299:system.c      ****     position[idx] = system_convert_axis_steps_to_mpos(steps, idx);
+ 1246              		.loc 1 299 0 is_stmt 0 discriminator 1
+ 1247 002c FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1248 002e 022B     		cmp	r3, #2
+ 1249 0030 EED9     		bls	.L113
+ 301:system.c      ****   }
+ 302:system.c      ****   return;
+ 1250              		.loc 1 302 0 is_stmt 1
+ 1251 0032 00BF     		nop
+ 303:system.c      **** }
+ 1252              		.loc 1 303 0
+ 1253 0034 1437     		adds	r7, r7, #20
+ 1254              		.cfi_def_cfa_offset 12
+ 1255 0036 BD46     		mov	sp, r7
+ 1256              		.cfi_def_cfa_register 13
+ 1257              		@ sp needed
+ 1258 0038 90BD     		pop	{r4, r7, pc}
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 29
+
+
+ 1259              		.cfi_endproc
+ 1260              	.LFE72:
+ 1261              		.size	system_convert_array_steps_to_mpos, .-system_convert_array_steps_to_mpos
+ 1262 003a 00BF     		.section	.text.system_convert_corexy_to_x_axis_steps,"ax",%progbits
+ 1263              		.align	2
+ 1264              		.global	system_convert_corexy_to_x_axis_steps
+ 1265              		.thumb
+ 1266              		.thumb_func
+ 1267              		.type	system_convert_corexy_to_x_axis_steps, %function
+ 1268              	system_convert_corexy_to_x_axis_steps:
+ 1269              	.LFB73:
+ 304:system.c      **** 
+ 305:system.c      **** 
+ 306:system.c      **** // CoreXY calculation only. Returns x or y-axis "steps" based on CoreXY motor steps.
+ 307:system.c      **** #ifdef COREXY
+ 308:system.c      ****   int32_t system_convert_corexy_to_x_axis_steps(int32_t *steps)
+ 309:system.c      ****   {
+ 1270              		.loc 1 309 0
+ 1271              		.cfi_startproc
+ 1272              		@ args = 0, pretend = 0, frame = 8
+ 1273              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1274              		@ link register save eliminated.
+ 1275 0000 80B4     		push	{r7}
+ 1276              		.cfi_def_cfa_offset 4
+ 1277              		.cfi_offset 7, -4
+ 1278 0002 83B0     		sub	sp, sp, #12
+ 1279              		.cfi_def_cfa_offset 16
+ 1280 0004 00AF     		add	r7, sp, #0
+ 1281              		.cfi_def_cfa_register 7
+ 1282 0006 7860     		str	r0, [r7, #4]
+ 310:system.c      ****     return( (steps[A_MOTOR] + steps[B_MOTOR])/2 );
+ 1283              		.loc 1 310 0
+ 1284 0008 7B68     		ldr	r3, [r7, #4]
+ 1285 000a 1A68     		ldr	r2, [r3]
+ 1286 000c 7B68     		ldr	r3, [r7, #4]
+ 1287 000e 0433     		adds	r3, r3, #4
+ 1288 0010 1B68     		ldr	r3, [r3]
+ 1289 0012 1344     		add	r3, r3, r2
+ 1290 0014 DA0F     		lsrs	r2, r3, #31
+ 1291 0016 1344     		add	r3, r3, r2
+ 1292 0018 5B10     		asrs	r3, r3, #1
+ 311:system.c      ****   }
+ 1293              		.loc 1 311 0
+ 1294 001a 1846     		mov	r0, r3
+ 1295 001c 0C37     		adds	r7, r7, #12
+ 1296              		.cfi_def_cfa_offset 4
+ 1297 001e BD46     		mov	sp, r7
+ 1298              		.cfi_def_cfa_register 13
+ 1299              		@ sp needed
+ 1300 0020 80BC     		pop	{r7}
+ 1301              		.cfi_restore 7
+ 1302              		.cfi_def_cfa_offset 0
+ 1303 0022 7047     		bx	lr
+ 1304              		.cfi_endproc
+ 1305              	.LFE73:
+ 1306              		.size	system_convert_corexy_to_x_axis_steps, .-system_convert_corexy_to_x_axis_steps
+ 1307              		.section	.text.system_convert_corexy_to_y_axis_steps,"ax",%progbits
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 30
+
+
+ 1308              		.align	2
+ 1309              		.global	system_convert_corexy_to_y_axis_steps
+ 1310              		.thumb
+ 1311              		.thumb_func
+ 1312              		.type	system_convert_corexy_to_y_axis_steps, %function
+ 1313              	system_convert_corexy_to_y_axis_steps:
+ 1314              	.LFB74:
+ 312:system.c      ****   int32_t system_convert_corexy_to_y_axis_steps(int32_t *steps)
+ 313:system.c      ****   {
+ 1315              		.loc 1 313 0
+ 1316              		.cfi_startproc
+ 1317              		@ args = 0, pretend = 0, frame = 8
+ 1318              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1319              		@ link register save eliminated.
+ 1320 0000 80B4     		push	{r7}
+ 1321              		.cfi_def_cfa_offset 4
+ 1322              		.cfi_offset 7, -4
+ 1323 0002 83B0     		sub	sp, sp, #12
+ 1324              		.cfi_def_cfa_offset 16
+ 1325 0004 00AF     		add	r7, sp, #0
+ 1326              		.cfi_def_cfa_register 7
+ 1327 0006 7860     		str	r0, [r7, #4]
+ 314:system.c      ****     return( (steps[A_MOTOR] - steps[B_MOTOR])/2 );
+ 1328              		.loc 1 314 0
+ 1329 0008 7B68     		ldr	r3, [r7, #4]
+ 1330 000a 1A68     		ldr	r2, [r3]
+ 1331 000c 7B68     		ldr	r3, [r7, #4]
+ 1332 000e 0433     		adds	r3, r3, #4
+ 1333 0010 1B68     		ldr	r3, [r3]
+ 1334 0012 D31A     		subs	r3, r2, r3
+ 1335 0014 DA0F     		lsrs	r2, r3, #31
+ 1336 0016 1344     		add	r3, r3, r2
+ 1337 0018 5B10     		asrs	r3, r3, #1
+ 315:system.c      ****   }
+ 1338              		.loc 1 315 0
+ 1339 001a 1846     		mov	r0, r3
+ 1340 001c 0C37     		adds	r7, r7, #12
+ 1341              		.cfi_def_cfa_offset 4
+ 1342 001e BD46     		mov	sp, r7
+ 1343              		.cfi_def_cfa_register 13
+ 1344              		@ sp needed
+ 1345 0020 80BC     		pop	{r7}
+ 1346              		.cfi_restore 7
+ 1347              		.cfi_def_cfa_offset 0
+ 1348 0022 7047     		bx	lr
+ 1349              		.cfi_endproc
+ 1350              	.LFE74:
+ 1351              		.size	system_convert_corexy_to_y_axis_steps, .-system_convert_corexy_to_y_axis_steps
+ 1352              		.global	__aeabi_fcmpeq
+ 1353              		.global	__aeabi_fcmplt
+ 1354              		.section	.text.system_check_travel_limits,"ax",%progbits
+ 1355              		.align	2
+ 1356              		.global	system_check_travel_limits
+ 1357              		.thumb
+ 1358              		.thumb_func
+ 1359              		.type	system_check_travel_limits, %function
+ 1360              	system_check_travel_limits:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 31
+
+
+ 1361              	.LFB75:
+ 316:system.c      **** #endif
+ 317:system.c      **** 
+ 318:system.c      **** 
+ 319:system.c      **** // Checks and reports if target array exceeds machine travel limits.
+ 320:system.c      **** uint8_t system_check_travel_limits(float *target)
+ 321:system.c      **** {
+ 1362              		.loc 1 321 0
+ 1363              		.cfi_startproc
+ 1364              		@ args = 0, pretend = 0, frame = 16
+ 1365              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1366 0000 80B5     		push	{r7, lr}
+ 1367              		.cfi_def_cfa_offset 8
+ 1368              		.cfi_offset 7, -8
+ 1369              		.cfi_offset 14, -4
+ 1370 0002 84B0     		sub	sp, sp, #16
+ 1371              		.cfi_def_cfa_offset 24
+ 1372 0004 00AF     		add	r7, sp, #0
+ 1373              		.cfi_def_cfa_register 7
+ 1374 0006 7860     		str	r0, [r7, #4]
+ 322:system.c      ****    uint8_t idx;
+ 323:system.c      ****   for (idx=0; idx<N_AXIS; idx++) {
+ 1375              		.loc 1 323 0
+ 1376 0008 0023     		movs	r3, #0
+ 1377 000a FB73     		strb	r3, [r7, #15]
+ 1378 000c 30E0     		b	.L120
+ 1379              	.L126:
+ 324:system.c      ****     // allow disabling soft limit per axis by setting max travel to zero
+ 325:system.c      ****     if (settings.max_travel[idx]) {
+ 1380              		.loc 1 325 0
+ 1381 000e FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1382 0010 1B4A     		ldr	r2, .L128
+ 1383 0012 0833     		adds	r3, r3, #8
+ 1384 0014 9B00     		lsls	r3, r3, #2
+ 1385 0016 1344     		add	r3, r3, r2
+ 1386 0018 5B68     		ldr	r3, [r3, #4]	@ float
+ 1387 001a 4FF00001 		mov	r1, #0
+ 1388 001e 1846     		mov	r0, r3
+ 1389 0020 FFF7FEFF 		bl	__aeabi_fcmpeq
+ 1390 0024 0346     		mov	r3, r0
+ 1391 0026 002B     		cmp	r3, #0
+ 1392 0028 1FD1     		bne	.L121
+ 326:system.c      ****       #ifdef HOMING_FORCE_SET_ORIGIN
+ 327:system.c      ****         // When homing forced set origin is enabled, soft limits checks need to account for directi
+ 328:system.c      ****         // NOTE: max_travel is stored as negative
+ 329:system.c      ****         if (bit_istrue(settings.homing_dir_mask,bit(idx))) {
+ 330:system.c      ****           if (target[idx] < 0 || target[idx] > -settings.max_travel[idx]) { return(true); }
+ 331:system.c      ****         } else {
+ 332:system.c      ****           if (target[idx] > 0 || target[idx] < settings.max_travel[idx]) { return(true); }
+ 333:system.c      ****         }
+ 334:system.c      ****       #else
+ 335:system.c      ****         // NOTE: max_travel is stored as negative
+ 336:system.c      ****         if (target[idx] > 0 || target[idx] < settings.max_travel[idx]) { return(true); }
+ 1393              		.loc 1 336 0
+ 1394 002a FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1395 002c 9B00     		lsls	r3, r3, #2
+ 1396 002e 7A68     		ldr	r2, [r7, #4]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 32
+
+
+ 1397 0030 1344     		add	r3, r3, r2
+ 1398 0032 1B68     		ldr	r3, [r3]	@ float
+ 1399 0034 4FF00001 		mov	r1, #0
+ 1400 0038 1846     		mov	r0, r3
+ 1401 003a FFF7FEFF 		bl	__aeabi_fcmpgt
+ 1402 003e 0346     		mov	r3, r0
+ 1403 0040 002B     		cmp	r3, #0
+ 1404 0042 10D1     		bne	.L123
+ 1405              		.loc 1 336 0 is_stmt 0 discriminator 2
+ 1406 0044 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1407 0046 9B00     		lsls	r3, r3, #2
+ 1408 0048 7A68     		ldr	r2, [r7, #4]
+ 1409 004a 1344     		add	r3, r3, r2
+ 1410 004c 1868     		ldr	r0, [r3]	@ float
+ 1411 004e FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1412 0050 0B4A     		ldr	r2, .L128
+ 1413 0052 0833     		adds	r3, r3, #8
+ 1414 0054 9B00     		lsls	r3, r3, #2
+ 1415 0056 1344     		add	r3, r3, r2
+ 1416 0058 5B68     		ldr	r3, [r3, #4]	@ float
+ 1417 005a 1946     		mov	r1, r3
+ 1418 005c FFF7FEFF 		bl	__aeabi_fcmplt
+ 1419 0060 0346     		mov	r3, r0
+ 1420 0062 002B     		cmp	r3, #0
+ 1421 0064 01D0     		beq	.L121
+ 1422              	.L123:
+ 1423              		.loc 1 336 0 discriminator 3
+ 1424 0066 0123     		movs	r3, #1
+ 1425 0068 06E0     		b	.L125
+ 1426              	.L121:
+ 323:system.c      ****     // allow disabling soft limit per axis by setting max travel to zero
+ 1427              		.loc 1 323 0 is_stmt 1 discriminator 2
+ 1428 006a FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1429 006c 0133     		adds	r3, r3, #1
+ 1430 006e FB73     		strb	r3, [r7, #15]
+ 1431              	.L120:
+ 323:system.c      ****     // allow disabling soft limit per axis by setting max travel to zero
+ 1432              		.loc 1 323 0 is_stmt 0 discriminator 1
+ 1433 0070 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1434 0072 022B     		cmp	r3, #2
+ 1435 0074 CBD9     		bls	.L126
+ 337:system.c      ****     #endif
+ 338:system.c      ****   }
+ 339:system.c      ****   }
+ 340:system.c      ****   return(false);
+ 1436              		.loc 1 340 0 is_stmt 1
+ 1437 0076 0023     		movs	r3, #0
+ 1438              	.L125:
+ 341:system.c      **** }
+ 1439              		.loc 1 341 0
+ 1440 0078 1846     		mov	r0, r3
+ 1441 007a 1037     		adds	r7, r7, #16
+ 1442              		.cfi_def_cfa_offset 8
+ 1443 007c BD46     		mov	sp, r7
+ 1444              		.cfi_def_cfa_register 13
+ 1445              		@ sp needed
+ 1446 007e 80BD     		pop	{r7, pc}
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 33
+
+
+ 1447              	.L129:
+ 1448              		.align	2
+ 1449              	.L128:
+ 1450 0080 00000000 		.word	settings
+ 1451              		.cfi_endproc
+ 1452              	.LFE75:
+ 1453              		.size	system_check_travel_limits, .-system_check_travel_limits
+ 1454              		.section	.text.system_set_exec_state_flag,"ax",%progbits
+ 1455              		.align	2
+ 1456              		.global	system_set_exec_state_flag
+ 1457              		.thumb
+ 1458              		.thumb_func
+ 1459              		.type	system_set_exec_state_flag, %function
+ 1460              	system_set_exec_state_flag:
+ 1461              	.LFB76:
+ 342:system.c      **** 
+ 343:system.c      **** 
+ 344:system.c      **** // Special handlers for setting and clearing Grbl's real-time execution flags.
+ 345:system.c      **** void system_set_exec_state_flag(uint8_t mask) {  
+ 1462              		.loc 1 345 0
+ 1463              		.cfi_startproc
+ 1464              		@ args = 0, pretend = 0, frame = 8
+ 1465              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1466              		@ link register save eliminated.
+ 1467 0000 80B4     		push	{r7}
+ 1468              		.cfi_def_cfa_offset 4
+ 1469              		.cfi_offset 7, -4
+ 1470 0002 83B0     		sub	sp, sp, #12
+ 1471              		.cfi_def_cfa_offset 16
+ 1472 0004 00AF     		add	r7, sp, #0
+ 1473              		.cfi_def_cfa_register 7
+ 1474 0006 0346     		mov	r3, r0
+ 1475 0008 FB71     		strb	r3, [r7, #7]
+ 346:system.c      ****   CyGlobalIntDisable; 
+ 1476              		.loc 1 346 0
+ 1477              		.syntax unified
+ 1478              	@ 346 "system.c" 1
+ 1479 000a 72B6     		CPSID   i
+ 1480              	@ 0 "" 2
+ 347:system.c      ****   sys_rt_exec_state |= (mask);
+ 1481              		.loc 1 347 0
+ 1482              		.thumb
+ 1483              		.syntax unified
+ 1484 000c 064B     		ldr	r3, .L131
+ 1485 000e 1B78     		ldrb	r3, [r3]
+ 1486 0010 DAB2     		uxtb	r2, r3
+ 1487 0012 FB79     		ldrb	r3, [r7, #7]
+ 1488 0014 1343     		orrs	r3, r3, r2
+ 1489 0016 DAB2     		uxtb	r2, r3
+ 1490 0018 034B     		ldr	r3, .L131
+ 1491 001a 1A70     		strb	r2, [r3]
+ 348:system.c      ****   CyGlobalIntEnable;
+ 1492              		.loc 1 348 0
+ 1493              		.syntax unified
+ 1494              	@ 348 "system.c" 1
+ 1495 001c 62B6     		CPSIE   i
+ 1496              	@ 0 "" 2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 34
+
+
+ 349:system.c      **** }
+ 1497              		.loc 1 349 0
+ 1498              		.thumb
+ 1499              		.syntax unified
+ 1500 001e 00BF     		nop
+ 1501 0020 0C37     		adds	r7, r7, #12
+ 1502              		.cfi_def_cfa_offset 4
+ 1503 0022 BD46     		mov	sp, r7
+ 1504              		.cfi_def_cfa_register 13
+ 1505              		@ sp needed
+ 1506 0024 80BC     		pop	{r7}
+ 1507              		.cfi_restore 7
+ 1508              		.cfi_def_cfa_offset 0
+ 1509 0026 7047     		bx	lr
+ 1510              	.L132:
+ 1511              		.align	2
+ 1512              	.L131:
+ 1513 0028 00000000 		.word	sys_rt_exec_state
+ 1514              		.cfi_endproc
+ 1515              	.LFE76:
+ 1516              		.size	system_set_exec_state_flag, .-system_set_exec_state_flag
+ 1517              		.section	.text.system_clear_exec_state_flag,"ax",%progbits
+ 1518              		.align	2
+ 1519              		.global	system_clear_exec_state_flag
+ 1520              		.thumb
+ 1521              		.thumb_func
+ 1522              		.type	system_clear_exec_state_flag, %function
+ 1523              	system_clear_exec_state_flag:
+ 1524              	.LFB77:
+ 350:system.c      **** 
+ 351:system.c      **** void system_clear_exec_state_flag(uint8_t mask) {
+ 1525              		.loc 1 351 0
+ 1526              		.cfi_startproc
+ 1527              		@ args = 0, pretend = 0, frame = 8
+ 1528              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1529              		@ link register save eliminated.
+ 1530 0000 80B4     		push	{r7}
+ 1531              		.cfi_def_cfa_offset 4
+ 1532              		.cfi_offset 7, -4
+ 1533 0002 83B0     		sub	sp, sp, #12
+ 1534              		.cfi_def_cfa_offset 16
+ 1535 0004 00AF     		add	r7, sp, #0
+ 1536              		.cfi_def_cfa_register 7
+ 1537 0006 0346     		mov	r3, r0
+ 1538 0008 FB71     		strb	r3, [r7, #7]
+ 352:system.c      ****   CyGlobalIntDisable; 
+ 1539              		.loc 1 352 0
+ 1540              		.syntax unified
+ 1541              	@ 352 "system.c" 1
+ 1542 000a 72B6     		CPSID   i
+ 1543              	@ 0 "" 2
+ 353:system.c      ****   sys_rt_exec_state &= ~(mask);
+ 1544              		.loc 1 353 0
+ 1545              		.thumb
+ 1546              		.syntax unified
+ 1547 000c 97F90730 		ldrsb	r3, [r7, #7]
+ 1548 0010 DB43     		mvns	r3, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 35
+
+
+ 1549 0012 5AB2     		sxtb	r2, r3
+ 1550 0014 074B     		ldr	r3, .L134
+ 1551 0016 1B78     		ldrb	r3, [r3]
+ 1552 0018 DBB2     		uxtb	r3, r3
+ 1553 001a 5BB2     		sxtb	r3, r3
+ 1554 001c 1340     		ands	r3, r3, r2
+ 1555 001e 5BB2     		sxtb	r3, r3
+ 1556 0020 DAB2     		uxtb	r2, r3
+ 1557 0022 044B     		ldr	r3, .L134
+ 1558 0024 1A70     		strb	r2, [r3]
+ 354:system.c      ****   CyGlobalIntEnable;
+ 1559              		.loc 1 354 0
+ 1560              		.syntax unified
+ 1561              	@ 354 "system.c" 1
+ 1562 0026 62B6     		CPSIE   i
+ 1563              	@ 0 "" 2
+ 355:system.c      **** }
+ 1564              		.loc 1 355 0
+ 1565              		.thumb
+ 1566              		.syntax unified
+ 1567 0028 00BF     		nop
+ 1568 002a 0C37     		adds	r7, r7, #12
+ 1569              		.cfi_def_cfa_offset 4
+ 1570 002c BD46     		mov	sp, r7
+ 1571              		.cfi_def_cfa_register 13
+ 1572              		@ sp needed
+ 1573 002e 80BC     		pop	{r7}
+ 1574              		.cfi_restore 7
+ 1575              		.cfi_def_cfa_offset 0
+ 1576 0030 7047     		bx	lr
+ 1577              	.L135:
+ 1578 0032 00BF     		.align	2
+ 1579              	.L134:
+ 1580 0034 00000000 		.word	sys_rt_exec_state
+ 1581              		.cfi_endproc
+ 1582              	.LFE77:
+ 1583              		.size	system_clear_exec_state_flag, .-system_clear_exec_state_flag
+ 1584              		.section	.text.system_set_exec_alarm,"ax",%progbits
+ 1585              		.align	2
+ 1586              		.global	system_set_exec_alarm
+ 1587              		.thumb
+ 1588              		.thumb_func
+ 1589              		.type	system_set_exec_alarm, %function
+ 1590              	system_set_exec_alarm:
+ 1591              	.LFB78:
+ 356:system.c      **** 
+ 357:system.c      **** void system_set_exec_alarm(uint8_t code) {
+ 1592              		.loc 1 357 0
+ 1593              		.cfi_startproc
+ 1594              		@ args = 0, pretend = 0, frame = 8
+ 1595              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1596              		@ link register save eliminated.
+ 1597 0000 80B4     		push	{r7}
+ 1598              		.cfi_def_cfa_offset 4
+ 1599              		.cfi_offset 7, -4
+ 1600 0002 83B0     		sub	sp, sp, #12
+ 1601              		.cfi_def_cfa_offset 16
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 36
+
+
+ 1602 0004 00AF     		add	r7, sp, #0
+ 1603              		.cfi_def_cfa_register 7
+ 1604 0006 0346     		mov	r3, r0
+ 1605 0008 FB71     		strb	r3, [r7, #7]
+ 358:system.c      ****   CyGlobalIntDisable;  
+ 1606              		.loc 1 358 0
+ 1607              		.syntax unified
+ 1608              	@ 358 "system.c" 1
+ 1609 000a 72B6     		CPSID   i
+ 1610              	@ 0 "" 2
+ 359:system.c      ****   sys_rt_exec_alarm = code;
+ 1611              		.loc 1 359 0
+ 1612              		.thumb
+ 1613              		.syntax unified
+ 1614 000c 044A     		ldr	r2, .L137
+ 1615 000e FB79     		ldrb	r3, [r7, #7]
+ 1616 0010 1370     		strb	r3, [r2]
+ 360:system.c      ****   CyGlobalIntEnable;
+ 1617              		.loc 1 360 0
+ 1618              		.syntax unified
+ 1619              	@ 360 "system.c" 1
+ 1620 0012 62B6     		CPSIE   i
+ 1621              	@ 0 "" 2
+ 361:system.c      **** }
+ 1622              		.loc 1 361 0
+ 1623              		.thumb
+ 1624              		.syntax unified
+ 1625 0014 00BF     		nop
+ 1626 0016 0C37     		adds	r7, r7, #12
+ 1627              		.cfi_def_cfa_offset 4
+ 1628 0018 BD46     		mov	sp, r7
+ 1629              		.cfi_def_cfa_register 13
+ 1630              		@ sp needed
+ 1631 001a 80BC     		pop	{r7}
+ 1632              		.cfi_restore 7
+ 1633              		.cfi_def_cfa_offset 0
+ 1634 001c 7047     		bx	lr
+ 1635              	.L138:
+ 1636 001e 00BF     		.align	2
+ 1637              	.L137:
+ 1638 0020 00000000 		.word	sys_rt_exec_alarm
+ 1639              		.cfi_endproc
+ 1640              	.LFE78:
+ 1641              		.size	system_set_exec_alarm, .-system_set_exec_alarm
+ 1642              		.section	.text.system_clear_exec_alarm,"ax",%progbits
+ 1643              		.align	2
+ 1644              		.global	system_clear_exec_alarm
+ 1645              		.thumb
+ 1646              		.thumb_func
+ 1647              		.type	system_clear_exec_alarm, %function
+ 1648              	system_clear_exec_alarm:
+ 1649              	.LFB79:
+ 362:system.c      **** 
+ 363:system.c      **** void system_clear_exec_alarm() {
+ 1650              		.loc 1 363 0
+ 1651              		.cfi_startproc
+ 1652              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 37
+
+
+ 1653              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1654              		@ link register save eliminated.
+ 1655 0000 80B4     		push	{r7}
+ 1656              		.cfi_def_cfa_offset 4
+ 1657              		.cfi_offset 7, -4
+ 1658 0002 00AF     		add	r7, sp, #0
+ 1659              		.cfi_def_cfa_register 7
+ 364:system.c      ****   CyGlobalIntDisable;
+ 1660              		.loc 1 364 0
+ 1661              		.syntax unified
+ 1662              	@ 364 "system.c" 1
+ 1663 0004 72B6     		CPSID   i
+ 1664              	@ 0 "" 2
+ 365:system.c      ****   sys_rt_exec_alarm = 0;
+ 1665              		.loc 1 365 0
+ 1666              		.thumb
+ 1667              		.syntax unified
+ 1668 0006 044B     		ldr	r3, .L140
+ 1669 0008 0022     		movs	r2, #0
+ 1670 000a 1A70     		strb	r2, [r3]
+ 366:system.c      ****   CyGlobalIntEnable;
+ 1671              		.loc 1 366 0
+ 1672              		.syntax unified
+ 1673              	@ 366 "system.c" 1
+ 1674 000c 62B6     		CPSIE   i
+ 1675              	@ 0 "" 2
+ 367:system.c      **** }
+ 1676              		.loc 1 367 0
+ 1677              		.thumb
+ 1678              		.syntax unified
+ 1679 000e 00BF     		nop
+ 1680 0010 BD46     		mov	sp, r7
+ 1681              		.cfi_def_cfa_register 13
+ 1682              		@ sp needed
+ 1683 0012 80BC     		pop	{r7}
+ 1684              		.cfi_restore 7
+ 1685              		.cfi_def_cfa_offset 0
+ 1686 0014 7047     		bx	lr
+ 1687              	.L141:
+ 1688 0016 00BF     		.align	2
+ 1689              	.L140:
+ 1690 0018 00000000 		.word	sys_rt_exec_alarm
+ 1691              		.cfi_endproc
+ 1692              	.LFE79:
+ 1693              		.size	system_clear_exec_alarm, .-system_clear_exec_alarm
+ 1694              		.section	.text.system_set_exec_alarm_flag,"ax",%progbits
+ 1695              		.align	2
+ 1696              		.global	system_set_exec_alarm_flag
+ 1697              		.thumb
+ 1698              		.thumb_func
+ 1699              		.type	system_set_exec_alarm_flag, %function
+ 1700              	system_set_exec_alarm_flag:
+ 1701              	.LFB80:
+ 368:system.c      **** 
+ 369:system.c      **** void system_set_exec_alarm_flag(uint8_t mask) {
+ 1702              		.loc 1 369 0
+ 1703              		.cfi_startproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 38
+
+
+ 1704              		@ args = 0, pretend = 0, frame = 8
+ 1705              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1706              		@ link register save eliminated.
+ 1707 0000 80B4     		push	{r7}
+ 1708              		.cfi_def_cfa_offset 4
+ 1709              		.cfi_offset 7, -4
+ 1710 0002 83B0     		sub	sp, sp, #12
+ 1711              		.cfi_def_cfa_offset 16
+ 1712 0004 00AF     		add	r7, sp, #0
+ 1713              		.cfi_def_cfa_register 7
+ 1714 0006 0346     		mov	r3, r0
+ 1715 0008 FB71     		strb	r3, [r7, #7]
+ 370:system.c      ****   CyGlobalIntDisable;
+ 1716              		.loc 1 370 0
+ 1717              		.syntax unified
+ 1718              	@ 370 "system.c" 1
+ 1719 000a 72B6     		CPSID   i
+ 1720              	@ 0 "" 2
+ 371:system.c      ****   sys_rt_exec_alarm |= (mask);
+ 1721              		.loc 1 371 0
+ 1722              		.thumb
+ 1723              		.syntax unified
+ 1724 000c 064B     		ldr	r3, .L143
+ 1725 000e 1B78     		ldrb	r3, [r3]
+ 1726 0010 DAB2     		uxtb	r2, r3
+ 1727 0012 FB79     		ldrb	r3, [r7, #7]
+ 1728 0014 1343     		orrs	r3, r3, r2
+ 1729 0016 DAB2     		uxtb	r2, r3
+ 1730 0018 034B     		ldr	r3, .L143
+ 1731 001a 1A70     		strb	r2, [r3]
+ 372:system.c      ****   CyGlobalIntEnable;
+ 1732              		.loc 1 372 0
+ 1733              		.syntax unified
+ 1734              	@ 372 "system.c" 1
+ 1735 001c 62B6     		CPSIE   i
+ 1736              	@ 0 "" 2
+ 373:system.c      **** }
+ 1737              		.loc 1 373 0
+ 1738              		.thumb
+ 1739              		.syntax unified
+ 1740 001e 00BF     		nop
+ 1741 0020 0C37     		adds	r7, r7, #12
+ 1742              		.cfi_def_cfa_offset 4
+ 1743 0022 BD46     		mov	sp, r7
+ 1744              		.cfi_def_cfa_register 13
+ 1745              		@ sp needed
+ 1746 0024 80BC     		pop	{r7}
+ 1747              		.cfi_restore 7
+ 1748              		.cfi_def_cfa_offset 0
+ 1749 0026 7047     		bx	lr
+ 1750              	.L144:
+ 1751              		.align	2
+ 1752              	.L143:
+ 1753 0028 00000000 		.word	sys_rt_exec_alarm
+ 1754              		.cfi_endproc
+ 1755              	.LFE80:
+ 1756              		.size	system_set_exec_alarm_flag, .-system_set_exec_alarm_flag
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 39
+
+
+ 1757              		.section	.text.system_clear_exec_alarm_flag,"ax",%progbits
+ 1758              		.align	2
+ 1759              		.global	system_clear_exec_alarm_flag
+ 1760              		.thumb
+ 1761              		.thumb_func
+ 1762              		.type	system_clear_exec_alarm_flag, %function
+ 1763              	system_clear_exec_alarm_flag:
+ 1764              	.LFB81:
+ 374:system.c      **** 
+ 375:system.c      **** void system_clear_exec_alarm_flag(uint8_t mask) {
+ 1765              		.loc 1 375 0
+ 1766              		.cfi_startproc
+ 1767              		@ args = 0, pretend = 0, frame = 8
+ 1768              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1769              		@ link register save eliminated.
+ 1770 0000 80B4     		push	{r7}
+ 1771              		.cfi_def_cfa_offset 4
+ 1772              		.cfi_offset 7, -4
+ 1773 0002 83B0     		sub	sp, sp, #12
+ 1774              		.cfi_def_cfa_offset 16
+ 1775 0004 00AF     		add	r7, sp, #0
+ 1776              		.cfi_def_cfa_register 7
+ 1777 0006 0346     		mov	r3, r0
+ 1778 0008 FB71     		strb	r3, [r7, #7]
+ 376:system.c      ****   CyGlobalIntDisable; 
+ 1779              		.loc 1 376 0
+ 1780              		.syntax unified
+ 1781              	@ 376 "system.c" 1
+ 1782 000a 72B6     		CPSID   i
+ 1783              	@ 0 "" 2
+ 377:system.c      ****   sys_rt_exec_alarm &= ~(mask);
+ 1784              		.loc 1 377 0
+ 1785              		.thumb
+ 1786              		.syntax unified
+ 1787 000c 97F90730 		ldrsb	r3, [r7, #7]
+ 1788 0010 DB43     		mvns	r3, r3
+ 1789 0012 5AB2     		sxtb	r2, r3
+ 1790 0014 074B     		ldr	r3, .L146
+ 1791 0016 1B78     		ldrb	r3, [r3]
+ 1792 0018 DBB2     		uxtb	r3, r3
+ 1793 001a 5BB2     		sxtb	r3, r3
+ 1794 001c 1340     		ands	r3, r3, r2
+ 1795 001e 5BB2     		sxtb	r3, r3
+ 1796 0020 DAB2     		uxtb	r2, r3
+ 1797 0022 044B     		ldr	r3, .L146
+ 1798 0024 1A70     		strb	r2, [r3]
+ 378:system.c      ****   CyGlobalIntEnable;
+ 1799              		.loc 1 378 0
+ 1800              		.syntax unified
+ 1801              	@ 378 "system.c" 1
+ 1802 0026 62B6     		CPSIE   i
+ 1803              	@ 0 "" 2
+ 379:system.c      **** }
+ 1804              		.loc 1 379 0
+ 1805              		.thumb
+ 1806              		.syntax unified
+ 1807 0028 00BF     		nop
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 40
+
+
+ 1808 002a 0C37     		adds	r7, r7, #12
+ 1809              		.cfi_def_cfa_offset 4
+ 1810 002c BD46     		mov	sp, r7
+ 1811              		.cfi_def_cfa_register 13
+ 1812              		@ sp needed
+ 1813 002e 80BC     		pop	{r7}
+ 1814              		.cfi_restore 7
+ 1815              		.cfi_def_cfa_offset 0
+ 1816 0030 7047     		bx	lr
+ 1817              	.L147:
+ 1818 0032 00BF     		.align	2
+ 1819              	.L146:
+ 1820 0034 00000000 		.word	sys_rt_exec_alarm
+ 1821              		.cfi_endproc
+ 1822              	.LFE81:
+ 1823              		.size	system_clear_exec_alarm_flag, .-system_clear_exec_alarm_flag
+ 1824              		.section	.text.system_set_exec_motion_override_flag,"ax",%progbits
+ 1825              		.align	2
+ 1826              		.global	system_set_exec_motion_override_flag
+ 1827              		.thumb
+ 1828              		.thumb_func
+ 1829              		.type	system_set_exec_motion_override_flag, %function
+ 1830              	system_set_exec_motion_override_flag:
+ 1831              	.LFB82:
+ 380:system.c      **** 
+ 381:system.c      **** void system_set_exec_motion_override_flag(uint8_t mask) {
+ 1832              		.loc 1 381 0
+ 1833              		.cfi_startproc
+ 1834              		@ args = 0, pretend = 0, frame = 8
+ 1835              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1836              		@ link register save eliminated.
+ 1837 0000 80B4     		push	{r7}
+ 1838              		.cfi_def_cfa_offset 4
+ 1839              		.cfi_offset 7, -4
+ 1840 0002 83B0     		sub	sp, sp, #12
+ 1841              		.cfi_def_cfa_offset 16
+ 1842 0004 00AF     		add	r7, sp, #0
+ 1843              		.cfi_def_cfa_register 7
+ 1844 0006 0346     		mov	r3, r0
+ 1845 0008 FB71     		strb	r3, [r7, #7]
+ 382:system.c      ****   CyGlobalIntDisable;
+ 1846              		.loc 1 382 0
+ 1847              		.syntax unified
+ 1848              	@ 382 "system.c" 1
+ 1849 000a 72B6     		CPSID   i
+ 1850              	@ 0 "" 2
+ 383:system.c      ****   sys_rt_exec_motion_override |= (mask);
+ 1851              		.loc 1 383 0
+ 1852              		.thumb
+ 1853              		.syntax unified
+ 1854 000c 064B     		ldr	r3, .L149
+ 1855 000e 1B78     		ldrb	r3, [r3]
+ 1856 0010 DAB2     		uxtb	r2, r3
+ 1857 0012 FB79     		ldrb	r3, [r7, #7]
+ 1858 0014 1343     		orrs	r3, r3, r2
+ 1859 0016 DAB2     		uxtb	r2, r3
+ 1860 0018 034B     		ldr	r3, .L149
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 41
+
+
+ 1861 001a 1A70     		strb	r2, [r3]
+ 384:system.c      ****   CyGlobalIntEnable;
+ 1862              		.loc 1 384 0
+ 1863              		.syntax unified
+ 1864              	@ 384 "system.c" 1
+ 1865 001c 62B6     		CPSIE   i
+ 1866              	@ 0 "" 2
+ 385:system.c      **** }
+ 1867              		.loc 1 385 0
+ 1868              		.thumb
+ 1869              		.syntax unified
+ 1870 001e 00BF     		nop
+ 1871 0020 0C37     		adds	r7, r7, #12
+ 1872              		.cfi_def_cfa_offset 4
+ 1873 0022 BD46     		mov	sp, r7
+ 1874              		.cfi_def_cfa_register 13
+ 1875              		@ sp needed
+ 1876 0024 80BC     		pop	{r7}
+ 1877              		.cfi_restore 7
+ 1878              		.cfi_def_cfa_offset 0
+ 1879 0026 7047     		bx	lr
+ 1880              	.L150:
+ 1881              		.align	2
+ 1882              	.L149:
+ 1883 0028 00000000 		.word	sys_rt_exec_motion_override
+ 1884              		.cfi_endproc
+ 1885              	.LFE82:
+ 1886              		.size	system_set_exec_motion_override_flag, .-system_set_exec_motion_override_flag
+ 1887              		.section	.text.system_set_exec_accessory_override_flag,"ax",%progbits
+ 1888              		.align	2
+ 1889              		.global	system_set_exec_accessory_override_flag
+ 1890              		.thumb
+ 1891              		.thumb_func
+ 1892              		.type	system_set_exec_accessory_override_flag, %function
+ 1893              	system_set_exec_accessory_override_flag:
+ 1894              	.LFB83:
+ 386:system.c      **** 
+ 387:system.c      **** void system_set_exec_accessory_override_flag(uint8_t mask) {
+ 1895              		.loc 1 387 0
+ 1896              		.cfi_startproc
+ 1897              		@ args = 0, pretend = 0, frame = 8
+ 1898              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1899              		@ link register save eliminated.
+ 1900 0000 80B4     		push	{r7}
+ 1901              		.cfi_def_cfa_offset 4
+ 1902              		.cfi_offset 7, -4
+ 1903 0002 83B0     		sub	sp, sp, #12
+ 1904              		.cfi_def_cfa_offset 16
+ 1905 0004 00AF     		add	r7, sp, #0
+ 1906              		.cfi_def_cfa_register 7
+ 1907 0006 0346     		mov	r3, r0
+ 1908 0008 FB71     		strb	r3, [r7, #7]
+ 388:system.c      ****   CyGlobalIntDisable;
+ 1909              		.loc 1 388 0
+ 1910              		.syntax unified
+ 1911              	@ 388 "system.c" 1
+ 1912 000a 72B6     		CPSID   i
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 42
+
+
+ 1913              	@ 0 "" 2
+ 389:system.c      ****   sys_rt_exec_accessory_override |= (mask);
+ 1914              		.loc 1 389 0
+ 1915              		.thumb
+ 1916              		.syntax unified
+ 1917 000c 064B     		ldr	r3, .L152
+ 1918 000e 1B78     		ldrb	r3, [r3]
+ 1919 0010 DAB2     		uxtb	r2, r3
+ 1920 0012 FB79     		ldrb	r3, [r7, #7]
+ 1921 0014 1343     		orrs	r3, r3, r2
+ 1922 0016 DAB2     		uxtb	r2, r3
+ 1923 0018 034B     		ldr	r3, .L152
+ 1924 001a 1A70     		strb	r2, [r3]
+ 390:system.c      ****   CyGlobalIntEnable;
+ 1925              		.loc 1 390 0
+ 1926              		.syntax unified
+ 1927              	@ 390 "system.c" 1
+ 1928 001c 62B6     		CPSIE   i
+ 1929              	@ 0 "" 2
+ 391:system.c      **** }
+ 1930              		.loc 1 391 0
+ 1931              		.thumb
+ 1932              		.syntax unified
+ 1933 001e 00BF     		nop
+ 1934 0020 0C37     		adds	r7, r7, #12
+ 1935              		.cfi_def_cfa_offset 4
+ 1936 0022 BD46     		mov	sp, r7
+ 1937              		.cfi_def_cfa_register 13
+ 1938              		@ sp needed
+ 1939 0024 80BC     		pop	{r7}
+ 1940              		.cfi_restore 7
+ 1941              		.cfi_def_cfa_offset 0
+ 1942 0026 7047     		bx	lr
+ 1943              	.L153:
+ 1944              		.align	2
+ 1945              	.L152:
+ 1946 0028 00000000 		.word	sys_rt_exec_accessory_override
+ 1947              		.cfi_endproc
+ 1948              	.LFE83:
+ 1949              		.size	system_set_exec_accessory_override_flag, .-system_set_exec_accessory_override_flag
+ 1950              		.section	.text.system_clear_exec_motion_overrides,"ax",%progbits
+ 1951              		.align	2
+ 1952              		.global	system_clear_exec_motion_overrides
+ 1953              		.thumb
+ 1954              		.thumb_func
+ 1955              		.type	system_clear_exec_motion_overrides, %function
+ 1956              	system_clear_exec_motion_overrides:
+ 1957              	.LFB84:
+ 392:system.c      **** 
+ 393:system.c      **** void system_clear_exec_motion_overrides() {
+ 1958              		.loc 1 393 0
+ 1959              		.cfi_startproc
+ 1960              		@ args = 0, pretend = 0, frame = 0
+ 1961              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1962              		@ link register save eliminated.
+ 1963 0000 80B4     		push	{r7}
+ 1964              		.cfi_def_cfa_offset 4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 43
+
+
+ 1965              		.cfi_offset 7, -4
+ 1966 0002 00AF     		add	r7, sp, #0
+ 1967              		.cfi_def_cfa_register 7
+ 394:system.c      ****   CyGlobalIntDisable;
+ 1968              		.loc 1 394 0
+ 1969              		.syntax unified
+ 1970              	@ 394 "system.c" 1
+ 1971 0004 72B6     		CPSID   i
+ 1972              	@ 0 "" 2
+ 395:system.c      ****   sys_rt_exec_motion_override = 0;
+ 1973              		.loc 1 395 0
+ 1974              		.thumb
+ 1975              		.syntax unified
+ 1976 0006 044B     		ldr	r3, .L155
+ 1977 0008 0022     		movs	r2, #0
+ 1978 000a 1A70     		strb	r2, [r3]
+ 396:system.c      ****   CyGlobalIntEnable;
+ 1979              		.loc 1 396 0
+ 1980              		.syntax unified
+ 1981              	@ 396 "system.c" 1
+ 1982 000c 62B6     		CPSIE   i
+ 1983              	@ 0 "" 2
+ 397:system.c      **** }
+ 1984              		.loc 1 397 0
+ 1985              		.thumb
+ 1986              		.syntax unified
+ 1987 000e 00BF     		nop
+ 1988 0010 BD46     		mov	sp, r7
+ 1989              		.cfi_def_cfa_register 13
+ 1990              		@ sp needed
+ 1991 0012 80BC     		pop	{r7}
+ 1992              		.cfi_restore 7
+ 1993              		.cfi_def_cfa_offset 0
+ 1994 0014 7047     		bx	lr
+ 1995              	.L156:
+ 1996 0016 00BF     		.align	2
+ 1997              	.L155:
+ 1998 0018 00000000 		.word	sys_rt_exec_motion_override
+ 1999              		.cfi_endproc
+ 2000              	.LFE84:
+ 2001              		.size	system_clear_exec_motion_overrides, .-system_clear_exec_motion_overrides
+ 2002              		.section	.text.system_clear_exec_accessory_overrides,"ax",%progbits
+ 2003              		.align	2
+ 2004              		.global	system_clear_exec_accessory_overrides
+ 2005              		.thumb
+ 2006              		.thumb_func
+ 2007              		.type	system_clear_exec_accessory_overrides, %function
+ 2008              	system_clear_exec_accessory_overrides:
+ 2009              	.LFB85:
+ 398:system.c      **** 
+ 399:system.c      **** void system_clear_exec_accessory_overrides() {
+ 2010              		.loc 1 399 0
+ 2011              		.cfi_startproc
+ 2012              		@ args = 0, pretend = 0, frame = 0
+ 2013              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2014              		@ link register save eliminated.
+ 2015 0000 80B4     		push	{r7}
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 44
+
+
+ 2016              		.cfi_def_cfa_offset 4
+ 2017              		.cfi_offset 7, -4
+ 2018 0002 00AF     		add	r7, sp, #0
+ 2019              		.cfi_def_cfa_register 7
+ 400:system.c      ****   CyGlobalIntDisable;
+ 2020              		.loc 1 400 0
+ 2021              		.syntax unified
+ 2022              	@ 400 "system.c" 1
+ 2023 0004 72B6     		CPSID   i
+ 2024              	@ 0 "" 2
+ 401:system.c      ****   sys_rt_exec_accessory_override = 0;
+ 2025              		.loc 1 401 0
+ 2026              		.thumb
+ 2027              		.syntax unified
+ 2028 0006 044B     		ldr	r3, .L158
+ 2029 0008 0022     		movs	r2, #0
+ 2030 000a 1A70     		strb	r2, [r3]
+ 402:system.c      ****   CyGlobalIntEnable;
+ 2031              		.loc 1 402 0
+ 2032              		.syntax unified
+ 2033              	@ 402 "system.c" 1
+ 2034 000c 62B6     		CPSIE   i
+ 2035              	@ 0 "" 2
+ 403:system.c      **** }
+ 2036              		.loc 1 403 0
+ 2037              		.thumb
+ 2038              		.syntax unified
+ 2039 000e 00BF     		nop
+ 2040 0010 BD46     		mov	sp, r7
+ 2041              		.cfi_def_cfa_register 13
+ 2042              		@ sp needed
+ 2043 0012 80BC     		pop	{r7}
+ 2044              		.cfi_restore 7
+ 2045              		.cfi_def_cfa_offset 0
+ 2046 0014 7047     		bx	lr
+ 2047              	.L159:
+ 2048 0016 00BF     		.align	2
+ 2049              	.L158:
+ 2050 0018 00000000 		.word	sys_rt_exec_accessory_override
+ 2051              		.cfi_endproc
+ 2052              	.LFE85:
+ 2053              		.size	system_clear_exec_accessory_overrides, .-system_clear_exec_accessory_overrides
+ 2054              		.text
+ 2055              	.Letext0:
+ 2056              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 2057              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 2058              		.file 4 "settings.h"
+ 2059              		.file 5 "system.h"
+ 2060              		.file 6 "Generated_Source\\PSoC5/core_cm3.h"
+ 2061              		.section	.debug_info,"",%progbits
+ 2062              	.Ldebug_info0:
+ 2063 0000 C8060000 		.4byte	0x6c8
+ 2064 0004 0400     		.2byte	0x4
+ 2065 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 2066 000a 04       		.byte	0x4
+ 2067 000b 01       		.uleb128 0x1
+ 2068 000c 06010000 		.4byte	.LASF97
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 45
+
+
+ 2069 0010 0C       		.byte	0xc
+ 2070 0011 F9060000 		.4byte	.LASF98
+ 2071 0015 FD050000 		.4byte	.LASF99
+ 2072 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 2073 001d 00000000 		.4byte	0
+ 2074 0021 00000000 		.4byte	.Ldebug_line0
+ 2075 0025 02       		.uleb128 0x2
+ 2076 0026 01       		.byte	0x1
+ 2077 0027 06       		.byte	0x6
+ 2078 0028 90030000 		.4byte	.LASF0
+ 2079 002c 03       		.uleb128 0x3
+ 2080 002d 01030000 		.4byte	.LASF3
+ 2081 0031 02       		.byte	0x2
+ 2082 0032 1D       		.byte	0x1d
+ 2083 0033 37000000 		.4byte	0x37
+ 2084 0037 02       		.uleb128 0x2
+ 2085 0038 01       		.byte	0x1
+ 2086 0039 08       		.byte	0x8
+ 2087 003a 7C030000 		.4byte	.LASF1
+ 2088 003e 02       		.uleb128 0x2
+ 2089 003f 02       		.byte	0x2
+ 2090 0040 05       		.byte	0x5
+ 2091 0041 AC000000 		.4byte	.LASF2
+ 2092 0045 03       		.uleb128 0x3
+ 2093 0046 BA010000 		.4byte	.LASF4
+ 2094 004a 02       		.byte	0x2
+ 2095 004b 2B       		.byte	0x2b
+ 2096 004c 50000000 		.4byte	0x50
+ 2097 0050 02       		.uleb128 0x2
+ 2098 0051 02       		.byte	0x2
+ 2099 0052 07       		.byte	0x7
+ 2100 0053 80040000 		.4byte	.LASF5
+ 2101 0057 03       		.uleb128 0x3
+ 2102 0058 D5050000 		.4byte	.LASF6
+ 2103 005c 02       		.byte	0x2
+ 2104 005d 3F       		.byte	0x3f
+ 2105 005e 62000000 		.4byte	0x62
+ 2106 0062 02       		.uleb128 0x2
+ 2107 0063 04       		.byte	0x4
+ 2108 0064 05       		.byte	0x5
+ 2109 0065 D7020000 		.4byte	.LASF7
+ 2110 0069 02       		.uleb128 0x2
+ 2111 006a 04       		.byte	0x4
+ 2112 006b 07       		.byte	0x7
+ 2113 006c 7A050000 		.4byte	.LASF8
+ 2114 0070 02       		.uleb128 0x2
+ 2115 0071 08       		.byte	0x8
+ 2116 0072 05       		.byte	0x5
+ 2117 0073 9A020000 		.4byte	.LASF9
+ 2118 0077 02       		.uleb128 0x2
+ 2119 0078 08       		.byte	0x8
+ 2120 0079 07       		.byte	0x7
+ 2121 007a A2030000 		.4byte	.LASF10
+ 2122 007e 04       		.uleb128 0x4
+ 2123 007f 04       		.byte	0x4
+ 2124 0080 05       		.byte	0x5
+ 2125 0081 696E7400 		.ascii	"int\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 46
+
+
+ 2126 0085 02       		.uleb128 0x2
+ 2127 0086 04       		.byte	0x4
+ 2128 0087 07       		.byte	0x7
+ 2129 0088 CD030000 		.4byte	.LASF11
+ 2130 008c 03       		.uleb128 0x3
+ 2131 008d FD010000 		.4byte	.LASF12
+ 2132 0091 03       		.byte	0x3
+ 2133 0092 18       		.byte	0x18
+ 2134 0093 2C000000 		.4byte	0x2c
+ 2135 0097 03       		.uleb128 0x3
+ 2136 0098 C6040000 		.4byte	.LASF13
+ 2137 009c 03       		.byte	0x3
+ 2138 009d 24       		.byte	0x24
+ 2139 009e 45000000 		.4byte	0x45
+ 2140 00a2 03       		.uleb128 0x3
+ 2141 00a3 DF040000 		.4byte	.LASF14
+ 2142 00a7 03       		.byte	0x3
+ 2143 00a8 2C       		.byte	0x2c
+ 2144 00a9 57000000 		.4byte	0x57
+ 2145 00ad 02       		.uleb128 0x2
+ 2146 00ae 04       		.byte	0x4
+ 2147 00af 04       		.byte	0x4
+ 2148 00b0 8B020000 		.4byte	.LASF15
+ 2149 00b4 02       		.uleb128 0x2
+ 2150 00b5 08       		.byte	0x8
+ 2151 00b6 04       		.byte	0x4
+ 2152 00b7 8C050000 		.4byte	.LASF16
+ 2153 00bb 02       		.uleb128 0x2
+ 2154 00bc 01       		.byte	0x1
+ 2155 00bd 08       		.byte	0x8
+ 2156 00be C1040000 		.4byte	.LASF17
+ 2157 00c2 02       		.uleb128 0x2
+ 2158 00c3 08       		.byte	0x8
+ 2159 00c4 04       		.byte	0x4
+ 2160 00c5 37030000 		.4byte	.LASF18
+ 2161 00c9 02       		.uleb128 0x2
+ 2162 00ca 04       		.byte	0x4
+ 2163 00cb 07       		.byte	0x7
+ 2164 00cc B6000000 		.4byte	.LASF19
+ 2165 00d0 05       		.uleb128 0x5
+ 2166 00d1 04       		.byte	0x4
+ 2167 00d2 BB000000 		.4byte	0xbb
+ 2168 00d6 06       		.uleb128 0x6
+ 2169 00d7 8C000000 		.4byte	0x8c
+ 2170 00db 07       		.uleb128 0x7
+ 2171 00dc 5C       		.byte	0x5c
+ 2172 00dd 04       		.byte	0x4
+ 2173 00de 4F       		.byte	0x4f
+ 2174 00df C8010000 		.4byte	0x1c8
+ 2175 00e3 08       		.uleb128 0x8
+ 2176 00e4 F4020000 		.4byte	.LASF20
+ 2177 00e8 04       		.byte	0x4
+ 2178 00e9 51       		.byte	0x51
+ 2179 00ea C8010000 		.4byte	0x1c8
+ 2180 00ee 00       		.byte	0
+ 2181 00ef 08       		.uleb128 0x8
+ 2182 00f0 CD060000 		.4byte	.LASF21
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 47
+
+
+ 2183 00f4 04       		.byte	0x4
+ 2184 00f5 52       		.byte	0x52
+ 2185 00f6 C8010000 		.4byte	0x1c8
+ 2186 00fa 0C       		.byte	0xc
+ 2187 00fb 08       		.uleb128 0x8
+ 2188 00fc 58000000 		.4byte	.LASF22
+ 2189 0100 04       		.byte	0x4
+ 2190 0101 53       		.byte	0x53
+ 2191 0102 C8010000 		.4byte	0x1c8
+ 2192 0106 18       		.byte	0x18
+ 2193 0107 08       		.uleb128 0x8
+ 2194 0108 F2050000 		.4byte	.LASF23
+ 2195 010c 04       		.byte	0x4
+ 2196 010d 54       		.byte	0x54
+ 2197 010e C8010000 		.4byte	0x1c8
+ 2198 0112 24       		.byte	0x24
+ 2199 0113 08       		.uleb128 0x8
+ 2200 0114 2F050000 		.4byte	.LASF24
+ 2201 0118 04       		.byte	0x4
+ 2202 0119 57       		.byte	0x57
+ 2203 011a 8C000000 		.4byte	0x8c
+ 2204 011e 30       		.byte	0x30
+ 2205 011f 08       		.uleb128 0x8
+ 2206 0120 E8060000 		.4byte	.LASF25
+ 2207 0124 04       		.byte	0x4
+ 2208 0125 58       		.byte	0x58
+ 2209 0126 8C000000 		.4byte	0x8c
+ 2210 012a 31       		.byte	0x31
+ 2211 012b 08       		.uleb128 0x8
+ 2212 012c CF040000 		.4byte	.LASF26
+ 2213 0130 04       		.byte	0x4
+ 2214 0131 59       		.byte	0x59
+ 2215 0132 8C000000 		.4byte	0x8c
+ 2216 0136 32       		.byte	0x32
+ 2217 0137 08       		.uleb128 0x8
+ 2218 0138 C5010000 		.4byte	.LASF27
+ 2219 013c 04       		.byte	0x4
+ 2220 013d 5A       		.byte	0x5a
+ 2221 013e 8C000000 		.4byte	0x8c
+ 2222 0142 33       		.byte	0x33
+ 2223 0143 08       		.uleb128 0x8
+ 2224 0144 28040000 		.4byte	.LASF28
+ 2225 0148 04       		.byte	0x4
+ 2226 0149 5B       		.byte	0x5b
+ 2227 014a 8C000000 		.4byte	0x8c
+ 2228 014e 34       		.byte	0x34
+ 2229 014f 08       		.uleb128 0x8
+ 2230 0150 DF050000 		.4byte	.LASF29
+ 2231 0154 04       		.byte	0x4
+ 2232 0155 5C       		.byte	0x5c
+ 2233 0156 AD000000 		.4byte	0xad
+ 2234 015a 38       		.byte	0x38
+ 2235 015b 08       		.uleb128 0x8
+ 2236 015c 29030000 		.4byte	.LASF30
+ 2237 0160 04       		.byte	0x4
+ 2238 0161 5D       		.byte	0x5d
+ 2239 0162 AD000000 		.4byte	0xad
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 48
+
+
+ 2240 0166 3C       		.byte	0x3c
+ 2241 0167 08       		.uleb128 0x8
+ 2242 0168 F1040000 		.4byte	.LASF31
+ 2243 016c 04       		.byte	0x4
+ 2244 016d 5F       		.byte	0x5f
+ 2245 016e AD000000 		.4byte	0xad
+ 2246 0172 40       		.byte	0x40
+ 2247 0173 08       		.uleb128 0x8
+ 2248 0174 BB050000 		.4byte	.LASF32
+ 2249 0178 04       		.byte	0x4
+ 2250 0179 60       		.byte	0x60
+ 2251 017a AD000000 		.4byte	0xad
+ 2252 017e 44       		.byte	0x44
+ 2253 017f 08       		.uleb128 0x8
+ 2254 0180 9C030000 		.4byte	.LASF33
+ 2255 0184 04       		.byte	0x4
+ 2256 0185 62       		.byte	0x62
+ 2257 0186 8C000000 		.4byte	0x8c
+ 2258 018a 48       		.byte	0x48
+ 2259 018b 08       		.uleb128 0x8
+ 2260 018c 6C030000 		.4byte	.LASF34
+ 2261 0190 04       		.byte	0x4
+ 2262 0191 64       		.byte	0x64
+ 2263 0192 8C000000 		.4byte	0x8c
+ 2264 0196 49       		.byte	0x49
+ 2265 0197 08       		.uleb128 0x8
+ 2266 0198 3F060000 		.4byte	.LASF35
+ 2267 019c 04       		.byte	0x4
+ 2268 019d 65       		.byte	0x65
+ 2269 019e AD000000 		.4byte	0xad
+ 2270 01a2 4C       		.byte	0x4c
+ 2271 01a3 08       		.uleb128 0x8
+ 2272 01a4 93050000 		.4byte	.LASF36
+ 2273 01a8 04       		.byte	0x4
+ 2274 01a9 66       		.byte	0x66
+ 2275 01aa AD000000 		.4byte	0xad
+ 2276 01ae 50       		.byte	0x50
+ 2277 01af 08       		.uleb128 0x8
+ 2278 01b0 19050000 		.4byte	.LASF37
+ 2279 01b4 04       		.byte	0x4
+ 2280 01b5 67       		.byte	0x67
+ 2281 01b6 97000000 		.4byte	0x97
+ 2282 01ba 54       		.byte	0x54
+ 2283 01bb 08       		.uleb128 0x8
+ 2284 01bc 7C020000 		.4byte	.LASF38
+ 2285 01c0 04       		.byte	0x4
+ 2286 01c1 68       		.byte	0x68
+ 2287 01c2 AD000000 		.4byte	0xad
+ 2288 01c6 58       		.byte	0x58
+ 2289 01c7 00       		.byte	0
+ 2290 01c8 09       		.uleb128 0x9
+ 2291 01c9 AD000000 		.4byte	0xad
+ 2292 01cd D8010000 		.4byte	0x1d8
+ 2293 01d1 0A       		.uleb128 0xa
+ 2294 01d2 C9000000 		.4byte	0xc9
+ 2295 01d6 02       		.byte	0x2
+ 2296 01d7 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 49
+
+
+ 2297 01d8 03       		.uleb128 0x3
+ 2298 01d9 6F040000 		.4byte	.LASF39
+ 2299 01dd 04       		.byte	0x4
+ 2300 01de 69       		.byte	0x69
+ 2301 01df DB000000 		.4byte	0xdb
+ 2302 01e3 07       		.uleb128 0x7
+ 2303 01e4 14       		.byte	0x14
+ 2304 01e5 05       		.byte	0x5
+ 2305 01e6 81       		.byte	0x81
+ 2306 01e7 94020000 		.4byte	0x294
+ 2307 01eb 08       		.uleb128 0x8
+ 2308 01ec 23030000 		.4byte	.LASF40
+ 2309 01f0 05       		.byte	0x5
+ 2310 01f1 82       		.byte	0x82
+ 2311 01f2 8C000000 		.4byte	0x8c
+ 2312 01f6 00       		.byte	0
+ 2313 01f7 08       		.uleb128 0x8
+ 2314 01f8 8A030000 		.4byte	.LASF41
+ 2315 01fc 05       		.byte	0x5
+ 2316 01fd 83       		.byte	0x83
+ 2317 01fe 8C000000 		.4byte	0x8c
+ 2318 0202 01       		.byte	0x1
+ 2319 0203 08       		.uleb128 0x8
+ 2320 0204 06050000 		.4byte	.LASF42
+ 2321 0208 05       		.byte	0x5
+ 2322 0209 84       		.byte	0x84
+ 2323 020a 8C000000 		.4byte	0x8c
+ 2324 020e 02       		.byte	0x2
+ 2325 020f 08       		.uleb128 0x8
+ 2326 0210 0E050000 		.4byte	.LASF43
+ 2327 0214 05       		.byte	0x5
+ 2328 0215 85       		.byte	0x85
+ 2329 0216 8C000000 		.4byte	0x8c
+ 2330 021a 03       		.byte	0x3
+ 2331 021b 08       		.uleb128 0x8
+ 2332 021c F9040000 		.4byte	.LASF44
+ 2333 0220 05       		.byte	0x5
+ 2334 0221 86       		.byte	0x86
+ 2335 0222 8C000000 		.4byte	0x8c
+ 2336 0226 04       		.byte	0x4
+ 2337 0227 08       		.uleb128 0x8
+ 2338 0228 C7020000 		.4byte	.LASF45
+ 2339 022c 05       		.byte	0x5
+ 2340 022d 87       		.byte	0x87
+ 2341 022e 8C000000 		.4byte	0x8c
+ 2342 0232 05       		.byte	0x5
+ 2343 0233 08       		.uleb128 0x8
+ 2344 0234 3B040000 		.4byte	.LASF46
+ 2345 0238 05       		.byte	0x5
+ 2346 0239 88       		.byte	0x88
+ 2347 023a 8C000000 		.4byte	0x8c
+ 2348 023e 06       		.byte	0x6
+ 2349 023f 08       		.uleb128 0x8
+ 2350 0240 DA030000 		.4byte	.LASF47
+ 2351 0244 05       		.byte	0x5
+ 2352 0245 89       		.byte	0x89
+ 2353 0246 8C000000 		.4byte	0x8c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 50
+
+
+ 2354 024a 07       		.byte	0x7
+ 2355 024b 08       		.uleb128 0x8
+ 2356 024c 57060000 		.4byte	.LASF48
+ 2357 0250 05       		.byte	0x5
+ 2358 0251 8A       		.byte	0x8a
+ 2359 0252 8C000000 		.4byte	0x8c
+ 2360 0256 08       		.byte	0x8
+ 2361 0257 08       		.uleb128 0x8
+ 2362 0258 A8020000 		.4byte	.LASF49
+ 2363 025c 05       		.byte	0x5
+ 2364 025d 8B       		.byte	0x8b
+ 2365 025e 8C000000 		.4byte	0x8c
+ 2366 0262 09       		.byte	0x9
+ 2367 0263 08       		.uleb128 0x8
+ 2368 0264 69050000 		.4byte	.LASF50
+ 2369 0268 05       		.byte	0x5
+ 2370 0269 8C       		.byte	0x8c
+ 2371 026a 8C000000 		.4byte	0x8c
+ 2372 026e 0A       		.byte	0xa
+ 2373 026f 08       		.uleb128 0x8
+ 2374 0270 0B030000 		.4byte	.LASF51
+ 2375 0274 05       		.byte	0x5
+ 2376 0275 8D       		.byte	0x8d
+ 2377 0276 8C000000 		.4byte	0x8c
+ 2378 027a 0B       		.byte	0xb
+ 2379 027b 08       		.uleb128 0x8
+ 2380 027c 7E060000 		.4byte	.LASF52
+ 2381 0280 05       		.byte	0x5
+ 2382 0281 8E       		.byte	0x8e
+ 2383 0282 8C000000 		.4byte	0x8c
+ 2384 0286 0C       		.byte	0xc
+ 2385 0287 08       		.uleb128 0x8
+ 2386 0288 E5030000 		.4byte	.LASF53
+ 2387 028c 05       		.byte	0x5
+ 2388 028d 90       		.byte	0x90
+ 2389 028e AD000000 		.4byte	0xad
+ 2390 0292 10       		.byte	0x10
+ 2391 0293 00       		.byte	0
+ 2392 0294 03       		.uleb128 0x3
+ 2393 0295 BF000000 		.4byte	.LASF54
+ 2394 0299 05       		.byte	0x5
+ 2395 029a 92       		.byte	0x92
+ 2396 029b E3010000 		.4byte	0x1e3
+ 2397 029f 0B       		.uleb128 0xb
+ 2398 02a0 60030000 		.4byte	.LASF65
+ 2399 02a4 01       		.byte	0x1
+ 2400 02a5 18       		.byte	0x18
+ 2401 02a6 00000000 		.4byte	.LFB64
+ 2402 02aa 18000000 		.4byte	.LFE64-.LFB64
+ 2403 02ae 01       		.uleb128 0x1
+ 2404 02af 9C       		.byte	0x9c
+ 2405 02b0 0C       		.uleb128 0xc
+ 2406 02b1 02070000 		.4byte	.LASF55
+ 2407 02b5 01       		.byte	0x1
+ 2408 02b6 24       		.byte	0x24
+ 2409 02b7 8C000000 		.4byte	0x8c
+ 2410 02bb 00000000 		.4byte	.LFB65
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 51
+
+
+ 2411 02bf 0E000000 		.4byte	.LFE65-.LFB65
+ 2412 02c3 01       		.uleb128 0x1
+ 2413 02c4 9C       		.byte	0x9c
+ 2414 02c5 0D       		.uleb128 0xd
+ 2415 02c6 E0020000 		.4byte	.LASF57
+ 2416 02ca 01       		.byte	0x1
+ 2417 02cb 33       		.byte	0x33
+ 2418 02cc 00000000 		.4byte	.LFB66
+ 2419 02d0 6C000000 		.4byte	.LFE66-.LFB66
+ 2420 02d4 01       		.uleb128 0x1
+ 2421 02d5 9C       		.byte	0x9c
+ 2422 02d6 E9020000 		.4byte	0x2e9
+ 2423 02da 0E       		.uleb128 0xe
+ 2424 02db 70696E00 		.ascii	"pin\000"
+ 2425 02df 01       		.byte	0x1
+ 2426 02e0 35       		.byte	0x35
+ 2427 02e1 8C000000 		.4byte	0x8c
+ 2428 02e5 02       		.uleb128 0x2
+ 2429 02e6 91       		.byte	0x91
+ 2430 02e7 77       		.sleb128 -9
+ 2431 02e8 00       		.byte	0
+ 2432 02e9 0F       		.uleb128 0xf
+ 2433 02ea 05020000 		.4byte	.LASF56
+ 2434 02ee 01       		.byte	0x1
+ 2435 02ef 4A       		.byte	0x4a
+ 2436 02f0 8C000000 		.4byte	0x8c
+ 2437 02f4 00000000 		.4byte	.LFB67
+ 2438 02f8 0E000000 		.4byte	.LFE67-.LFB67
+ 2439 02fc 01       		.uleb128 0x1
+ 2440 02fd 9C       		.byte	0x9c
+ 2441 02fe 0D       		.uleb128 0xd
+ 2442 02ff 42050000 		.4byte	.LASF58
+ 2443 0303 01       		.byte	0x1
+ 2444 0304 55       		.byte	0x55
+ 2445 0305 00000000 		.4byte	.LFB68
+ 2446 0309 5E000000 		.4byte	.LFE68-.LFB68
+ 2447 030d 01       		.uleb128 0x1
+ 2448 030e 9C       		.byte	0x9c
+ 2449 030f 46030000 		.4byte	0x346
+ 2450 0313 10       		.uleb128 0x10
+ 2451 0314 1E030000 		.4byte	.LASF60
+ 2452 0318 01       		.byte	0x1
+ 2453 0319 55       		.byte	0x55
+ 2454 031a D0000000 		.4byte	0xd0
+ 2455 031e 02       		.uleb128 0x2
+ 2456 031f 91       		.byte	0x91
+ 2457 0320 6C       		.sleb128 -20
+ 2458 0321 0E       		.uleb128 0xe
+ 2459 0322 6E00     		.ascii	"n\000"
+ 2460 0324 01       		.byte	0x1
+ 2461 0325 57       		.byte	0x57
+ 2462 0326 8C000000 		.4byte	0x8c
+ 2463 032a 02       		.uleb128 0x2
+ 2464 032b 91       		.byte	0x91
+ 2465 032c 77       		.sleb128 -9
+ 2466 032d 11       		.uleb128 0x11
+ 2467 032e 36000000 		.4byte	.LBB2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 52
+
+
+ 2468 0332 14000000 		.4byte	.LBE2-.LBB2
+ 2469 0336 12       		.uleb128 0x12
+ 2470 0337 12000000 		.4byte	.LASF59
+ 2471 033b 01       		.byte	0x1
+ 2472 033c 5E       		.byte	0x5e
+ 2473 033d 8C000000 		.4byte	0x8c
+ 2474 0341 02       		.uleb128 0x2
+ 2475 0342 91       		.byte	0x91
+ 2476 0343 76       		.sleb128 -10
+ 2477 0344 00       		.byte	0
+ 2478 0345 00       		.byte	0
+ 2479 0346 13       		.uleb128 0x13
+ 2480 0347 B9030000 		.4byte	.LASF67
+ 2481 034b 01       		.byte	0x1
+ 2482 034c 6D       		.byte	0x6d
+ 2483 034d 8C000000 		.4byte	0x8c
+ 2484 0351 00000000 		.4byte	.LFB69
+ 2485 0355 2C050000 		.4byte	.LFE69-.LFB69
+ 2486 0359 01       		.uleb128 0x1
+ 2487 035a 9C       		.byte	0x9c
+ 2488 035b A6030000 		.4byte	0x3a6
+ 2489 035f 10       		.uleb128 0x10
+ 2490 0360 1E030000 		.4byte	.LASF60
+ 2491 0364 01       		.byte	0x1
+ 2492 0365 6D       		.byte	0x6d
+ 2493 0366 D0000000 		.4byte	0xd0
+ 2494 036a 02       		.uleb128 0x2
+ 2495 036b 91       		.byte	0x91
+ 2496 036c 5C       		.sleb128 -36
+ 2497 036d 12       		.uleb128 0x12
+ 2498 036e C3050000 		.4byte	.LASF61
+ 2499 0372 01       		.byte	0x1
+ 2500 0373 6F       		.byte	0x6f
+ 2501 0374 8C000000 		.4byte	0x8c
+ 2502 0378 02       		.uleb128 0x2
+ 2503 0379 91       		.byte	0x91
+ 2504 037a 6E       		.sleb128 -18
+ 2505 037b 12       		.uleb128 0x12
+ 2506 037c 93040000 		.4byte	.LASF62
+ 2507 0380 01       		.byte	0x1
+ 2508 0381 70       		.byte	0x70
+ 2509 0382 8C000000 		.4byte	0x8c
+ 2510 0386 02       		.uleb128 0x2
+ 2511 0387 91       		.byte	0x91
+ 2512 0388 6F       		.sleb128 -17
+ 2513 0389 12       		.uleb128 0x12
+ 2514 038a E7040000 		.4byte	.LASF63
+ 2515 038e 01       		.byte	0x1
+ 2516 038f 71       		.byte	0x71
+ 2517 0390 AD000000 		.4byte	0xad
+ 2518 0394 02       		.uleb128 0x2
+ 2519 0395 91       		.byte	0x91
+ 2520 0396 68       		.sleb128 -24
+ 2521 0397 12       		.uleb128 0x12
+ 2522 0398 DC010000 		.4byte	.LASF64
+ 2523 039c 01       		.byte	0x1
+ 2524 039d 71       		.byte	0x71
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 53
+
+
+ 2525 039e AD000000 		.4byte	0xad
+ 2526 03a2 02       		.uleb128 0x2
+ 2527 03a3 91       		.byte	0x91
+ 2528 03a4 64       		.sleb128 -28
+ 2529 03a5 00       		.byte	0
+ 2530 03a6 14       		.uleb128 0x14
+ 2531 03a7 A4050000 		.4byte	.LASF66
+ 2532 03ab 01       		.byte	0x1
+ 2533 03ac 0A01     		.2byte	0x10a
+ 2534 03ae 00000000 		.4byte	.LFB70
+ 2535 03b2 18000000 		.4byte	.LFE70-.LFB70
+ 2536 03b6 01       		.uleb128 0x1
+ 2537 03b7 9C       		.byte	0x9c
+ 2538 03b8 15       		.uleb128 0x15
+ 2539 03b9 8A000000 		.4byte	.LASF68
+ 2540 03bd 01       		.byte	0x1
+ 2541 03be 1601     		.2byte	0x116
+ 2542 03c0 AD000000 		.4byte	0xad
+ 2543 03c4 00000000 		.4byte	.LFB71
+ 2544 03c8 8C000000 		.4byte	.LFE71-.LFB71
+ 2545 03cc 01       		.uleb128 0x1
+ 2546 03cd 9C       		.byte	0x9c
+ 2547 03ce 00040000 		.4byte	0x400
+ 2548 03d2 16       		.uleb128 0x16
+ 2549 03d3 7A040000 		.4byte	.LASF69
+ 2550 03d7 01       		.byte	0x1
+ 2551 03d8 1601     		.2byte	0x116
+ 2552 03da 00040000 		.4byte	0x400
+ 2553 03de 02       		.uleb128 0x2
+ 2554 03df 91       		.byte	0x91
+ 2555 03e0 6C       		.sleb128 -20
+ 2556 03e1 17       		.uleb128 0x17
+ 2557 03e2 69647800 		.ascii	"idx\000"
+ 2558 03e6 01       		.byte	0x1
+ 2559 03e7 1601     		.2byte	0x116
+ 2560 03e9 8C000000 		.4byte	0x8c
+ 2561 03ed 02       		.uleb128 0x2
+ 2562 03ee 91       		.byte	0x91
+ 2563 03ef 6B       		.sleb128 -21
+ 2564 03f0 18       		.uleb128 0x18
+ 2565 03f1 706F7300 		.ascii	"pos\000"
+ 2566 03f5 01       		.byte	0x1
+ 2567 03f6 1801     		.2byte	0x118
+ 2568 03f8 AD000000 		.4byte	0xad
+ 2569 03fc 02       		.uleb128 0x2
+ 2570 03fd 91       		.byte	0x91
+ 2571 03fe 74       		.sleb128 -12
+ 2572 03ff 00       		.byte	0
+ 2573 0400 05       		.uleb128 0x5
+ 2574 0401 04       		.byte	0x4
+ 2575 0402 A2000000 		.4byte	0xa2
+ 2576 0406 19       		.uleb128 0x19
+ 2577 0407 4C040000 		.4byte	.LASF70
+ 2578 040b 01       		.byte	0x1
+ 2579 040c 2801     		.2byte	0x128
+ 2580 040e 00000000 		.4byte	.LFB72
+ 2581 0412 3A000000 		.4byte	.LFE72-.LFB72
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 54
+
+
+ 2582 0416 01       		.uleb128 0x1
+ 2583 0417 9C       		.byte	0x9c
+ 2584 0418 4A040000 		.4byte	0x44a
+ 2585 041c 16       		.uleb128 0x16
+ 2586 041d 91060000 		.4byte	.LASF71
+ 2587 0421 01       		.byte	0x1
+ 2588 0422 2801     		.2byte	0x128
+ 2589 0424 4A040000 		.4byte	0x44a
+ 2590 0428 02       		.uleb128 0x2
+ 2591 0429 91       		.byte	0x91
+ 2592 042a 64       		.sleb128 -28
+ 2593 042b 16       		.uleb128 0x16
+ 2594 042c 7A040000 		.4byte	.LASF69
+ 2595 0430 01       		.byte	0x1
+ 2596 0431 2801     		.2byte	0x128
+ 2597 0433 00040000 		.4byte	0x400
+ 2598 0437 02       		.uleb128 0x2
+ 2599 0438 91       		.byte	0x91
+ 2600 0439 60       		.sleb128 -32
+ 2601 043a 18       		.uleb128 0x18
+ 2602 043b 69647800 		.ascii	"idx\000"
+ 2603 043f 01       		.byte	0x1
+ 2604 0440 2A01     		.2byte	0x12a
+ 2605 0442 8C000000 		.4byte	0x8c
+ 2606 0446 02       		.uleb128 0x2
+ 2607 0447 91       		.byte	0x91
+ 2608 0448 6F       		.sleb128 -17
+ 2609 0449 00       		.byte	0
+ 2610 044a 05       		.uleb128 0x5
+ 2611 044b 04       		.byte	0x4
+ 2612 044c AD000000 		.4byte	0xad
+ 2613 0450 1A       		.uleb128 0x1a
+ 2614 0451 E0000000 		.4byte	.LASF72
+ 2615 0455 01       		.byte	0x1
+ 2616 0456 3401     		.2byte	0x134
+ 2617 0458 A2000000 		.4byte	0xa2
+ 2618 045c 00000000 		.4byte	.LFB73
+ 2619 0460 24000000 		.4byte	.LFE73-.LFB73
+ 2620 0464 01       		.uleb128 0x1
+ 2621 0465 9C       		.byte	0x9c
+ 2622 0466 7A040000 		.4byte	0x47a
+ 2623 046a 16       		.uleb128 0x16
+ 2624 046b 7A040000 		.4byte	.LASF69
+ 2625 046f 01       		.byte	0x1
+ 2626 0470 3401     		.2byte	0x134
+ 2627 0472 00040000 		.4byte	0x400
+ 2628 0476 02       		.uleb128 0x2
+ 2629 0477 91       		.byte	0x91
+ 2630 0478 74       		.sleb128 -12
+ 2631 0479 00       		.byte	0
+ 2632 047a 1A       		.uleb128 0x1a
+ 2633 047b 94010000 		.4byte	.LASF73
+ 2634 047f 01       		.byte	0x1
+ 2635 0480 3801     		.2byte	0x138
+ 2636 0482 A2000000 		.4byte	0xa2
+ 2637 0486 00000000 		.4byte	.LFB74
+ 2638 048a 24000000 		.4byte	.LFE74-.LFB74
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 55
+
+
+ 2639 048e 01       		.uleb128 0x1
+ 2640 048f 9C       		.byte	0x9c
+ 2641 0490 A4040000 		.4byte	0x4a4
+ 2642 0494 16       		.uleb128 0x16
+ 2643 0495 7A040000 		.4byte	.LASF69
+ 2644 0499 01       		.byte	0x1
+ 2645 049a 3801     		.2byte	0x138
+ 2646 049c 00040000 		.4byte	0x400
+ 2647 04a0 02       		.uleb128 0x2
+ 2648 04a1 91       		.byte	0x91
+ 2649 04a2 74       		.sleb128 -12
+ 2650 04a3 00       		.byte	0
+ 2651 04a4 15       		.uleb128 0x15
+ 2652 04a5 23020000 		.4byte	.LASF74
+ 2653 04a9 01       		.byte	0x1
+ 2654 04aa 4001     		.2byte	0x140
+ 2655 04ac 8C000000 		.4byte	0x8c
+ 2656 04b0 00000000 		.4byte	.LFB75
+ 2657 04b4 84000000 		.4byte	.LFE75-.LFB75
+ 2658 04b8 01       		.uleb128 0x1
+ 2659 04b9 9C       		.byte	0x9c
+ 2660 04ba DD040000 		.4byte	0x4dd
+ 2661 04be 16       		.uleb128 0x16
+ 2662 04bf 50060000 		.4byte	.LASF75
+ 2663 04c3 01       		.byte	0x1
+ 2664 04c4 4001     		.2byte	0x140
+ 2665 04c6 4A040000 		.4byte	0x44a
+ 2666 04ca 02       		.uleb128 0x2
+ 2667 04cb 91       		.byte	0x91
+ 2668 04cc 6C       		.sleb128 -20
+ 2669 04cd 18       		.uleb128 0x18
+ 2670 04ce 69647800 		.ascii	"idx\000"
+ 2671 04d2 01       		.byte	0x1
+ 2672 04d3 4201     		.2byte	0x142
+ 2673 04d5 8C000000 		.4byte	0x8c
+ 2674 04d9 02       		.uleb128 0x2
+ 2675 04da 91       		.byte	0x91
+ 2676 04db 77       		.sleb128 -9
+ 2677 04dc 00       		.byte	0
+ 2678 04dd 1B       		.uleb128 0x1b
+ 2679 04de E2010000 		.4byte	.LASF76
+ 2680 04e2 01       		.byte	0x1
+ 2681 04e3 5901     		.2byte	0x159
+ 2682 04e5 00000000 		.4byte	.LFB76
+ 2683 04e9 2C000000 		.4byte	.LFE76-.LFB76
+ 2684 04ed 01       		.uleb128 0x1
+ 2685 04ee 9C       		.byte	0x9c
+ 2686 04ef 03050000 		.4byte	0x503
+ 2687 04f3 16       		.uleb128 0x16
+ 2688 04f4 D0050000 		.4byte	.LASF77
+ 2689 04f8 01       		.byte	0x1
+ 2690 04f9 5901     		.2byte	0x159
+ 2691 04fb 8C000000 		.4byte	0x8c
+ 2692 04ff 02       		.uleb128 0x2
+ 2693 0500 91       		.byte	0x91
+ 2694 0501 77       		.sleb128 -9
+ 2695 0502 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 56
+
+
+ 2696 0503 1B       		.uleb128 0x1b
+ 2697 0504 0B040000 		.4byte	.LASF78
+ 2698 0508 01       		.byte	0x1
+ 2699 0509 5F01     		.2byte	0x15f
+ 2700 050b 00000000 		.4byte	.LFB77
+ 2701 050f 38000000 		.4byte	.LFE77-.LFB77
+ 2702 0513 01       		.uleb128 0x1
+ 2703 0514 9C       		.byte	0x9c
+ 2704 0515 29050000 		.4byte	0x529
+ 2705 0519 16       		.uleb128 0x16
+ 2706 051a D0050000 		.4byte	.LASF77
+ 2707 051e 01       		.byte	0x1
+ 2708 051f 5F01     		.2byte	0x15f
+ 2709 0521 8C000000 		.4byte	0x8c
+ 2710 0525 02       		.uleb128 0x2
+ 2711 0526 91       		.byte	0x91
+ 2712 0527 77       		.sleb128 -9
+ 2713 0528 00       		.byte	0
+ 2714 0529 1B       		.uleb128 0x1b
+ 2715 052a 3E020000 		.4byte	.LASF79
+ 2716 052e 01       		.byte	0x1
+ 2717 052f 6501     		.2byte	0x165
+ 2718 0531 00000000 		.4byte	.LFB78
+ 2719 0535 24000000 		.4byte	.LFE78-.LFB78
+ 2720 0539 01       		.uleb128 0x1
+ 2721 053a 9C       		.byte	0x9c
+ 2722 053b 4F050000 		.4byte	0x54f
+ 2723 053f 16       		.uleb128 0x16
+ 2724 0540 06040000 		.4byte	.LASF80
+ 2725 0544 01       		.byte	0x1
+ 2726 0545 6501     		.2byte	0x165
+ 2727 0547 8C000000 		.4byte	0x8c
+ 2728 054b 02       		.uleb128 0x2
+ 2729 054c 91       		.byte	0x91
+ 2730 054d 77       		.sleb128 -9
+ 2731 054e 00       		.byte	0
+ 2732 054f 1C       		.uleb128 0x1c
+ 2733 0550 C8000000 		.4byte	.LASF81
+ 2734 0554 01       		.byte	0x1
+ 2735 0555 6B01     		.2byte	0x16b
+ 2736 0557 00000000 		.4byte	.LFB79
+ 2737 055b 1C000000 		.4byte	.LFE79-.LFB79
+ 2738 055f 01       		.uleb128 0x1
+ 2739 0560 9C       		.byte	0x9c
+ 2740 0561 1B       		.uleb128 0x1b
+ 2741 0562 1E000000 		.4byte	.LASF82
+ 2742 0566 01       		.byte	0x1
+ 2743 0567 7101     		.2byte	0x171
+ 2744 0569 00000000 		.4byte	.LFB80
+ 2745 056d 2C000000 		.4byte	.LFE80-.LFB80
+ 2746 0571 01       		.uleb128 0x1
+ 2747 0572 9C       		.byte	0x9c
+ 2748 0573 87050000 		.4byte	0x587
+ 2749 0577 16       		.uleb128 0x16
+ 2750 0578 D0050000 		.4byte	.LASF77
+ 2751 057c 01       		.byte	0x1
+ 2752 057d 7101     		.2byte	0x171
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 57
+
+
+ 2753 057f 8C000000 		.4byte	0x8c
+ 2754 0583 02       		.uleb128 0x2
+ 2755 0584 91       		.byte	0x91
+ 2756 0585 77       		.sleb128 -9
+ 2757 0586 00       		.byte	0
+ 2758 0587 1B       		.uleb128 0x1b
+ 2759 0588 43030000 		.4byte	.LASF83
+ 2760 058c 01       		.byte	0x1
+ 2761 058d 7701     		.2byte	0x177
+ 2762 058f 00000000 		.4byte	.LFB81
+ 2763 0593 38000000 		.4byte	.LFE81-.LFB81
+ 2764 0597 01       		.uleb128 0x1
+ 2765 0598 9C       		.byte	0x9c
+ 2766 0599 AD050000 		.4byte	0x5ad
+ 2767 059d 16       		.uleb128 0x16
+ 2768 059e D0050000 		.4byte	.LASF77
+ 2769 05a2 01       		.byte	0x1
+ 2770 05a3 7701     		.2byte	0x177
+ 2771 05a5 8C000000 		.4byte	0x8c
+ 2772 05a9 02       		.uleb128 0x2
+ 2773 05aa 91       		.byte	0x91
+ 2774 05ab 77       		.sleb128 -9
+ 2775 05ac 00       		.byte	0
+ 2776 05ad 1B       		.uleb128 0x1b
+ 2777 05ae 65000000 		.4byte	.LASF84
+ 2778 05b2 01       		.byte	0x1
+ 2779 05b3 7D01     		.2byte	0x17d
+ 2780 05b5 00000000 		.4byte	.LFB82
+ 2781 05b9 2C000000 		.4byte	.LFE82-.LFB82
+ 2782 05bd 01       		.uleb128 0x1
+ 2783 05be 9C       		.byte	0x9c
+ 2784 05bf D3050000 		.4byte	0x5d3
+ 2785 05c3 16       		.uleb128 0x16
+ 2786 05c4 D0050000 		.4byte	.LASF77
+ 2787 05c8 01       		.byte	0x1
+ 2788 05c9 7D01     		.2byte	0x17d
+ 2789 05cb 8C000000 		.4byte	0x8c
+ 2790 05cf 02       		.uleb128 0x2
+ 2791 05d0 91       		.byte	0x91
+ 2792 05d1 77       		.sleb128 -9
+ 2793 05d2 00       		.byte	0
+ 2794 05d3 1B       		.uleb128 0x1b
+ 2795 05d4 54020000 		.4byte	.LASF85
+ 2796 05d8 01       		.byte	0x1
+ 2797 05d9 8301     		.2byte	0x183
+ 2798 05db 00000000 		.4byte	.LFB83
+ 2799 05df 2C000000 		.4byte	.LFE83-.LFB83
+ 2800 05e3 01       		.uleb128 0x1
+ 2801 05e4 9C       		.byte	0x9c
+ 2802 05e5 F9050000 		.4byte	0x5f9
+ 2803 05e9 16       		.uleb128 0x16
+ 2804 05ea D0050000 		.4byte	.LASF77
+ 2805 05ee 01       		.byte	0x1
+ 2806 05ef 8301     		.2byte	0x183
+ 2807 05f1 8C000000 		.4byte	0x8c
+ 2808 05f5 02       		.uleb128 0x2
+ 2809 05f6 91       		.byte	0x91
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 58
+
+
+ 2810 05f7 77       		.sleb128 -9
+ 2811 05f8 00       		.byte	0
+ 2812 05f9 1C       		.uleb128 0x1c
+ 2813 05fa 9E040000 		.4byte	.LASF86
+ 2814 05fe 01       		.byte	0x1
+ 2815 05ff 8901     		.2byte	0x189
+ 2816 0601 00000000 		.4byte	.LFB84
+ 2817 0605 1C000000 		.4byte	.LFE84-.LFB84
+ 2818 0609 01       		.uleb128 0x1
+ 2819 060a 9C       		.byte	0x9c
+ 2820 060b 1C       		.uleb128 0x1c
+ 2821 060c A7060000 		.4byte	.LASF87
+ 2822 0610 01       		.byte	0x1
+ 2823 0611 8F01     		.2byte	0x18f
+ 2824 0613 00000000 		.4byte	.LFB85
+ 2825 0617 1C000000 		.4byte	.LFE85-.LFB85
+ 2826 061b 01       		.uleb128 0x1
+ 2827 061c 9C       		.byte	0x9c
+ 2828 061d 1D       		.uleb128 0x1d
+ 2829 061e 9A060000 		.4byte	.LASF88
+ 2830 0622 06       		.byte	0x6
+ 2831 0623 1207     		.2byte	0x712
+ 2832 0625 29060000 		.4byte	0x629
+ 2833 0629 06       		.uleb128 0x6
+ 2834 062a A2000000 		.4byte	0xa2
+ 2835 062e 1E       		.uleb128 0x1e
+ 2836 062f 91020000 		.4byte	.LASF89
+ 2837 0633 04       		.byte	0x4
+ 2838 0634 6A       		.byte	0x6a
+ 2839 0635 D8010000 		.4byte	0x1d8
+ 2840 0639 1F       		.uleb128 0x1f
+ 2841 063a 73797300 		.ascii	"sys\000"
+ 2842 063e 05       		.byte	0x5
+ 2843 063f 93       		.byte	0x93
+ 2844 0640 94020000 		.4byte	0x294
+ 2845 0644 09       		.uleb128 0x9
+ 2846 0645 A2000000 		.4byte	0xa2
+ 2847 0649 54060000 		.4byte	0x654
+ 2848 064d 0A       		.uleb128 0xa
+ 2849 064e C9000000 		.4byte	0xc9
+ 2850 0652 02       		.byte	0x2
+ 2851 0653 00       		.byte	0
+ 2852 0654 20       		.uleb128 0x20
+ 2853 0655 BA020000 		.4byte	.LASF90
+ 2854 0659 05       		.byte	0x5
+ 2855 065a 96       		.byte	0x96
+ 2856 065b 44060000 		.4byte	0x644
+ 2857 065f 05       		.uleb128 0x5
+ 2858 0660 03       		.byte	0x3
+ 2859 0661 00000000 		.4byte	sys_position
+ 2860 0665 20       		.uleb128 0x20
+ 2861 0666 F3030000 		.4byte	.LASF91
+ 2862 066a 05       		.byte	0x5
+ 2863 066b 97       		.byte	0x97
+ 2864 066c 44060000 		.4byte	0x644
+ 2865 0670 05       		.uleb128 0x5
+ 2866 0671 03       		.byte	0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 59
+
+
+ 2867 0672 00000000 		.4byte	sys_probe_position
+ 2868 0676 20       		.uleb128 0x20
+ 2869 0677 59050000 		.4byte	.LASF92
+ 2870 067b 05       		.byte	0x5
+ 2871 067c 99       		.byte	0x99
+ 2872 067d D6000000 		.4byte	0xd6
+ 2873 0681 05       		.uleb128 0x5
+ 2874 0682 03       		.byte	0x3
+ 2875 0683 00000000 		.4byte	sys_probe_state
+ 2876 0687 20       		.uleb128 0x20
+ 2877 0688 D6060000 		.4byte	.LASF93
+ 2878 068c 05       		.byte	0x5
+ 2879 068d 9A       		.byte	0x9a
+ 2880 068e D6000000 		.4byte	0xd6
+ 2881 0692 05       		.uleb128 0x5
+ 2882 0693 03       		.byte	0x3
+ 2883 0694 00000000 		.4byte	sys_rt_exec_state
+ 2884 0698 20       		.uleb128 0x20
+ 2885 0699 00000000 		.4byte	.LASF94
+ 2886 069d 05       		.byte	0x5
+ 2887 069e 9B       		.byte	0x9b
+ 2888 069f D6000000 		.4byte	0xd6
+ 2889 06a3 05       		.uleb128 0x5
+ 2890 06a4 03       		.byte	0x3
+ 2891 06a5 00000000 		.4byte	sys_rt_exec_alarm
+ 2892 06a9 20       		.uleb128 0x20
+ 2893 06aa 62060000 		.4byte	.LASF95
+ 2894 06ae 05       		.byte	0x5
+ 2895 06af 9C       		.byte	0x9c
+ 2896 06b0 D6000000 		.4byte	0xd6
+ 2897 06b4 05       		.uleb128 0x5
+ 2898 06b5 03       		.byte	0x3
+ 2899 06b6 00000000 		.4byte	sys_rt_exec_motion_override
+ 2900 06ba 20       		.uleb128 0x20
+ 2901 06bb 39000000 		.4byte	.LASF96
+ 2902 06bf 05       		.byte	0x5
+ 2903 06c0 9D       		.byte	0x9d
+ 2904 06c1 D6000000 		.4byte	0xd6
+ 2905 06c5 05       		.uleb128 0x5
+ 2906 06c6 03       		.byte	0x3
+ 2907 06c7 00000000 		.4byte	sys_rt_exec_accessory_override
+ 2908 06cb 00       		.byte	0
+ 2909              		.section	.debug_abbrev,"",%progbits
+ 2910              	.Ldebug_abbrev0:
+ 2911 0000 01       		.uleb128 0x1
+ 2912 0001 11       		.uleb128 0x11
+ 2913 0002 01       		.byte	0x1
+ 2914 0003 25       		.uleb128 0x25
+ 2915 0004 0E       		.uleb128 0xe
+ 2916 0005 13       		.uleb128 0x13
+ 2917 0006 0B       		.uleb128 0xb
+ 2918 0007 03       		.uleb128 0x3
+ 2919 0008 0E       		.uleb128 0xe
+ 2920 0009 1B       		.uleb128 0x1b
+ 2921 000a 0E       		.uleb128 0xe
+ 2922 000b 55       		.uleb128 0x55
+ 2923 000c 17       		.uleb128 0x17
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 60
+
+
+ 2924 000d 11       		.uleb128 0x11
+ 2925 000e 01       		.uleb128 0x1
+ 2926 000f 10       		.uleb128 0x10
+ 2927 0010 17       		.uleb128 0x17
+ 2928 0011 00       		.byte	0
+ 2929 0012 00       		.byte	0
+ 2930 0013 02       		.uleb128 0x2
+ 2931 0014 24       		.uleb128 0x24
+ 2932 0015 00       		.byte	0
+ 2933 0016 0B       		.uleb128 0xb
+ 2934 0017 0B       		.uleb128 0xb
+ 2935 0018 3E       		.uleb128 0x3e
+ 2936 0019 0B       		.uleb128 0xb
+ 2937 001a 03       		.uleb128 0x3
+ 2938 001b 0E       		.uleb128 0xe
+ 2939 001c 00       		.byte	0
+ 2940 001d 00       		.byte	0
+ 2941 001e 03       		.uleb128 0x3
+ 2942 001f 16       		.uleb128 0x16
+ 2943 0020 00       		.byte	0
+ 2944 0021 03       		.uleb128 0x3
+ 2945 0022 0E       		.uleb128 0xe
+ 2946 0023 3A       		.uleb128 0x3a
+ 2947 0024 0B       		.uleb128 0xb
+ 2948 0025 3B       		.uleb128 0x3b
+ 2949 0026 0B       		.uleb128 0xb
+ 2950 0027 49       		.uleb128 0x49
+ 2951 0028 13       		.uleb128 0x13
+ 2952 0029 00       		.byte	0
+ 2953 002a 00       		.byte	0
+ 2954 002b 04       		.uleb128 0x4
+ 2955 002c 24       		.uleb128 0x24
+ 2956 002d 00       		.byte	0
+ 2957 002e 0B       		.uleb128 0xb
+ 2958 002f 0B       		.uleb128 0xb
+ 2959 0030 3E       		.uleb128 0x3e
+ 2960 0031 0B       		.uleb128 0xb
+ 2961 0032 03       		.uleb128 0x3
+ 2962 0033 08       		.uleb128 0x8
+ 2963 0034 00       		.byte	0
+ 2964 0035 00       		.byte	0
+ 2965 0036 05       		.uleb128 0x5
+ 2966 0037 0F       		.uleb128 0xf
+ 2967 0038 00       		.byte	0
+ 2968 0039 0B       		.uleb128 0xb
+ 2969 003a 0B       		.uleb128 0xb
+ 2970 003b 49       		.uleb128 0x49
+ 2971 003c 13       		.uleb128 0x13
+ 2972 003d 00       		.byte	0
+ 2973 003e 00       		.byte	0
+ 2974 003f 06       		.uleb128 0x6
+ 2975 0040 35       		.uleb128 0x35
+ 2976 0041 00       		.byte	0
+ 2977 0042 49       		.uleb128 0x49
+ 2978 0043 13       		.uleb128 0x13
+ 2979 0044 00       		.byte	0
+ 2980 0045 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 61
+
+
+ 2981 0046 07       		.uleb128 0x7
+ 2982 0047 13       		.uleb128 0x13
+ 2983 0048 01       		.byte	0x1
+ 2984 0049 0B       		.uleb128 0xb
+ 2985 004a 0B       		.uleb128 0xb
+ 2986 004b 3A       		.uleb128 0x3a
+ 2987 004c 0B       		.uleb128 0xb
+ 2988 004d 3B       		.uleb128 0x3b
+ 2989 004e 0B       		.uleb128 0xb
+ 2990 004f 01       		.uleb128 0x1
+ 2991 0050 13       		.uleb128 0x13
+ 2992 0051 00       		.byte	0
+ 2993 0052 00       		.byte	0
+ 2994 0053 08       		.uleb128 0x8
+ 2995 0054 0D       		.uleb128 0xd
+ 2996 0055 00       		.byte	0
+ 2997 0056 03       		.uleb128 0x3
+ 2998 0057 0E       		.uleb128 0xe
+ 2999 0058 3A       		.uleb128 0x3a
+ 3000 0059 0B       		.uleb128 0xb
+ 3001 005a 3B       		.uleb128 0x3b
+ 3002 005b 0B       		.uleb128 0xb
+ 3003 005c 49       		.uleb128 0x49
+ 3004 005d 13       		.uleb128 0x13
+ 3005 005e 38       		.uleb128 0x38
+ 3006 005f 0B       		.uleb128 0xb
+ 3007 0060 00       		.byte	0
+ 3008 0061 00       		.byte	0
+ 3009 0062 09       		.uleb128 0x9
+ 3010 0063 01       		.uleb128 0x1
+ 3011 0064 01       		.byte	0x1
+ 3012 0065 49       		.uleb128 0x49
+ 3013 0066 13       		.uleb128 0x13
+ 3014 0067 01       		.uleb128 0x1
+ 3015 0068 13       		.uleb128 0x13
+ 3016 0069 00       		.byte	0
+ 3017 006a 00       		.byte	0
+ 3018 006b 0A       		.uleb128 0xa
+ 3019 006c 21       		.uleb128 0x21
+ 3020 006d 00       		.byte	0
+ 3021 006e 49       		.uleb128 0x49
+ 3022 006f 13       		.uleb128 0x13
+ 3023 0070 2F       		.uleb128 0x2f
+ 3024 0071 0B       		.uleb128 0xb
+ 3025 0072 00       		.byte	0
+ 3026 0073 00       		.byte	0
+ 3027 0074 0B       		.uleb128 0xb
+ 3028 0075 2E       		.uleb128 0x2e
+ 3029 0076 00       		.byte	0
+ 3030 0077 3F       		.uleb128 0x3f
+ 3031 0078 19       		.uleb128 0x19
+ 3032 0079 03       		.uleb128 0x3
+ 3033 007a 0E       		.uleb128 0xe
+ 3034 007b 3A       		.uleb128 0x3a
+ 3035 007c 0B       		.uleb128 0xb
+ 3036 007d 3B       		.uleb128 0x3b
+ 3037 007e 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 62
+
+
+ 3038 007f 11       		.uleb128 0x11
+ 3039 0080 01       		.uleb128 0x1
+ 3040 0081 12       		.uleb128 0x12
+ 3041 0082 06       		.uleb128 0x6
+ 3042 0083 40       		.uleb128 0x40
+ 3043 0084 18       		.uleb128 0x18
+ 3044 0085 9642     		.uleb128 0x2116
+ 3045 0087 19       		.uleb128 0x19
+ 3046 0088 00       		.byte	0
+ 3047 0089 00       		.byte	0
+ 3048 008a 0C       		.uleb128 0xc
+ 3049 008b 2E       		.uleb128 0x2e
+ 3050 008c 00       		.byte	0
+ 3051 008d 3F       		.uleb128 0x3f
+ 3052 008e 19       		.uleb128 0x19
+ 3053 008f 03       		.uleb128 0x3
+ 3054 0090 0E       		.uleb128 0xe
+ 3055 0091 3A       		.uleb128 0x3a
+ 3056 0092 0B       		.uleb128 0xb
+ 3057 0093 3B       		.uleb128 0x3b
+ 3058 0094 0B       		.uleb128 0xb
+ 3059 0095 49       		.uleb128 0x49
+ 3060 0096 13       		.uleb128 0x13
+ 3061 0097 11       		.uleb128 0x11
+ 3062 0098 01       		.uleb128 0x1
+ 3063 0099 12       		.uleb128 0x12
+ 3064 009a 06       		.uleb128 0x6
+ 3065 009b 40       		.uleb128 0x40
+ 3066 009c 18       		.uleb128 0x18
+ 3067 009d 9642     		.uleb128 0x2116
+ 3068 009f 19       		.uleb128 0x19
+ 3069 00a0 00       		.byte	0
+ 3070 00a1 00       		.byte	0
+ 3071 00a2 0D       		.uleb128 0xd
+ 3072 00a3 2E       		.uleb128 0x2e
+ 3073 00a4 01       		.byte	0x1
+ 3074 00a5 3F       		.uleb128 0x3f
+ 3075 00a6 19       		.uleb128 0x19
+ 3076 00a7 03       		.uleb128 0x3
+ 3077 00a8 0E       		.uleb128 0xe
+ 3078 00a9 3A       		.uleb128 0x3a
+ 3079 00aa 0B       		.uleb128 0xb
+ 3080 00ab 3B       		.uleb128 0x3b
+ 3081 00ac 0B       		.uleb128 0xb
+ 3082 00ad 27       		.uleb128 0x27
+ 3083 00ae 19       		.uleb128 0x19
+ 3084 00af 11       		.uleb128 0x11
+ 3085 00b0 01       		.uleb128 0x1
+ 3086 00b1 12       		.uleb128 0x12
+ 3087 00b2 06       		.uleb128 0x6
+ 3088 00b3 40       		.uleb128 0x40
+ 3089 00b4 18       		.uleb128 0x18
+ 3090 00b5 9642     		.uleb128 0x2116
+ 3091 00b7 19       		.uleb128 0x19
+ 3092 00b8 01       		.uleb128 0x1
+ 3093 00b9 13       		.uleb128 0x13
+ 3094 00ba 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 63
+
+
+ 3095 00bb 00       		.byte	0
+ 3096 00bc 0E       		.uleb128 0xe
+ 3097 00bd 34       		.uleb128 0x34
+ 3098 00be 00       		.byte	0
+ 3099 00bf 03       		.uleb128 0x3
+ 3100 00c0 08       		.uleb128 0x8
+ 3101 00c1 3A       		.uleb128 0x3a
+ 3102 00c2 0B       		.uleb128 0xb
+ 3103 00c3 3B       		.uleb128 0x3b
+ 3104 00c4 0B       		.uleb128 0xb
+ 3105 00c5 49       		.uleb128 0x49
+ 3106 00c6 13       		.uleb128 0x13
+ 3107 00c7 02       		.uleb128 0x2
+ 3108 00c8 18       		.uleb128 0x18
+ 3109 00c9 00       		.byte	0
+ 3110 00ca 00       		.byte	0
+ 3111 00cb 0F       		.uleb128 0xf
+ 3112 00cc 2E       		.uleb128 0x2e
+ 3113 00cd 00       		.byte	0
+ 3114 00ce 3F       		.uleb128 0x3f
+ 3115 00cf 19       		.uleb128 0x19
+ 3116 00d0 03       		.uleb128 0x3
+ 3117 00d1 0E       		.uleb128 0xe
+ 3118 00d2 3A       		.uleb128 0x3a
+ 3119 00d3 0B       		.uleb128 0xb
+ 3120 00d4 3B       		.uleb128 0x3b
+ 3121 00d5 0B       		.uleb128 0xb
+ 3122 00d6 49       		.uleb128 0x49
+ 3123 00d7 13       		.uleb128 0x13
+ 3124 00d8 11       		.uleb128 0x11
+ 3125 00d9 01       		.uleb128 0x1
+ 3126 00da 12       		.uleb128 0x12
+ 3127 00db 06       		.uleb128 0x6
+ 3128 00dc 40       		.uleb128 0x40
+ 3129 00dd 18       		.uleb128 0x18
+ 3130 00de 9742     		.uleb128 0x2117
+ 3131 00e0 19       		.uleb128 0x19
+ 3132 00e1 00       		.byte	0
+ 3133 00e2 00       		.byte	0
+ 3134 00e3 10       		.uleb128 0x10
+ 3135 00e4 05       		.uleb128 0x5
+ 3136 00e5 00       		.byte	0
+ 3137 00e6 03       		.uleb128 0x3
+ 3138 00e7 0E       		.uleb128 0xe
+ 3139 00e8 3A       		.uleb128 0x3a
+ 3140 00e9 0B       		.uleb128 0xb
+ 3141 00ea 3B       		.uleb128 0x3b
+ 3142 00eb 0B       		.uleb128 0xb
+ 3143 00ec 49       		.uleb128 0x49
+ 3144 00ed 13       		.uleb128 0x13
+ 3145 00ee 02       		.uleb128 0x2
+ 3146 00ef 18       		.uleb128 0x18
+ 3147 00f0 00       		.byte	0
+ 3148 00f1 00       		.byte	0
+ 3149 00f2 11       		.uleb128 0x11
+ 3150 00f3 0B       		.uleb128 0xb
+ 3151 00f4 01       		.byte	0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 64
+
+
+ 3152 00f5 11       		.uleb128 0x11
+ 3153 00f6 01       		.uleb128 0x1
+ 3154 00f7 12       		.uleb128 0x12
+ 3155 00f8 06       		.uleb128 0x6
+ 3156 00f9 00       		.byte	0
+ 3157 00fa 00       		.byte	0
+ 3158 00fb 12       		.uleb128 0x12
+ 3159 00fc 34       		.uleb128 0x34
+ 3160 00fd 00       		.byte	0
+ 3161 00fe 03       		.uleb128 0x3
+ 3162 00ff 0E       		.uleb128 0xe
+ 3163 0100 3A       		.uleb128 0x3a
+ 3164 0101 0B       		.uleb128 0xb
+ 3165 0102 3B       		.uleb128 0x3b
+ 3166 0103 0B       		.uleb128 0xb
+ 3167 0104 49       		.uleb128 0x49
+ 3168 0105 13       		.uleb128 0x13
+ 3169 0106 02       		.uleb128 0x2
+ 3170 0107 18       		.uleb128 0x18
+ 3171 0108 00       		.byte	0
+ 3172 0109 00       		.byte	0
+ 3173 010a 13       		.uleb128 0x13
+ 3174 010b 2E       		.uleb128 0x2e
+ 3175 010c 01       		.byte	0x1
+ 3176 010d 3F       		.uleb128 0x3f
+ 3177 010e 19       		.uleb128 0x19
+ 3178 010f 03       		.uleb128 0x3
+ 3179 0110 0E       		.uleb128 0xe
+ 3180 0111 3A       		.uleb128 0x3a
+ 3181 0112 0B       		.uleb128 0xb
+ 3182 0113 3B       		.uleb128 0x3b
+ 3183 0114 0B       		.uleb128 0xb
+ 3184 0115 27       		.uleb128 0x27
+ 3185 0116 19       		.uleb128 0x19
+ 3186 0117 49       		.uleb128 0x49
+ 3187 0118 13       		.uleb128 0x13
+ 3188 0119 11       		.uleb128 0x11
+ 3189 011a 01       		.uleb128 0x1
+ 3190 011b 12       		.uleb128 0x12
+ 3191 011c 06       		.uleb128 0x6
+ 3192 011d 40       		.uleb128 0x40
+ 3193 011e 18       		.uleb128 0x18
+ 3194 011f 9642     		.uleb128 0x2116
+ 3195 0121 19       		.uleb128 0x19
+ 3196 0122 01       		.uleb128 0x1
+ 3197 0123 13       		.uleb128 0x13
+ 3198 0124 00       		.byte	0
+ 3199 0125 00       		.byte	0
+ 3200 0126 14       		.uleb128 0x14
+ 3201 0127 2E       		.uleb128 0x2e
+ 3202 0128 00       		.byte	0
+ 3203 0129 3F       		.uleb128 0x3f
+ 3204 012a 19       		.uleb128 0x19
+ 3205 012b 03       		.uleb128 0x3
+ 3206 012c 0E       		.uleb128 0xe
+ 3207 012d 3A       		.uleb128 0x3a
+ 3208 012e 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 65
+
+
+ 3209 012f 3B       		.uleb128 0x3b
+ 3210 0130 05       		.uleb128 0x5
+ 3211 0131 11       		.uleb128 0x11
+ 3212 0132 01       		.uleb128 0x1
+ 3213 0133 12       		.uleb128 0x12
+ 3214 0134 06       		.uleb128 0x6
+ 3215 0135 40       		.uleb128 0x40
+ 3216 0136 18       		.uleb128 0x18
+ 3217 0137 9642     		.uleb128 0x2116
+ 3218 0139 19       		.uleb128 0x19
+ 3219 013a 00       		.byte	0
+ 3220 013b 00       		.byte	0
+ 3221 013c 15       		.uleb128 0x15
+ 3222 013d 2E       		.uleb128 0x2e
+ 3223 013e 01       		.byte	0x1
+ 3224 013f 3F       		.uleb128 0x3f
+ 3225 0140 19       		.uleb128 0x19
+ 3226 0141 03       		.uleb128 0x3
+ 3227 0142 0E       		.uleb128 0xe
+ 3228 0143 3A       		.uleb128 0x3a
+ 3229 0144 0B       		.uleb128 0xb
+ 3230 0145 3B       		.uleb128 0x3b
+ 3231 0146 05       		.uleb128 0x5
+ 3232 0147 27       		.uleb128 0x27
+ 3233 0148 19       		.uleb128 0x19
+ 3234 0149 49       		.uleb128 0x49
+ 3235 014a 13       		.uleb128 0x13
+ 3236 014b 11       		.uleb128 0x11
+ 3237 014c 01       		.uleb128 0x1
+ 3238 014d 12       		.uleb128 0x12
+ 3239 014e 06       		.uleb128 0x6
+ 3240 014f 40       		.uleb128 0x40
+ 3241 0150 18       		.uleb128 0x18
+ 3242 0151 9642     		.uleb128 0x2116
+ 3243 0153 19       		.uleb128 0x19
+ 3244 0154 01       		.uleb128 0x1
+ 3245 0155 13       		.uleb128 0x13
+ 3246 0156 00       		.byte	0
+ 3247 0157 00       		.byte	0
+ 3248 0158 16       		.uleb128 0x16
+ 3249 0159 05       		.uleb128 0x5
+ 3250 015a 00       		.byte	0
+ 3251 015b 03       		.uleb128 0x3
+ 3252 015c 0E       		.uleb128 0xe
+ 3253 015d 3A       		.uleb128 0x3a
+ 3254 015e 0B       		.uleb128 0xb
+ 3255 015f 3B       		.uleb128 0x3b
+ 3256 0160 05       		.uleb128 0x5
+ 3257 0161 49       		.uleb128 0x49
+ 3258 0162 13       		.uleb128 0x13
+ 3259 0163 02       		.uleb128 0x2
+ 3260 0164 18       		.uleb128 0x18
+ 3261 0165 00       		.byte	0
+ 3262 0166 00       		.byte	0
+ 3263 0167 17       		.uleb128 0x17
+ 3264 0168 05       		.uleb128 0x5
+ 3265 0169 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 66
+
+
+ 3266 016a 03       		.uleb128 0x3
+ 3267 016b 08       		.uleb128 0x8
+ 3268 016c 3A       		.uleb128 0x3a
+ 3269 016d 0B       		.uleb128 0xb
+ 3270 016e 3B       		.uleb128 0x3b
+ 3271 016f 05       		.uleb128 0x5
+ 3272 0170 49       		.uleb128 0x49
+ 3273 0171 13       		.uleb128 0x13
+ 3274 0172 02       		.uleb128 0x2
+ 3275 0173 18       		.uleb128 0x18
+ 3276 0174 00       		.byte	0
+ 3277 0175 00       		.byte	0
+ 3278 0176 18       		.uleb128 0x18
+ 3279 0177 34       		.uleb128 0x34
+ 3280 0178 00       		.byte	0
+ 3281 0179 03       		.uleb128 0x3
+ 3282 017a 08       		.uleb128 0x8
+ 3283 017b 3A       		.uleb128 0x3a
+ 3284 017c 0B       		.uleb128 0xb
+ 3285 017d 3B       		.uleb128 0x3b
+ 3286 017e 05       		.uleb128 0x5
+ 3287 017f 49       		.uleb128 0x49
+ 3288 0180 13       		.uleb128 0x13
+ 3289 0181 02       		.uleb128 0x2
+ 3290 0182 18       		.uleb128 0x18
+ 3291 0183 00       		.byte	0
+ 3292 0184 00       		.byte	0
+ 3293 0185 19       		.uleb128 0x19
+ 3294 0186 2E       		.uleb128 0x2e
+ 3295 0187 01       		.byte	0x1
+ 3296 0188 3F       		.uleb128 0x3f
+ 3297 0189 19       		.uleb128 0x19
+ 3298 018a 03       		.uleb128 0x3
+ 3299 018b 0E       		.uleb128 0xe
+ 3300 018c 3A       		.uleb128 0x3a
+ 3301 018d 0B       		.uleb128 0xb
+ 3302 018e 3B       		.uleb128 0x3b
+ 3303 018f 05       		.uleb128 0x5
+ 3304 0190 27       		.uleb128 0x27
+ 3305 0191 19       		.uleb128 0x19
+ 3306 0192 11       		.uleb128 0x11
+ 3307 0193 01       		.uleb128 0x1
+ 3308 0194 12       		.uleb128 0x12
+ 3309 0195 06       		.uleb128 0x6
+ 3310 0196 40       		.uleb128 0x40
+ 3311 0197 18       		.uleb128 0x18
+ 3312 0198 9642     		.uleb128 0x2116
+ 3313 019a 19       		.uleb128 0x19
+ 3314 019b 01       		.uleb128 0x1
+ 3315 019c 13       		.uleb128 0x13
+ 3316 019d 00       		.byte	0
+ 3317 019e 00       		.byte	0
+ 3318 019f 1A       		.uleb128 0x1a
+ 3319 01a0 2E       		.uleb128 0x2e
+ 3320 01a1 01       		.byte	0x1
+ 3321 01a2 3F       		.uleb128 0x3f
+ 3322 01a3 19       		.uleb128 0x19
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 67
+
+
+ 3323 01a4 03       		.uleb128 0x3
+ 3324 01a5 0E       		.uleb128 0xe
+ 3325 01a6 3A       		.uleb128 0x3a
+ 3326 01a7 0B       		.uleb128 0xb
+ 3327 01a8 3B       		.uleb128 0x3b
+ 3328 01a9 05       		.uleb128 0x5
+ 3329 01aa 27       		.uleb128 0x27
+ 3330 01ab 19       		.uleb128 0x19
+ 3331 01ac 49       		.uleb128 0x49
+ 3332 01ad 13       		.uleb128 0x13
+ 3333 01ae 11       		.uleb128 0x11
+ 3334 01af 01       		.uleb128 0x1
+ 3335 01b0 12       		.uleb128 0x12
+ 3336 01b1 06       		.uleb128 0x6
+ 3337 01b2 40       		.uleb128 0x40
+ 3338 01b3 18       		.uleb128 0x18
+ 3339 01b4 9742     		.uleb128 0x2117
+ 3340 01b6 19       		.uleb128 0x19
+ 3341 01b7 01       		.uleb128 0x1
+ 3342 01b8 13       		.uleb128 0x13
+ 3343 01b9 00       		.byte	0
+ 3344 01ba 00       		.byte	0
+ 3345 01bb 1B       		.uleb128 0x1b
+ 3346 01bc 2E       		.uleb128 0x2e
+ 3347 01bd 01       		.byte	0x1
+ 3348 01be 3F       		.uleb128 0x3f
+ 3349 01bf 19       		.uleb128 0x19
+ 3350 01c0 03       		.uleb128 0x3
+ 3351 01c1 0E       		.uleb128 0xe
+ 3352 01c2 3A       		.uleb128 0x3a
+ 3353 01c3 0B       		.uleb128 0xb
+ 3354 01c4 3B       		.uleb128 0x3b
+ 3355 01c5 05       		.uleb128 0x5
+ 3356 01c6 27       		.uleb128 0x27
+ 3357 01c7 19       		.uleb128 0x19
+ 3358 01c8 11       		.uleb128 0x11
+ 3359 01c9 01       		.uleb128 0x1
+ 3360 01ca 12       		.uleb128 0x12
+ 3361 01cb 06       		.uleb128 0x6
+ 3362 01cc 40       		.uleb128 0x40
+ 3363 01cd 18       		.uleb128 0x18
+ 3364 01ce 9742     		.uleb128 0x2117
+ 3365 01d0 19       		.uleb128 0x19
+ 3366 01d1 01       		.uleb128 0x1
+ 3367 01d2 13       		.uleb128 0x13
+ 3368 01d3 00       		.byte	0
+ 3369 01d4 00       		.byte	0
+ 3370 01d5 1C       		.uleb128 0x1c
+ 3371 01d6 2E       		.uleb128 0x2e
+ 3372 01d7 00       		.byte	0
+ 3373 01d8 3F       		.uleb128 0x3f
+ 3374 01d9 19       		.uleb128 0x19
+ 3375 01da 03       		.uleb128 0x3
+ 3376 01db 0E       		.uleb128 0xe
+ 3377 01dc 3A       		.uleb128 0x3a
+ 3378 01dd 0B       		.uleb128 0xb
+ 3379 01de 3B       		.uleb128 0x3b
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 68
+
+
+ 3380 01df 05       		.uleb128 0x5
+ 3381 01e0 11       		.uleb128 0x11
+ 3382 01e1 01       		.uleb128 0x1
+ 3383 01e2 12       		.uleb128 0x12
+ 3384 01e3 06       		.uleb128 0x6
+ 3385 01e4 40       		.uleb128 0x40
+ 3386 01e5 18       		.uleb128 0x18
+ 3387 01e6 9742     		.uleb128 0x2117
+ 3388 01e8 19       		.uleb128 0x19
+ 3389 01e9 00       		.byte	0
+ 3390 01ea 00       		.byte	0
+ 3391 01eb 1D       		.uleb128 0x1d
+ 3392 01ec 34       		.uleb128 0x34
+ 3393 01ed 00       		.byte	0
+ 3394 01ee 03       		.uleb128 0x3
+ 3395 01ef 0E       		.uleb128 0xe
+ 3396 01f0 3A       		.uleb128 0x3a
+ 3397 01f1 0B       		.uleb128 0xb
+ 3398 01f2 3B       		.uleb128 0x3b
+ 3399 01f3 05       		.uleb128 0x5
+ 3400 01f4 49       		.uleb128 0x49
+ 3401 01f5 13       		.uleb128 0x13
+ 3402 01f6 3F       		.uleb128 0x3f
+ 3403 01f7 19       		.uleb128 0x19
+ 3404 01f8 3C       		.uleb128 0x3c
+ 3405 01f9 19       		.uleb128 0x19
+ 3406 01fa 00       		.byte	0
+ 3407 01fb 00       		.byte	0
+ 3408 01fc 1E       		.uleb128 0x1e
+ 3409 01fd 34       		.uleb128 0x34
+ 3410 01fe 00       		.byte	0
+ 3411 01ff 03       		.uleb128 0x3
+ 3412 0200 0E       		.uleb128 0xe
+ 3413 0201 3A       		.uleb128 0x3a
+ 3414 0202 0B       		.uleb128 0xb
+ 3415 0203 3B       		.uleb128 0x3b
+ 3416 0204 0B       		.uleb128 0xb
+ 3417 0205 49       		.uleb128 0x49
+ 3418 0206 13       		.uleb128 0x13
+ 3419 0207 3F       		.uleb128 0x3f
+ 3420 0208 19       		.uleb128 0x19
+ 3421 0209 3C       		.uleb128 0x3c
+ 3422 020a 19       		.uleb128 0x19
+ 3423 020b 00       		.byte	0
+ 3424 020c 00       		.byte	0
+ 3425 020d 1F       		.uleb128 0x1f
+ 3426 020e 34       		.uleb128 0x34
+ 3427 020f 00       		.byte	0
+ 3428 0210 03       		.uleb128 0x3
+ 3429 0211 08       		.uleb128 0x8
+ 3430 0212 3A       		.uleb128 0x3a
+ 3431 0213 0B       		.uleb128 0xb
+ 3432 0214 3B       		.uleb128 0x3b
+ 3433 0215 0B       		.uleb128 0xb
+ 3434 0216 49       		.uleb128 0x49
+ 3435 0217 13       		.uleb128 0x13
+ 3436 0218 3F       		.uleb128 0x3f
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 69
+
+
+ 3437 0219 19       		.uleb128 0x19
+ 3438 021a 3C       		.uleb128 0x3c
+ 3439 021b 19       		.uleb128 0x19
+ 3440 021c 00       		.byte	0
+ 3441 021d 00       		.byte	0
+ 3442 021e 20       		.uleb128 0x20
+ 3443 021f 34       		.uleb128 0x34
+ 3444 0220 00       		.byte	0
+ 3445 0221 03       		.uleb128 0x3
+ 3446 0222 0E       		.uleb128 0xe
+ 3447 0223 3A       		.uleb128 0x3a
+ 3448 0224 0B       		.uleb128 0xb
+ 3449 0225 3B       		.uleb128 0x3b
+ 3450 0226 0B       		.uleb128 0xb
+ 3451 0227 49       		.uleb128 0x49
+ 3452 0228 13       		.uleb128 0x13
+ 3453 0229 3F       		.uleb128 0x3f
+ 3454 022a 19       		.uleb128 0x19
+ 3455 022b 02       		.uleb128 0x2
+ 3456 022c 18       		.uleb128 0x18
+ 3457 022d 00       		.byte	0
+ 3458 022e 00       		.byte	0
+ 3459 022f 00       		.byte	0
+ 3460              		.section	.debug_aranges,"",%progbits
+ 3461 0000 C4000000 		.4byte	0xc4
+ 3462 0004 0200     		.2byte	0x2
+ 3463 0006 00000000 		.4byte	.Ldebug_info0
+ 3464 000a 04       		.byte	0x4
+ 3465 000b 00       		.byte	0
+ 3466 000c 0000     		.2byte	0
+ 3467 000e 0000     		.2byte	0
+ 3468 0010 00000000 		.4byte	.LFB64
+ 3469 0014 18000000 		.4byte	.LFE64-.LFB64
+ 3470 0018 00000000 		.4byte	.LFB65
+ 3471 001c 0E000000 		.4byte	.LFE65-.LFB65
+ 3472 0020 00000000 		.4byte	.LFB66
+ 3473 0024 6C000000 		.4byte	.LFE66-.LFB66
+ 3474 0028 00000000 		.4byte	.LFB67
+ 3475 002c 0E000000 		.4byte	.LFE67-.LFB67
+ 3476 0030 00000000 		.4byte	.LFB68
+ 3477 0034 5E000000 		.4byte	.LFE68-.LFB68
+ 3478 0038 00000000 		.4byte	.LFB69
+ 3479 003c 2C050000 		.4byte	.LFE69-.LFB69
+ 3480 0040 00000000 		.4byte	.LFB70
+ 3481 0044 18000000 		.4byte	.LFE70-.LFB70
+ 3482 0048 00000000 		.4byte	.LFB71
+ 3483 004c 8C000000 		.4byte	.LFE71-.LFB71
+ 3484 0050 00000000 		.4byte	.LFB72
+ 3485 0054 3A000000 		.4byte	.LFE72-.LFB72
+ 3486 0058 00000000 		.4byte	.LFB73
+ 3487 005c 24000000 		.4byte	.LFE73-.LFB73
+ 3488 0060 00000000 		.4byte	.LFB74
+ 3489 0064 24000000 		.4byte	.LFE74-.LFB74
+ 3490 0068 00000000 		.4byte	.LFB75
+ 3491 006c 84000000 		.4byte	.LFE75-.LFB75
+ 3492 0070 00000000 		.4byte	.LFB76
+ 3493 0074 2C000000 		.4byte	.LFE76-.LFB76
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 70
+
+
+ 3494 0078 00000000 		.4byte	.LFB77
+ 3495 007c 38000000 		.4byte	.LFE77-.LFB77
+ 3496 0080 00000000 		.4byte	.LFB78
+ 3497 0084 24000000 		.4byte	.LFE78-.LFB78
+ 3498 0088 00000000 		.4byte	.LFB79
+ 3499 008c 1C000000 		.4byte	.LFE79-.LFB79
+ 3500 0090 00000000 		.4byte	.LFB80
+ 3501 0094 2C000000 		.4byte	.LFE80-.LFB80
+ 3502 0098 00000000 		.4byte	.LFB81
+ 3503 009c 38000000 		.4byte	.LFE81-.LFB81
+ 3504 00a0 00000000 		.4byte	.LFB82
+ 3505 00a4 2C000000 		.4byte	.LFE82-.LFB82
+ 3506 00a8 00000000 		.4byte	.LFB83
+ 3507 00ac 2C000000 		.4byte	.LFE83-.LFB83
+ 3508 00b0 00000000 		.4byte	.LFB84
+ 3509 00b4 1C000000 		.4byte	.LFE84-.LFB84
+ 3510 00b8 00000000 		.4byte	.LFB85
+ 3511 00bc 1C000000 		.4byte	.LFE85-.LFB85
+ 3512 00c0 00000000 		.4byte	0
+ 3513 00c4 00000000 		.4byte	0
+ 3514              		.section	.debug_ranges,"",%progbits
+ 3515              	.Ldebug_ranges0:
+ 3516 0000 00000000 		.4byte	.LFB64
+ 3517 0004 18000000 		.4byte	.LFE64
+ 3518 0008 00000000 		.4byte	.LFB65
+ 3519 000c 0E000000 		.4byte	.LFE65
+ 3520 0010 00000000 		.4byte	.LFB66
+ 3521 0014 6C000000 		.4byte	.LFE66
+ 3522 0018 00000000 		.4byte	.LFB67
+ 3523 001c 0E000000 		.4byte	.LFE67
+ 3524 0020 00000000 		.4byte	.LFB68
+ 3525 0024 5E000000 		.4byte	.LFE68
+ 3526 0028 00000000 		.4byte	.LFB69
+ 3527 002c 2C050000 		.4byte	.LFE69
+ 3528 0030 00000000 		.4byte	.LFB70
+ 3529 0034 18000000 		.4byte	.LFE70
+ 3530 0038 00000000 		.4byte	.LFB71
+ 3531 003c 8C000000 		.4byte	.LFE71
+ 3532 0040 00000000 		.4byte	.LFB72
+ 3533 0044 3A000000 		.4byte	.LFE72
+ 3534 0048 00000000 		.4byte	.LFB73
+ 3535 004c 24000000 		.4byte	.LFE73
+ 3536 0050 00000000 		.4byte	.LFB74
+ 3537 0054 24000000 		.4byte	.LFE74
+ 3538 0058 00000000 		.4byte	.LFB75
+ 3539 005c 84000000 		.4byte	.LFE75
+ 3540 0060 00000000 		.4byte	.LFB76
+ 3541 0064 2C000000 		.4byte	.LFE76
+ 3542 0068 00000000 		.4byte	.LFB77
+ 3543 006c 38000000 		.4byte	.LFE77
+ 3544 0070 00000000 		.4byte	.LFB78
+ 3545 0074 24000000 		.4byte	.LFE78
+ 3546 0078 00000000 		.4byte	.LFB79
+ 3547 007c 1C000000 		.4byte	.LFE79
+ 3548 0080 00000000 		.4byte	.LFB80
+ 3549 0084 2C000000 		.4byte	.LFE80
+ 3550 0088 00000000 		.4byte	.LFB81
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 71
+
+
+ 3551 008c 38000000 		.4byte	.LFE81
+ 3552 0090 00000000 		.4byte	.LFB82
+ 3553 0094 2C000000 		.4byte	.LFE82
+ 3554 0098 00000000 		.4byte	.LFB83
+ 3555 009c 2C000000 		.4byte	.LFE83
+ 3556 00a0 00000000 		.4byte	.LFB84
+ 3557 00a4 1C000000 		.4byte	.LFE84
+ 3558 00a8 00000000 		.4byte	.LFB85
+ 3559 00ac 1C000000 		.4byte	.LFE85
+ 3560 00b0 00000000 		.4byte	0
+ 3561 00b4 00000000 		.4byte	0
+ 3562              		.section	.debug_line,"",%progbits
+ 3563              	.Ldebug_line0:
+ 3564 0000 AD040000 		.section	.debug_str,"MS",%progbits,1
+ 3564      02005B01 
+ 3564      00000201 
+ 3564      FB0E0D00 
+ 3564      01010101 
+ 3565              	.LASF94:
+ 3566 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 3566      72745F65 
+ 3566      7865635F 
+ 3566      616C6172 
+ 3566      6D00
+ 3567              	.LASF59:
+ 3568 0012 73746174 		.ascii	"status_code\000"
+ 3568      75735F63 
+ 3568      6F646500 
+ 3569              	.LASF82:
+ 3570 001e 73797374 		.ascii	"system_set_exec_alarm_flag\000"
+ 3570      656D5F73 
+ 3570      65745F65 
+ 3570      7865635F 
+ 3570      616C6172 
+ 3571              	.LASF96:
+ 3572 0039 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 3572      72745F65 
+ 3572      7865635F 
+ 3572      61636365 
+ 3572      73736F72 
+ 3573              	.LASF22:
+ 3574 0058 61636365 		.ascii	"acceleration\000"
+ 3574      6C657261 
+ 3574      74696F6E 
+ 3574      00
+ 3575              	.LASF84:
+ 3576 0065 73797374 		.ascii	"system_set_exec_motion_override_flag\000"
+ 3576      656D5F73 
+ 3576      65745F65 
+ 3576      7865635F 
+ 3576      6D6F7469 
+ 3577              	.LASF68:
+ 3578 008a 73797374 		.ascii	"system_convert_axis_steps_to_mpos\000"
+ 3578      656D5F63 
+ 3578      6F6E7665 
+ 3578      72745F61 
+ 3578      7869735F 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 72
+
+
+ 3579              	.LASF2:
+ 3580 00ac 73686F72 		.ascii	"short int\000"
+ 3580      7420696E 
+ 3580      7400
+ 3581              	.LASF19:
+ 3582 00b6 73697A65 		.ascii	"sizetype\000"
+ 3582      74797065 
+ 3582      00
+ 3583              	.LASF54:
+ 3584 00bf 73797374 		.ascii	"system_t\000"
+ 3584      656D5F74 
+ 3584      00
+ 3585              	.LASF81:
+ 3586 00c8 73797374 		.ascii	"system_clear_exec_alarm\000"
+ 3586      656D5F63 
+ 3586      6C656172 
+ 3586      5F657865 
+ 3586      635F616C 
+ 3587              	.LASF72:
+ 3588 00e0 73797374 		.ascii	"system_convert_corexy_to_x_axis_steps\000"
+ 3588      656D5F63 
+ 3588      6F6E7665 
+ 3588      72745F63 
+ 3588      6F726578 
+ 3589              	.LASF97:
+ 3590 0106 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 3590      43313120 
+ 3590      352E342E 
+ 3590      31203230 
+ 3590      31363036 
+ 3591 0139 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 3591      20726576 
+ 3591      6973696F 
+ 3591      6E203233 
+ 3591      37373135 
+ 3592 016c 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 3592      66756E63 
+ 3592      74696F6E 
+ 3592      2D736563 
+ 3592      74696F6E 
+ 3593              	.LASF73:
+ 3594 0194 73797374 		.ascii	"system_convert_corexy_to_y_axis_steps\000"
+ 3594      656D5F63 
+ 3594      6F6E7665 
+ 3594      72745F63 
+ 3594      6F726578 
+ 3595              	.LASF4:
+ 3596 01ba 5F5F7569 		.ascii	"__uint16_t\000"
+ 3596      6E743136 
+ 3596      5F7400
+ 3597              	.LASF27:
+ 3598 01c5 73746570 		.ascii	"stepper_idle_lock_time\000"
+ 3598      7065725F 
+ 3598      69646C65 
+ 3598      5F6C6F63 
+ 3598      6B5F7469 
+ 3599              	.LASF64:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 73
+
+
+ 3600 01dc 76616C75 		.ascii	"value\000"
+ 3600      6500
+ 3601              	.LASF76:
+ 3602 01e2 73797374 		.ascii	"system_set_exec_state_flag\000"
+ 3602      656D5F73 
+ 3602      65745F65 
+ 3602      7865635F 
+ 3602      73746174 
+ 3603              	.LASF12:
+ 3604 01fd 75696E74 		.ascii	"uint8_t\000"
+ 3604      385F7400 
+ 3605              	.LASF56:
+ 3606 0205 73797374 		.ascii	"system_check_safety_door_ajar\000"
+ 3606      656D5F63 
+ 3606      6865636B 
+ 3606      5F736166 
+ 3606      6574795F 
+ 3607              	.LASF74:
+ 3608 0223 73797374 		.ascii	"system_check_travel_limits\000"
+ 3608      656D5F63 
+ 3608      6865636B 
+ 3608      5F747261 
+ 3608      76656C5F 
+ 3609              	.LASF79:
+ 3610 023e 73797374 		.ascii	"system_set_exec_alarm\000"
+ 3610      656D5F73 
+ 3610      65745F65 
+ 3610      7865635F 
+ 3610      616C6172 
+ 3611              	.LASF85:
+ 3612 0254 73797374 		.ascii	"system_set_exec_accessory_override_flag\000"
+ 3612      656D5F73 
+ 3612      65745F65 
+ 3612      7865635F 
+ 3612      61636365 
+ 3613              	.LASF38:
+ 3614 027c 686F6D69 		.ascii	"homing_pulloff\000"
+ 3614      6E675F70 
+ 3614      756C6C6F 
+ 3614      666600
+ 3615              	.LASF15:
+ 3616 028b 666C6F61 		.ascii	"float\000"
+ 3616      7400
+ 3617              	.LASF89:
+ 3618 0291 73657474 		.ascii	"settings\000"
+ 3618      696E6773 
+ 3618      00
+ 3619              	.LASF9:
+ 3620 029a 6C6F6E67 		.ascii	"long long int\000"
+ 3620      206C6F6E 
+ 3620      6720696E 
+ 3620      7400
+ 3621              	.LASF49:
+ 3622 02a8 7370696E 		.ascii	"spindle_speed_ovr\000"
+ 3622      646C655F 
+ 3622      73706565 
+ 3622      645F6F76 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 74
+
+
+ 3622      7200
+ 3623              	.LASF90:
+ 3624 02ba 7379735F 		.ascii	"sys_position\000"
+ 3624      706F7369 
+ 3624      74696F6E 
+ 3624      00
+ 3625              	.LASF45:
+ 3626 02c7 70726F62 		.ascii	"probe_succeeded\000"
+ 3626      655F7375 
+ 3626      63636565 
+ 3626      64656400 
+ 3627              	.LASF7:
+ 3628 02d7 6C6F6E67 		.ascii	"long int\000"
+ 3628      20696E74 
+ 3628      00
+ 3629              	.LASF57:
+ 3630 02e0 636F6E74 		.ascii	"control_isr_handler\000"
+ 3630      726F6C5F 
+ 3630      6973725F 
+ 3630      68616E64 
+ 3630      6C657200 
+ 3631              	.LASF20:
+ 3632 02f4 73746570 		.ascii	"steps_per_mm\000"
+ 3632      735F7065 
+ 3632      725F6D6D 
+ 3632      00
+ 3633              	.LASF3:
+ 3634 0301 5F5F7569 		.ascii	"__uint8_t\000"
+ 3634      6E74385F 
+ 3634      7400
+ 3635              	.LASF51:
+ 3636 030b 7265706F 		.ascii	"report_ovr_counter\000"
+ 3636      72745F6F 
+ 3636      76725F63 
+ 3636      6F756E74 
+ 3636      657200
+ 3637              	.LASF60:
+ 3638 031e 6C696E65 		.ascii	"line\000"
+ 3638      00
+ 3639              	.LASF40:
+ 3640 0323 73746174 		.ascii	"state\000"
+ 3640      6500
+ 3641              	.LASF30:
+ 3642 0329 6172635F 		.ascii	"arc_tolerance\000"
+ 3642      746F6C65 
+ 3642      72616E63 
+ 3642      6500
+ 3643              	.LASF18:
+ 3644 0337 6C6F6E67 		.ascii	"long double\000"
+ 3644      20646F75 
+ 3644      626C6500 
+ 3645              	.LASF83:
+ 3646 0343 73797374 		.ascii	"system_clear_exec_alarm_flag\000"
+ 3646      656D5F63 
+ 3646      6C656172 
+ 3646      5F657865 
+ 3646      635F616C 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 75
+
+
+ 3647              	.LASF65:
+ 3648 0360 73797374 		.ascii	"system_init\000"
+ 3648      656D5F69 
+ 3648      6E697400 
+ 3649              	.LASF34:
+ 3650 036c 686F6D69 		.ascii	"homing_dir_mask\000"
+ 3650      6E675F64 
+ 3650      69725F6D 
+ 3650      61736B00 
+ 3651              	.LASF1:
+ 3652 037c 756E7369 		.ascii	"unsigned char\000"
+ 3652      676E6564 
+ 3652      20636861 
+ 3652      7200
+ 3653              	.LASF41:
+ 3654 038a 61626F72 		.ascii	"abort\000"
+ 3654      7400
+ 3655              	.LASF0:
+ 3656 0390 7369676E 		.ascii	"signed char\000"
+ 3656      65642063 
+ 3656      68617200 
+ 3657              	.LASF33:
+ 3658 039c 666C6167 		.ascii	"flags\000"
+ 3658      7300
+ 3659              	.LASF10:
+ 3660 03a2 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3660      206C6F6E 
+ 3660      6720756E 
+ 3660      7369676E 
+ 3660      65642069 
+ 3661              	.LASF67:
+ 3662 03b9 73797374 		.ascii	"system_execute_line\000"
+ 3662      656D5F65 
+ 3662      78656375 
+ 3662      74655F6C 
+ 3662      696E6500 
+ 3663              	.LASF11:
+ 3664 03cd 756E7369 		.ascii	"unsigned int\000"
+ 3664      676E6564 
+ 3664      20696E74 
+ 3664      00
+ 3665              	.LASF47:
+ 3666 03da 665F6F76 		.ascii	"f_override\000"
+ 3666      65727269 
+ 3666      646500
+ 3667              	.LASF53:
+ 3668 03e5 7370696E 		.ascii	"spindle_speed\000"
+ 3668      646C655F 
+ 3668      73706565 
+ 3668      6400
+ 3669              	.LASF91:
+ 3670 03f3 7379735F 		.ascii	"sys_probe_position\000"
+ 3670      70726F62 
+ 3670      655F706F 
+ 3670      73697469 
+ 3670      6F6E00
+ 3671              	.LASF80:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 76
+
+
+ 3672 0406 636F6465 		.ascii	"code\000"
+ 3672      00
+ 3673              	.LASF78:
+ 3674 040b 73797374 		.ascii	"system_clear_exec_state_flag\000"
+ 3674      656D5F63 
+ 3674      6C656172 
+ 3674      5F657865 
+ 3674      635F7374 
+ 3675              	.LASF28:
+ 3676 0428 73746174 		.ascii	"status_report_mask\000"
+ 3676      75735F72 
+ 3676      65706F72 
+ 3676      745F6D61 
+ 3676      736B00
+ 3677              	.LASF46:
+ 3678 043b 686F6D69 		.ascii	"homing_axis_lock\000"
+ 3678      6E675F61 
+ 3678      7869735F 
+ 3678      6C6F636B 
+ 3678      00
+ 3679              	.LASF70:
+ 3680 044c 73797374 		.ascii	"system_convert_array_steps_to_mpos\000"
+ 3680      656D5F63 
+ 3680      6F6E7665 
+ 3680      72745F61 
+ 3680      72726179 
+ 3681              	.LASF39:
+ 3682 046f 73657474 		.ascii	"settings_t\000"
+ 3682      696E6773 
+ 3682      5F7400
+ 3683              	.LASF69:
+ 3684 047a 73746570 		.ascii	"steps\000"
+ 3684      7300
+ 3685              	.LASF5:
+ 3686 0480 73686F72 		.ascii	"short unsigned int\000"
+ 3686      7420756E 
+ 3686      7369676E 
+ 3686      65642069 
+ 3686      6E7400
+ 3687              	.LASF62:
+ 3688 0493 68656C70 		.ascii	"helper_var\000"
+ 3688      65725F76 
+ 3688      617200
+ 3689              	.LASF86:
+ 3690 049e 73797374 		.ascii	"system_clear_exec_motion_overrides\000"
+ 3690      656D5F63 
+ 3690      6C656172 
+ 3690      5F657865 
+ 3690      635F6D6F 
+ 3691              	.LASF17:
+ 3692 04c1 63686172 		.ascii	"char\000"
+ 3692      00
+ 3693              	.LASF13:
+ 3694 04c6 75696E74 		.ascii	"uint16_t\000"
+ 3694      31365F74 
+ 3694      00
+ 3695              	.LASF26:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 77
+
+
+ 3696 04cf 6469725F 		.ascii	"dir_invert_mask\000"
+ 3696      696E7665 
+ 3696      72745F6D 
+ 3696      61736B00 
+ 3697              	.LASF14:
+ 3698 04df 696E7433 		.ascii	"int32_t\000"
+ 3698      325F7400 
+ 3699              	.LASF63:
+ 3700 04e7 70617261 		.ascii	"parameter\000"
+ 3700      6D657465 
+ 3700      7200
+ 3701              	.LASF31:
+ 3702 04f1 72706D5F 		.ascii	"rpm_max\000"
+ 3702      6D617800 
+ 3703              	.LASF44:
+ 3704 04f9 73746570 		.ascii	"step_control\000"
+ 3704      5F636F6E 
+ 3704      74726F6C 
+ 3704      00
+ 3705              	.LASF42:
+ 3706 0506 73757370 		.ascii	"suspend\000"
+ 3706      656E6400 
+ 3707              	.LASF43:
+ 3708 050e 736F6674 		.ascii	"soft_limit\000"
+ 3708      5F6C696D 
+ 3708      697400
+ 3709              	.LASF37:
+ 3710 0519 686F6D69 		.ascii	"homing_debounce_delay\000"
+ 3710      6E675F64 
+ 3710      65626F75 
+ 3710      6E63655F 
+ 3710      64656C61 
+ 3711              	.LASF24:
+ 3712 052f 70756C73 		.ascii	"pulse_microseconds\000"
+ 3712      655F6D69 
+ 3712      63726F73 
+ 3712      65636F6E 
+ 3712      647300
+ 3713              	.LASF58:
+ 3714 0542 73797374 		.ascii	"system_execute_startup\000"
+ 3714      656D5F65 
+ 3714      78656375 
+ 3714      74655F73 
+ 3714      74617274 
+ 3715              	.LASF92:
+ 3716 0559 7379735F 		.ascii	"sys_probe_state\000"
+ 3716      70726F62 
+ 3716      655F7374 
+ 3716      61746500 
+ 3717              	.LASF50:
+ 3718 0569 7370696E 		.ascii	"spindle_stop_ovr\000"
+ 3718      646C655F 
+ 3718      73746F70 
+ 3718      5F6F7672 
+ 3718      00
+ 3719              	.LASF8:
+ 3720 057a 6C6F6E67 		.ascii	"long unsigned int\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 78
+
+
+ 3720      20756E73 
+ 3720      69676E65 
+ 3720      6420696E 
+ 3720      7400
+ 3721              	.LASF16:
+ 3722 058c 646F7562 		.ascii	"double\000"
+ 3722      6C6500
+ 3723              	.LASF36:
+ 3724 0593 686F6D69 		.ascii	"homing_seek_rate\000"
+ 3724      6E675F73 
+ 3724      65656B5F 
+ 3724      72617465 
+ 3724      00
+ 3725              	.LASF66:
+ 3726 05a4 73797374 		.ascii	"system_flag_wco_change\000"
+ 3726      656D5F66 
+ 3726      6C61675F 
+ 3726      77636F5F 
+ 3726      6368616E 
+ 3727              	.LASF32:
+ 3728 05bb 72706D5F 		.ascii	"rpm_min\000"
+ 3728      6D696E00 
+ 3729              	.LASF61:
+ 3730 05c3 63686172 		.ascii	"char_counter\000"
+ 3730      5F636F75 
+ 3730      6E746572 
+ 3730      00
+ 3731              	.LASF77:
+ 3732 05d0 6D61736B 		.ascii	"mask\000"
+ 3732      00
+ 3733              	.LASF6:
+ 3734 05d5 5F5F696E 		.ascii	"__int32_t\000"
+ 3734      7433325F 
+ 3734      7400
+ 3735              	.LASF29:
+ 3736 05df 6A756E63 		.ascii	"junction_deviation\000"
+ 3736      74696F6E 
+ 3736      5F646576 
+ 3736      69617469 
+ 3736      6F6E00
+ 3737              	.LASF23:
+ 3738 05f2 6D61785F 		.ascii	"max_travel\000"
+ 3738      74726176 
+ 3738      656C00
+ 3739              	.LASF99:
+ 3740 05fd 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 3740      73657273 
+ 3740      5C626172 
+ 3740      746F5C44 
+ 3740      726F7062 
+ 3741 062a 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 3741      5553425F 
+ 3741      4E617469 
+ 3741      76652E63 
+ 3741      7964736E 
+ 3742              	.LASF35:
+ 3743 063f 686F6D69 		.ascii	"homing_feed_rate\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 79
+
+
+ 3743      6E675F66 
+ 3743      6565645F 
+ 3743      72617465 
+ 3743      00
+ 3744              	.LASF75:
+ 3745 0650 74617267 		.ascii	"target\000"
+ 3745      657400
+ 3746              	.LASF48:
+ 3747 0657 725F6F76 		.ascii	"r_override\000"
+ 3747      65727269 
+ 3747      646500
+ 3748              	.LASF95:
+ 3749 0662 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 3749      72745F65 
+ 3749      7865635F 
+ 3749      6D6F7469 
+ 3749      6F6E5F6F 
+ 3750              	.LASF52:
+ 3751 067e 7265706F 		.ascii	"report_wco_counter\000"
+ 3751      72745F77 
+ 3751      636F5F63 
+ 3751      6F756E74 
+ 3751      657200
+ 3752              	.LASF71:
+ 3753 0691 706F7369 		.ascii	"position\000"
+ 3753      74696F6E 
+ 3753      00
+ 3754              	.LASF88:
+ 3755 069a 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 3755      52784275 
+ 3755      66666572 
+ 3755      00
+ 3756              	.LASF87:
+ 3757 06a7 73797374 		.ascii	"system_clear_exec_accessory_overrides\000"
+ 3757      656D5F63 
+ 3757      6C656172 
+ 3757      5F657865 
+ 3757      635F6163 
+ 3758              	.LASF21:
+ 3759 06cd 6D61785F 		.ascii	"max_rate\000"
+ 3759      72617465 
+ 3759      00
+ 3760              	.LASF93:
+ 3761 06d6 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 3761      72745F65 
+ 3761      7865635F 
+ 3761      73746174 
+ 3761      6500
+ 3762              	.LASF25:
+ 3763 06e8 73746570 		.ascii	"step_invert_mask\000"
+ 3763      5F696E76 
+ 3763      6572745F 
+ 3763      6D61736B 
+ 3763      00
+ 3764              	.LASF98:
+ 3765 06f9 73797374 		.ascii	"system.c\000"
+ 3765      656D2E63 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\cc1xUybq.s 			page 80
+
+
+ 3765      00
+ 3766              	.LASF55:
+ 3767 0702 73797374 		.ascii	"system_control_get_state\000"
+ 3767      656D5F63 
+ 3767      6F6E7472 
+ 3767      6F6C5F67 
+ 3767      65745F73 
+ 3768              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

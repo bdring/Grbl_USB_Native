@@ -1,0 +1,6 @@
+--------------- Clean Started: 07/15/2018 13:26:31 Project: Grbl_USB_Native, Configuration: ARM GCC 5.4-2016-q2-update Debug ---------------
+Deleting file ".\Grbl_USB_Native.cycdx"
+Deleting file ".\Grbl_USB_Native.svd"
+Deleting file ".\Grbl_USB_Native.rpt"
+Deleting file ".\Grbl_USB_Native_timing.html"
+--------------- Clean Succeeded: 07/15/2018 13:26:31 ---------------

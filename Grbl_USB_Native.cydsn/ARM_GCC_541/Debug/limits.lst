@@ -1,0 +1,3040 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"limits.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.section	.text.limits_init,"ax",%progbits
+  27              		.align	2
+  28              		.global	limits_init
+  29              		.thumb
+  30              		.thumb_func
+  31              		.type	limits_init, %function
+  32              	limits_init:
+  33              	.LFB64:
+  34              		.file 1 "limits.c"
+   1:limits.c      **** /*
+   2:limits.c      ****   limits.c - code pertaining to limit-switches and performing the homing cycle
+   3:limits.c      ****   Part of Grbl
+   4:limits.c      **** 
+   5:limits.c      ****   Copyright (c) 2012-2016 Sungeun K. Jeon for Gnea Research LLC
+   6:limits.c      ****   Copyright (c) 2009-2011 Simen Svale Skogsrud
+   7:limits.c      ****       Updated For PSoC 2017-2018 Barton Dring buildlog.net
+   8:limits.c      **** 
+   9:limits.c      ****   Grbl is free software: you can redistribute it and/or modify
+  10:limits.c      ****   it under the terms of the GNU General Public License as published by
+  11:limits.c      ****   the Free Software Foundation, either version 3 of the License, or
+  12:limits.c      ****   (at your option) any later version.
+  13:limits.c      **** 
+  14:limits.c      ****   Grbl is distributed in the hope that it will be useful,
+  15:limits.c      ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:limits.c      ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:limits.c      ****   GNU General Public License for more details.
+  18:limits.c      **** 
+  19:limits.c      ****   You should have received a copy of the GNU General Public License
+  20:limits.c      ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  21:limits.c      **** */
+  22:limits.c      **** 
+  23:limits.c      **** #include "grbl.h"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 2
+
+
+  24:limits.c      **** 
+  25:limits.c      **** 
+  26:limits.c      **** // Homing axis search distance multiplier. Computed by this value times the cycle travel.
+  27:limits.c      **** #ifndef HOMING_AXIS_SEARCH_SCALAR
+  28:limits.c      ****   #define HOMING_AXIS_SEARCH_SCALAR  1.5 // Must be > 1 to ensure limit switch will be engaged.
+  29:limits.c      **** #endif
+  30:limits.c      **** #ifndef HOMING_AXIS_LOCATE_SCALAR
+  31:limits.c      ****   #define HOMING_AXIS_LOCATE_SCALAR  5.0 // Must be > 1 to ensure limit switch is cleared.
+  32:limits.c      **** #endif
+  33:limits.c      **** 
+  34:limits.c      **** // PSoc Complete rewrire.  Pins and debouncing are setup on the PSoc Schematic
+  35:limits.c      **** void limits_init() 
+  36:limits.c      **** { 
+  35              		.loc 1 36 0
+  36              		.cfi_startproc
+  37              		@ args = 0, pretend = 0, frame = 0
+  38              		@ frame_needed = 1, uses_anonymous_args = 0
+  39 0000 80B5     		push	{r7, lr}
+  40              		.cfi_def_cfa_offset 8
+  41              		.cfi_offset 7, -8
+  42              		.cfi_offset 14, -4
+  43 0002 00AF     		add	r7, sp, #0
+  44              		.cfi_def_cfa_register 7
+  37:limits.c      **** 
+  38:limits.c      ****   if (bit_istrue(settings.flags,BITFLAG_HARD_LIMIT_ENABLE)) {
+  45              		.loc 1 38 0
+  46 0004 084B     		ldr	r3, .L5
+  47 0006 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+  48 000a 03F00803 		and	r3, r3, #8
+  49 000e 002B     		cmp	r3, #0
+  50 0010 05D0     		beq	.L2
+  39:limits.c      ****     Status_Limit_InterruptEnable();
+  51              		.loc 1 39 0
+  52 0012 FFF7FEFF 		bl	Status_Limit_InterruptEnable
+  40:limits.c      ****     isr_Limits_StartEx(limit_isr_handler);
+  53              		.loc 1 40 0
+  54 0016 0548     		ldr	r0, .L5+4
+  55 0018 FFF7FEFF 		bl	isr_Limits_StartEx
+  41:limits.c      ****   } else {
+  42:limits.c      ****     
+  43:limits.c      ****     limits_disable(); 
+  44:limits.c      ****   }
+  45:limits.c      **** }
+  56              		.loc 1 45 0
+  57 001c 01E0     		b	.L4
+  58              	.L2:
+  43:limits.c      ****   }
+  59              		.loc 1 43 0
+  60 001e FFF7FEFF 		bl	limits_disable
+  61              	.L4:
+  62              		.loc 1 45 0
+  63 0022 00BF     		nop
+  64 0024 80BD     		pop	{r7, pc}
+  65              	.L6:
+  66 0026 00BF     		.align	2
+  67              	.L5:
+  68 0028 00000000 		.word	settings
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 3
+
+
+  69 002c 00000000 		.word	limit_isr_handler
+  70              		.cfi_endproc
+  71              	.LFE64:
+  72              		.size	limits_init, .-limits_init
+  73              		.section	.text.limits_disable,"ax",%progbits
+  74              		.align	2
+  75              		.global	limits_disable
+  76              		.thumb
+  77              		.thumb_func
+  78              		.type	limits_disable, %function
+  79              	limits_disable:
+  80              	.LFB65:
+  46:limits.c      **** 
+  47:limits.c      **** 
+  48:limits.c      **** // complete PSoc rewrite
+  49:limits.c      **** void limits_disable()
+  50:limits.c      **** {
+  81              		.loc 1 50 0
+  82              		.cfi_startproc
+  83              		@ args = 0, pretend = 0, frame = 0
+  84              		@ frame_needed = 1, uses_anonymous_args = 0
+  85 0000 80B5     		push	{r7, lr}
+  86              		.cfi_def_cfa_offset 8
+  87              		.cfi_offset 7, -8
+  88              		.cfi_offset 14, -4
+  89 0002 00AF     		add	r7, sp, #0
+  90              		.cfi_def_cfa_register 7
+  51:limits.c      ****   Status_Limit_InterruptDisable();
+  91              		.loc 1 51 0
+  92 0004 FFF7FEFF 		bl	Status_Limit_InterruptDisable
+  52:limits.c      ****   isr_Limits_Stop();
+  93              		.loc 1 52 0
+  94 0008 FFF7FEFF 		bl	isr_Limits_Stop
+  53:limits.c      **** }
+  95              		.loc 1 53 0
+  96 000c 00BF     		nop
+  97 000e 80BD     		pop	{r7, pc}
+  98              		.cfi_endproc
+  99              	.LFE65:
+ 100              		.size	limits_disable, .-limits_disable
+ 101              		.section	.text.limits_get_state,"ax",%progbits
+ 102              		.align	2
+ 103              		.global	limits_get_state
+ 104              		.thumb
+ 105              		.thumb_func
+ 106              		.type	limits_get_state, %function
+ 107              	limits_get_state:
+ 108              	.LFB66:
+  54:limits.c      **** 
+  55:limits.c      **** 
+  56:limits.c      **** // Returns limit state as a bit-wise uint8 variable. Each bit indicates an axis limit, where
+  57:limits.c      **** // triggered is 1 and not triggered is 0. Invert mask is applied. Axes are defined by their
+  58:limits.c      **** // number in bit position, i.e. Z_AXIS is (1<<2) or bit 2, and Y_AXIS is (1<<1) or bit 1.
+  59:limits.c      **** // Complete PSoC Rewrite
+  60:limits.c      **** uint8_t limits_get_state()
+  61:limits.c      **** {  
+ 109              		.loc 1 61 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 4
+
+
+ 110              		.cfi_startproc
+ 111              		@ args = 0, pretend = 0, frame = 0
+ 112              		@ frame_needed = 1, uses_anonymous_args = 0
+ 113 0000 80B5     		push	{r7, lr}
+ 114              		.cfi_def_cfa_offset 8
+ 115              		.cfi_offset 7, -8
+ 116              		.cfi_offset 14, -4
+ 117 0002 00AF     		add	r7, sp, #0
+ 118              		.cfi_def_cfa_register 7
+  62:limits.c      ****   return Status_Limit_Read(); 
+ 119              		.loc 1 62 0
+ 120 0004 FFF7FEFF 		bl	Status_Limit_Read
+ 121 0008 0346     		mov	r3, r0
+  63:limits.c      **** }
+ 122              		.loc 1 63 0
+ 123 000a 1846     		mov	r0, r3
+ 124 000c 80BD     		pop	{r7, pc}
+ 125              		.cfi_endproc
+ 126              	.LFE66:
+ 127              		.size	limits_get_state, .-limits_get_state
+ 128 000e 00BF     		.section	.text.limit_isr_handler,"ax",%progbits
+ 129              		.align	2
+ 130              		.global	limit_isr_handler
+ 131              		.thumb
+ 132              		.thumb_func
+ 133              		.type	limit_isr_handler, %function
+ 134              	limit_isr_handler:
+ 135              	.LFB67:
+  64:limits.c      **** 
+  65:limits.c      **** // PSoc Change
+  66:limits.c      **** void limit_isr_handler() // ISR(LIMIT_INT_vect) // DEFAULT: Limit pin change interrupt process. 
+  67:limits.c      ****   {
+ 136              		.loc 1 67 0
+ 137              		.cfi_startproc
+ 138              		@ args = 0, pretend = 0, frame = 0
+ 139              		@ frame_needed = 1, uses_anonymous_args = 0
+ 140 0000 80B5     		push	{r7, lr}
+ 141              		.cfi_def_cfa_offset 8
+ 142              		.cfi_offset 7, -8
+ 143              		.cfi_offset 14, -4
+ 144 0002 00AF     		add	r7, sp, #0
+ 145              		.cfi_def_cfa_register 7
+  68:limits.c      ****     // Ignore limit switches if already in an alarm state or in-process of executing an alarm.
+  69:limits.c      ****     // When in the alarm state, Grbl should have been reset or will force a reset, so any pending 
+  70:limits.c      ****     // moves in the planner and serial buffers are all cleared and newly sent blocks will be 
+  71:limits.c      ****     // locked out until a homing cycle or a kill lock command. Allows the user to disable the hard
+  72:limits.c      ****     // limit setting if their limits are constantly triggering after a reset and move their axes.
+  73:limits.c      ****     if (sys.state != STATE_ALARM) { 
+ 146              		.loc 1 73 0
+ 147 0004 074B     		ldr	r3, .L13
+ 148 0006 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 149 0008 012B     		cmp	r3, #1
+ 150 000a 09D0     		beq	.L12
+  74:limits.c      ****       if (!(sys_rt_exec_alarm)) {
+ 151              		.loc 1 74 0
+ 152 000c 064B     		ldr	r3, .L13+4
+ 153 000e 1B78     		ldrb	r3, [r3]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 5
+
+
+ 154 0010 DBB2     		uxtb	r3, r3
+ 155 0012 002B     		cmp	r3, #0
+ 156 0014 04D1     		bne	.L12
+  75:limits.c      ****         #ifdef HARD_LIMIT_FORCE_STATE_CHECK
+  76:limits.c      ****           // Check limit pin state. 
+  77:limits.c      ****           if (limits_get_state()) {
+  78:limits.c      ****             mc_reset(); // Initiate system kill.
+  79:limits.c      ****             system_set_exec_alarm_flag((EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate ha
+  80:limits.c      ****           }
+  81:limits.c      ****         #else
+  82:limits.c      ****           mc_reset(); // Initiate system kill.
+ 157              		.loc 1 82 0
+ 158 0016 FFF7FEFF 		bl	mc_reset
+  83:limits.c      ****           system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); // Indicate hard limit critical event
+ 159              		.loc 1 83 0
+ 160 001a 0120     		movs	r0, #1
+ 161 001c FFF7FEFF 		bl	system_set_exec_alarm
+ 162              	.L12:
+  84:limits.c      ****         #endif
+  85:limits.c      ****       }
+  86:limits.c      ****     }
+  87:limits.c      ****   }  
+ 163              		.loc 1 87 0
+ 164 0020 00BF     		nop
+ 165 0022 80BD     		pop	{r7, pc}
+ 166              	.L14:
+ 167              		.align	2
+ 168              	.L13:
+ 169 0024 00000000 		.word	sys
+ 170 0028 00000000 		.word	sys_rt_exec_alarm
+ 171              		.cfi_endproc
+ 172              	.LFE67:
+ 173              		.size	limit_isr_handler, .-limit_isr_handler
+ 174              		.global	__aeabi_f2d
+ 175              		.global	__aeabi_dmul
+ 176              		.global	__aeabi_dcmpgt
+ 177              		.global	__aeabi_d2f
+ 178              		.global	__aeabi_ui2d
+ 179              		.global	__aeabi_fmul
+ 180              		.global	__aeabi_fadd
+ 181              		.section	.text.limits_go_home,"ax",%progbits
+ 182              		.align	2
+ 183              		.global	limits_go_home
+ 184              		.thumb
+ 185              		.thumb_func
+ 186              		.type	limits_go_home, %function
+ 187              	limits_go_home:
+ 188              	.LFB68:
+  88:limits.c      **** 
+  89:limits.c      **** // Homes the specified cycle axes, sets the machine position, and performs a pull-off motion after
+  90:limits.c      **** // completing. Homing is a special motion case, which involves rapid uncontrolled stops to locate
+  91:limits.c      **** // the trigger point of the limit switches. The rapid stops are handled by a system level axis lock
+  92:limits.c      **** // mask, which prevents the stepper algorithm from executing step pulses. Homing motions typically
+  93:limits.c      **** // circumvent the processes for executing motions in normal operation.
+  94:limits.c      **** // NOTE: Only the abort realtime command can interrupt this process.
+  95:limits.c      **** // TODO: Move limit pin-specific calls to a general function for portability.
+  96:limits.c      **** void limits_go_home(uint8_t cycle_mask)
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 6
+
+
+  97:limits.c      **** {
+ 189              		.loc 1 97 0
+ 190              		.cfi_startproc
+ 191              		@ args = 0, pretend = 0, frame = 88
+ 192              		@ frame_needed = 1, uses_anonymous_args = 0
+ 193 0000 B0B5     		push	{r4, r5, r7, lr}
+ 194              		.cfi_def_cfa_offset 16
+ 195              		.cfi_offset 4, -16
+ 196              		.cfi_offset 5, -12
+ 197              		.cfi_offset 7, -8
+ 198              		.cfi_offset 14, -4
+ 199 0002 96B0     		sub	sp, sp, #88
+ 200              		.cfi_def_cfa_offset 104
+ 201 0004 00AF     		add	r7, sp, #0
+ 202              		.cfi_def_cfa_register 7
+ 203 0006 0346     		mov	r3, r0
+ 204 0008 FB71     		strb	r3, [r7, #7]
+  98:limits.c      ****   if (sys.abort) { return; } // Block if system reset has been issued.
+ 205              		.loc 1 98 0
+ 206 000a C44B     		ldr	r3, .L64
+ 207 000c 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 208 000e 002B     		cmp	r3, #0
+ 209 0010 40F0C082 		bne	.L63
+  99:limits.c      **** 
+ 100:limits.c      ****   // Initialize plan data struct for homing motion. Spindle and coolant are disabled.
+ 101:limits.c      ****   plan_line_data_t plan_data;
+ 102:limits.c      ****   plan_line_data_t *pl_data = &plan_data;
+ 210              		.loc 1 102 0
+ 211 0014 07F11C03 		add	r3, r7, #28
+ 212 0018 FB63     		str	r3, [r7, #60]
+ 103:limits.c      ****   memset(pl_data,0,sizeof(plan_line_data_t));
+ 213              		.loc 1 103 0
+ 214 001a 0C22     		movs	r2, #12
+ 215 001c 0021     		movs	r1, #0
+ 216 001e F86B     		ldr	r0, [r7, #60]
+ 217 0020 FFF7FEFF 		bl	memset
+ 104:limits.c      ****   pl_data->condition = (PL_COND_FLAG_SYSTEM_MOTION|PL_COND_FLAG_NO_FEED_OVERRIDE);
+ 218              		.loc 1 104 0
+ 219 0024 FB6B     		ldr	r3, [r7, #60]
+ 220 0026 0622     		movs	r2, #6
+ 221 0028 1A72     		strb	r2, [r3, #8]
+ 105:limits.c      ****   #ifdef USE_LINE_NUMBERS
+ 106:limits.c      ****     pl_data->line_number = HOMING_CYCLE_LINE_NUMBER;
+ 107:limits.c      ****   #endif
+ 108:limits.c      **** 
+ 109:limits.c      ****   // Initialize variables used for homing computations.
+ 110:limits.c      ****   uint8_t n_cycle = (2*N_HOMING_LOCATE_CYCLE+1);
+ 222              		.loc 1 110 0
+ 223 002a 0323     		movs	r3, #3
+ 224 002c 87F85730 		strb	r3, [r7, #87]
+ 111:limits.c      ****   uint8_t step_pin[N_AXIS];
+ 112:limits.c      ****   float target[N_AXIS];
+ 113:limits.c      ****   float max_travel = 0.0;
+ 225              		.loc 1 113 0
+ 226 0030 4FF00003 		mov	r3, #0
+ 227 0034 3B65     		str	r3, [r7, #80]	@ float
+ 114:limits.c      ****   uint8_t idx;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 7
+
+
+ 115:limits.c      ****   for (idx=0; idx<N_AXIS; idx++) {
+ 228              		.loc 1 115 0
+ 229 0036 0023     		movs	r3, #0
+ 230 0038 87F84F30 		strb	r3, [r7, #79]
+ 231 003c 6BE0     		b	.L18
+ 232              	.L25:
+ 116:limits.c      ****     // Initialize step pin masks
+ 117:limits.c      ****     step_pin[idx] = get_step_pin_mask(idx);
+ 233              		.loc 1 117 0
+ 234 003e 97F84F40 		ldrb	r4, [r7, #79]	@ zero_extendqisi2
+ 235 0042 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 236 0046 1846     		mov	r0, r3
+ 237 0048 FFF7FEFF 		bl	get_step_pin_mask
+ 238 004c 0346     		mov	r3, r0
+ 239 004e 1A46     		mov	r2, r3
+ 240 0050 07F15803 		add	r3, r7, #88
+ 241 0054 2344     		add	r3, r3, r4
+ 242 0056 03F8402C 		strb	r2, [r3, #-64]
+ 118:limits.c      ****     #ifdef COREXY
+ 119:limits.c      ****       if ((idx==A_MOTOR)||(idx==B_MOTOR)) { step_pin[idx] = (get_step_pin_mask(X_AXIS)|get_step_pin
+ 243              		.loc 1 119 0
+ 244 005a 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 245 005e 002B     		cmp	r3, #0
+ 246 0060 03D0     		beq	.L19
+ 247              		.loc 1 119 0 is_stmt 0 discriminator 2
+ 248 0062 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 249 0066 012B     		cmp	r3, #1
+ 250 0068 11D1     		bne	.L20
+ 251              	.L19:
+ 252              		.loc 1 119 0 discriminator 3
+ 253 006a 97F84F40 		ldrb	r4, [r7, #79]	@ zero_extendqisi2
+ 254 006e 0020     		movs	r0, #0
+ 255 0070 FFF7FEFF 		bl	get_step_pin_mask
+ 256 0074 0346     		mov	r3, r0
+ 257 0076 1D46     		mov	r5, r3
+ 258 0078 0120     		movs	r0, #1
+ 259 007a FFF7FEFF 		bl	get_step_pin_mask
+ 260 007e 0346     		mov	r3, r0
+ 261 0080 2B43     		orrs	r3, r3, r5
+ 262 0082 DAB2     		uxtb	r2, r3
+ 263 0084 07F15803 		add	r3, r7, #88
+ 264 0088 2344     		add	r3, r3, r4
+ 265 008a 03F8402C 		strb	r2, [r3, #-64]
+ 266              	.L20:
+ 120:limits.c      ****     #endif
+ 121:limits.c      **** 
+ 122:limits.c      ****     if (bit_istrue(cycle_mask,bit(idx))) {
+ 267              		.loc 1 122 0 is_stmt 1
+ 268 008e FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 269 0090 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 270 0094 42FA03F3 		asr	r3, r2, r3
+ 271 0098 03F00103 		and	r3, r3, #1
+ 272 009c 002B     		cmp	r3, #0
+ 273 009e 35D0     		beq	.L21
+ 123:limits.c      ****       // Set target based on max_travel setting. Ensure homing switches engaged with search scalar.
+ 124:limits.c      ****       // NOTE: settings.max_travel[] is stored as a negative value.
+ 125:limits.c      ****       max_travel = max(max_travel,(-HOMING_AXIS_SEARCH_SCALAR)*settings.max_travel[idx]);
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 8
+
+
+ 274              		.loc 1 125 0
+ 275 00a0 386D     		ldr	r0, [r7, #80]	@ float
+ 276 00a2 FFF7FEFF 		bl	__aeabi_f2d
+ 277 00a6 0446     		mov	r4, r0
+ 278 00a8 0D46     		mov	r5, r1
+ 279 00aa 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 280 00ae 9C4A     		ldr	r2, .L64+4
+ 281 00b0 0833     		adds	r3, r3, #8
+ 282 00b2 9B00     		lsls	r3, r3, #2
+ 283 00b4 1344     		add	r3, r3, r2
+ 284 00b6 5B68     		ldr	r3, [r3, #4]	@ float
+ 285 00b8 1846     		mov	r0, r3
+ 286 00ba FFF7FEFF 		bl	__aeabi_f2d
+ 287 00be 4FF00002 		mov	r2, #0
+ 288 00c2 984B     		ldr	r3, .L64+8
+ 289 00c4 FFF7FEFF 		bl	__aeabi_dmul
+ 290 00c8 0246     		mov	r2, r0
+ 291 00ca 0B46     		mov	r3, r1
+ 292 00cc 2046     		mov	r0, r4
+ 293 00ce 2946     		mov	r1, r5
+ 294 00d0 FFF7FEFF 		bl	__aeabi_dcmpgt
+ 295 00d4 0346     		mov	r3, r0
+ 296 00d6 002B     		cmp	r3, #0
+ 297 00d8 01D0     		beq	.L62
+ 298              		.loc 1 125 0 is_stmt 0 discriminator 1
+ 299 00da 3B6D     		ldr	r3, [r7, #80]	@ float
+ 300 00dc 15E0     		b	.L24
+ 301              	.L62:
+ 302              		.loc 1 125 0 discriminator 2
+ 303 00de 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 304 00e2 8F4A     		ldr	r2, .L64+4
+ 305 00e4 0833     		adds	r3, r3, #8
+ 306 00e6 9B00     		lsls	r3, r3, #2
+ 307 00e8 1344     		add	r3, r3, r2
+ 308 00ea 5B68     		ldr	r3, [r3, #4]	@ float
+ 309 00ec 1846     		mov	r0, r3
+ 310 00ee FFF7FEFF 		bl	__aeabi_f2d
+ 311 00f2 4FF00002 		mov	r2, #0
+ 312 00f6 8B4B     		ldr	r3, .L64+8
+ 313 00f8 FFF7FEFF 		bl	__aeabi_dmul
+ 314 00fc 0346     		mov	r3, r0
+ 315 00fe 0C46     		mov	r4, r1
+ 316 0100 1846     		mov	r0, r3
+ 317 0102 2146     		mov	r1, r4
+ 318 0104 FFF7FEFF 		bl	__aeabi_d2f
+ 319 0108 0346     		mov	r3, r0
+ 320              	.L24:
+ 321              		.loc 1 125 0 discriminator 4
+ 322 010a 3B65     		str	r3, [r7, #80]	@ float
+ 323              	.L21:
+ 115:limits.c      ****     // Initialize step pin masks
+ 324              		.loc 1 115 0 is_stmt 1 discriminator 2
+ 325 010c 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 326 0110 0133     		adds	r3, r3, #1
+ 327 0112 87F84F30 		strb	r3, [r7, #79]
+ 328              	.L18:
+ 115:limits.c      ****     // Initialize step pin masks
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 9
+
+
+ 329              		.loc 1 115 0 is_stmt 0 discriminator 1
+ 330 0116 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 331 011a 022B     		cmp	r3, #2
+ 332 011c 8FD9     		bls	.L25
+ 126:limits.c      ****     }
+ 127:limits.c      ****   }
+ 128:limits.c      **** 
+ 129:limits.c      ****   // Set search mode with approach at seek rate to quickly engage the specified cycle_mask limit sw
+ 130:limits.c      ****   bool approach = true;
+ 333              		.loc 1 130 0 is_stmt 1
+ 334 011e 0123     		movs	r3, #1
+ 335 0120 87F84E30 		strb	r3, [r7, #78]
+ 131:limits.c      ****   float homing_rate = settings.homing_seek_rate;
+ 336              		.loc 1 131 0
+ 337 0124 7E4B     		ldr	r3, .L64+4
+ 338 0126 1B6D     		ldr	r3, [r3, #80]	@ float
+ 339 0128 BB64     		str	r3, [r7, #72]	@ float
+ 340              	.L52:
+ 132:limits.c      **** 
+ 133:limits.c      ****   uint8_t limit_state, axislock, n_active_axis;
+ 134:limits.c      ****   do {
+ 135:limits.c      **** 
+ 136:limits.c      ****     system_convert_array_steps_to_mpos(target,sys_position);
+ 341              		.loc 1 136 0
+ 342 012a 07F10C03 		add	r3, r7, #12
+ 343 012e 7E49     		ldr	r1, .L64+12
+ 344 0130 1846     		mov	r0, r3
+ 345 0132 FFF7FEFF 		bl	system_convert_array_steps_to_mpos
+ 137:limits.c      **** 
+ 138:limits.c      ****     // Initialize and declare variables needed for homing routine.
+ 139:limits.c      ****     axislock = 0;
+ 346              		.loc 1 139 0
+ 347 0136 0023     		movs	r3, #0
+ 348 0138 87F84730 		strb	r3, [r7, #71]
+ 140:limits.c      ****     n_active_axis = 0;
+ 349              		.loc 1 140 0
+ 350 013c 0023     		movs	r3, #0
+ 351 013e 87F84630 		strb	r3, [r7, #70]
+ 141:limits.c      ****     for (idx=0; idx<N_AXIS; idx++) {
+ 352              		.loc 1 141 0
+ 353 0142 0023     		movs	r3, #0
+ 354 0144 87F84F30 		strb	r3, [r7, #79]
+ 355 0148 80E0     		b	.L26
+ 356              	.L36:
+ 142:limits.c      ****       // Set target location for active axes and setup computation for homing rate.
+ 143:limits.c      ****       if (bit_istrue(cycle_mask,bit(idx))) {
+ 357              		.loc 1 143 0
+ 358 014a FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 359 014c 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 360 0150 42FA03F3 		asr	r3, r2, r3
+ 361 0154 03F00103 		and	r3, r3, #1
+ 362 0158 002B     		cmp	r3, #0
+ 363 015a 72D0     		beq	.L27
+ 144:limits.c      ****         n_active_axis++;
+ 364              		.loc 1 144 0
+ 365 015c 97F84630 		ldrb	r3, [r7, #70]	@ zero_extendqisi2
+ 366 0160 0133     		adds	r3, r3, #1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 10
+
+
+ 367 0162 87F84630 		strb	r3, [r7, #70]
+ 145:limits.c      ****         #ifdef COREXY
+ 146:limits.c      ****           if (idx == X_AXIS) {
+ 368              		.loc 1 146 0
+ 369 0166 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 370 016a 002B     		cmp	r3, #0
+ 371 016c 0BD1     		bne	.L28
+ 372              	.LBB2:
+ 147:limits.c      ****             int32_t axis_position = system_convert_corexy_to_y_axis_steps(sys_position);
+ 373              		.loc 1 147 0
+ 374 016e 6E48     		ldr	r0, .L64+12
+ 375 0170 FFF7FEFF 		bl	system_convert_corexy_to_y_axis_steps
+ 376 0174 B863     		str	r0, [r7, #56]
+ 148:limits.c      ****             sys_position[A_MOTOR] = axis_position;
+ 377              		.loc 1 148 0
+ 378 0176 6C4A     		ldr	r2, .L64+12
+ 379 0178 BB6B     		ldr	r3, [r7, #56]
+ 380 017a 1360     		str	r3, [r2]
+ 149:limits.c      ****             sys_position[B_MOTOR] = -axis_position;
+ 381              		.loc 1 149 0
+ 382 017c BB6B     		ldr	r3, [r7, #56]
+ 383 017e 5B42     		negs	r3, r3
+ 384 0180 694A     		ldr	r2, .L64+12
+ 385 0182 5360     		str	r3, [r2, #4]
+ 386              	.LBE2:
+ 387 0184 12E0     		b	.L29
+ 388              	.L28:
+ 150:limits.c      ****           } else if (idx == Y_AXIS) {
+ 389              		.loc 1 150 0
+ 390 0186 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 391 018a 012B     		cmp	r3, #1
+ 392 018c 0BD1     		bne	.L30
+ 393              	.LBB3:
+ 151:limits.c      ****             int32_t axis_position = system_convert_corexy_to_x_axis_steps(sys_position);
+ 394              		.loc 1 151 0
+ 395 018e 6648     		ldr	r0, .L64+12
+ 396 0190 FFF7FEFF 		bl	system_convert_corexy_to_x_axis_steps
+ 397 0194 7863     		str	r0, [r7, #52]
+ 152:limits.c      ****             sys_position[A_MOTOR] = sys_position[B_MOTOR] = axis_position;
+ 398              		.loc 1 152 0
+ 399 0196 644A     		ldr	r2, .L64+12
+ 400 0198 7B6B     		ldr	r3, [r7, #52]
+ 401 019a 5360     		str	r3, [r2, #4]
+ 402 019c 624B     		ldr	r3, .L64+12
+ 403 019e 5B68     		ldr	r3, [r3, #4]
+ 404 01a0 614A     		ldr	r2, .L64+12
+ 405 01a2 1360     		str	r3, [r2]
+ 406              	.LBE3:
+ 407 01a4 02E0     		b	.L29
+ 408              	.L30:
+ 153:limits.c      ****           } else {
+ 154:limits.c      ****             sys_position[Z_AXIS] = 0;
+ 409              		.loc 1 154 0
+ 410 01a6 604B     		ldr	r3, .L64+12
+ 411 01a8 0022     		movs	r2, #0
+ 412 01aa 9A60     		str	r2, [r3, #8]
+ 413              	.L29:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 11
+
+
+ 155:limits.c      ****           }
+ 156:limits.c      ****         #else
+ 157:limits.c      ****           sys_position[idx] = 0;
+ 158:limits.c      ****         #endif
+ 159:limits.c      ****         // Set target direction based on cycle mask and homing cycle approach state.
+ 160:limits.c      ****         // NOTE: This happens to compile smaller than any other implementation tried.
+ 161:limits.c      ****         if (bit_istrue(settings.homing_dir_mask,bit(idx))) {
+ 414              		.loc 1 161 0
+ 415 01ac 5C4B     		ldr	r3, .L64+4
+ 416 01ae 93F84930 		ldrb	r3, [r3, #73]	@ zero_extendqisi2
+ 417 01b2 1A46     		mov	r2, r3
+ 418 01b4 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 419 01b8 42FA03F3 		asr	r3, r2, r3
+ 420 01bc 03F00103 		and	r3, r3, #1
+ 421 01c0 002B     		cmp	r3, #0
+ 422 01c2 19D0     		beq	.L31
+ 162:limits.c      ****           if (approach) { target[idx] = -max_travel; }
+ 423              		.loc 1 162 0
+ 424 01c4 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 425 01c8 002B     		cmp	r3, #0
+ 426 01ca 0BD0     		beq	.L32
+ 427              		.loc 1 162 0 is_stmt 0 discriminator 1
+ 428 01cc 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 429 01d0 3A6D     		ldr	r2, [r7, #80]
+ 430 01d2 82F00042 		eor	r2, r2, #-2147483648
+ 431 01d6 9B00     		lsls	r3, r3, #2
+ 432 01d8 07F15801 		add	r1, r7, #88
+ 433 01dc 0B44     		add	r3, r3, r1
+ 434 01de 43F84C2C 		str	r2, [r3, #-76]	@ float
+ 435 01e2 22E0     		b	.L34
+ 436              	.L32:
+ 163:limits.c      ****           else { target[idx] = max_travel; }
+ 437              		.loc 1 163 0 is_stmt 1
+ 438 01e4 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 439 01e8 9B00     		lsls	r3, r3, #2
+ 440 01ea 07F15802 		add	r2, r7, #88
+ 441 01ee 1344     		add	r3, r3, r2
+ 442 01f0 3A6D     		ldr	r2, [r7, #80]	@ float
+ 443 01f2 43F84C2C 		str	r2, [r3, #-76]	@ float
+ 444 01f6 18E0     		b	.L34
+ 445              	.L31:
+ 164:limits.c      ****         } else {
+ 165:limits.c      ****           if (approach) { target[idx] = max_travel; }
+ 446              		.loc 1 165 0
+ 447 01f8 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 448 01fc 002B     		cmp	r3, #0
+ 449 01fe 09D0     		beq	.L35
+ 450              		.loc 1 165 0 is_stmt 0 discriminator 1
+ 451 0200 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 452 0204 9B00     		lsls	r3, r3, #2
+ 453 0206 07F15802 		add	r2, r7, #88
+ 454 020a 1344     		add	r3, r3, r2
+ 455 020c 3A6D     		ldr	r2, [r7, #80]	@ float
+ 456 020e 43F84C2C 		str	r2, [r3, #-76]	@ float
+ 457 0212 0AE0     		b	.L34
+ 458              	.L35:
+ 166:limits.c      ****           else { target[idx] = -max_travel; }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 12
+
+
+ 459              		.loc 1 166 0 is_stmt 1
+ 460 0214 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 461 0218 3A6D     		ldr	r2, [r7, #80]
+ 462 021a 82F00042 		eor	r2, r2, #-2147483648
+ 463 021e 9B00     		lsls	r3, r3, #2
+ 464 0220 07F15801 		add	r1, r7, #88
+ 465 0224 0B44     		add	r3, r3, r1
+ 466 0226 43F84C2C 		str	r2, [r3, #-76]	@ float
+ 467              	.L34:
+ 167:limits.c      ****         }
+ 168:limits.c      ****         // Apply axislock to the step port pins active in this cycle.
+ 169:limits.c      ****         axislock |= step_pin[idx];
+ 468              		.loc 1 169 0
+ 469 022a 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 470 022e 07F15802 		add	r2, r7, #88
+ 471 0232 1344     		add	r3, r3, r2
+ 472 0234 13F8402C 		ldrb	r2, [r3, #-64]	@ zero_extendqisi2
+ 473 0238 97F84730 		ldrb	r3, [r7, #71]
+ 474 023c 1343     		orrs	r3, r3, r2
+ 475 023e 87F84730 		strb	r3, [r7, #71]
+ 476              	.L27:
+ 141:limits.c      ****       // Set target location for active axes and setup computation for homing rate.
+ 477              		.loc 1 141 0 discriminator 2
+ 478 0242 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 479 0246 0133     		adds	r3, r3, #1
+ 480 0248 87F84F30 		strb	r3, [r7, #79]
+ 481              	.L26:
+ 141:limits.c      ****       // Set target location for active axes and setup computation for homing rate.
+ 482              		.loc 1 141 0 is_stmt 0 discriminator 1
+ 483 024c 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 484 0250 022B     		cmp	r3, #2
+ 485 0252 7FF67AAF 		bls	.L36
+ 170:limits.c      ****       }
+ 171:limits.c      **** 
+ 172:limits.c      ****     }
+ 173:limits.c      ****     homing_rate *= sqrt(n_active_axis); // [sqrt(N_AXIS)] Adjust so individual axes all move at hom
+ 486              		.loc 1 173 0 is_stmt 1
+ 487 0256 97F84630 		ldrb	r3, [r7, #70]	@ zero_extendqisi2
+ 488 025a 1846     		mov	r0, r3
+ 489 025c FFF7FEFF 		bl	__aeabi_ui2d
+ 490 0260 0346     		mov	r3, r0
+ 491 0262 0C46     		mov	r4, r1
+ 492 0264 1846     		mov	r0, r3
+ 493 0266 2146     		mov	r1, r4
+ 494 0268 FFF7FEFF 		bl	sqrt
+ 495 026c 0446     		mov	r4, r0
+ 496 026e 0D46     		mov	r5, r1
+ 497 0270 B86C     		ldr	r0, [r7, #72]	@ float
+ 498 0272 FFF7FEFF 		bl	__aeabi_f2d
+ 499 0276 2246     		mov	r2, r4
+ 500 0278 2B46     		mov	r3, r5
+ 501 027a FFF7FEFF 		bl	__aeabi_dmul
+ 502 027e 0346     		mov	r3, r0
+ 503 0280 0C46     		mov	r4, r1
+ 504 0282 1846     		mov	r0, r3
+ 505 0284 2146     		mov	r1, r4
+ 506 0286 FFF7FEFF 		bl	__aeabi_d2f
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 13
+
+
+ 507 028a 0346     		mov	r3, r0
+ 508 028c BB64     		str	r3, [r7, #72]	@ float
+ 174:limits.c      ****     sys.homing_axis_lock = axislock;
+ 509              		.loc 1 174 0
+ 510 028e 234A     		ldr	r2, .L64
+ 511 0290 97F84730 		ldrb	r3, [r7, #71]
+ 512 0294 9371     		strb	r3, [r2, #6]
+ 175:limits.c      **** 
+ 176:limits.c      ****     // Perform homing cycle. Planner buffer should be empty, as required to initiate the homing cyc
+ 177:limits.c      ****     pl_data->feed_rate = homing_rate; // Set current homing rate.
+ 513              		.loc 1 177 0
+ 514 0296 FB6B     		ldr	r3, [r7, #60]
+ 515 0298 BA6C     		ldr	r2, [r7, #72]	@ float
+ 516 029a 1A60     		str	r2, [r3]	@ float
+ 178:limits.c      ****     plan_buffer_line(target, pl_data); // Bypass mc_line(). Directly plan homing motion.
+ 517              		.loc 1 178 0
+ 518 029c 07F10C03 		add	r3, r7, #12
+ 519 02a0 F96B     		ldr	r1, [r7, #60]
+ 520 02a2 1846     		mov	r0, r3
+ 521 02a4 FFF7FEFF 		bl	plan_buffer_line
+ 179:limits.c      **** 
+ 180:limits.c      ****     sys.step_control = STEP_CONTROL_EXECUTE_SYS_MOTION; // Set to execute homing motion and clear e
+ 522              		.loc 1 180 0
+ 523 02a8 1C4B     		ldr	r3, .L64
+ 524 02aa 0422     		movs	r2, #4
+ 525 02ac 1A71     		strb	r2, [r3, #4]
+ 181:limits.c      ****     st_prep_buffer(); // Prep and fill segment buffer from newly planned block.
+ 526              		.loc 1 181 0
+ 527 02ae FFF7FEFF 		bl	st_prep_buffer
+ 182:limits.c      ****     st_wake_up(); // Initiate motion
+ 528              		.loc 1 182 0
+ 529 02b2 FFF7FEFF 		bl	st_wake_up
+ 530              	.L49:
+ 183:limits.c      ****     do {
+ 184:limits.c      ****       if (approach) {
+ 531              		.loc 1 184 0
+ 532 02b6 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 533 02ba 002B     		cmp	r3, #0
+ 534 02bc 50D0     		beq	.L37
+ 185:limits.c      ****         // Check limit state. Lock out cycle axes when they change.
+ 186:limits.c      ****         limit_state = limits_get_state();
+ 535              		.loc 1 186 0
+ 536 02be FFF7FEFF 		bl	limits_get_state
+ 537 02c2 0346     		mov	r3, r0
+ 538 02c4 87F83330 		strb	r3, [r7, #51]
+ 187:limits.c      ****         for (idx=0; idx<N_AXIS; idx++) {
+ 539              		.loc 1 187 0
+ 540 02c8 0023     		movs	r3, #0
+ 541 02ca 87F84F30 		strb	r3, [r7, #79]
+ 542 02ce 3FE0     		b	.L38
+ 543              	.L41:
+ 188:limits.c      ****           if (axislock & step_pin[idx]) {
+ 544              		.loc 1 188 0
+ 545 02d0 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 546 02d4 07F15802 		add	r2, r7, #88
+ 547 02d8 1344     		add	r3, r3, r2
+ 548 02da 13F8402C 		ldrb	r2, [r3, #-64]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 14
+
+
+ 549 02de 97F84730 		ldrb	r3, [r7, #71]
+ 550 02e2 1340     		ands	r3, r3, r2
+ 551 02e4 DBB2     		uxtb	r3, r3
+ 552 02e6 002B     		cmp	r3, #0
+ 553 02e8 2DD0     		beq	.L39
+ 189:limits.c      ****             if (limit_state & (1 << idx)) {
+ 554              		.loc 1 189 0
+ 555 02ea 97F83320 		ldrb	r2, [r7, #51]	@ zero_extendqisi2
+ 556 02ee 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 557 02f2 42FA03F3 		asr	r3, r2, r3
+ 558 02f6 03F00103 		and	r3, r3, #1
+ 559 02fa 002B     		cmp	r3, #0
+ 560 02fc 23D0     		beq	.L39
+ 190:limits.c      ****               #ifdef COREXY
+ 191:limits.c      ****                 if (idx==Z_AXIS) { axislock &= ~(step_pin[Z_AXIS]); }
+ 561              		.loc 1 191 0
+ 562 02fe 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 563 0302 022B     		cmp	r3, #2
+ 564 0304 12D1     		bne	.L40
+ 565              		.loc 1 191 0 is_stmt 0 discriminator 1
+ 566 0306 BB7E     		ldrb	r3, [r7, #26]	@ zero_extendqisi2
+ 567 0308 5BB2     		sxtb	r3, r3
+ 568 030a DB43     		mvns	r3, r3
+ 569 030c 5AB2     		sxtb	r2, r3
+ 570 030e 97F94730 		ldrsb	r3, [r7, #71]
+ 571 0312 1340     		ands	r3, r3, r2
+ 572 0314 5BB2     		sxtb	r3, r3
+ 573 0316 87F84730 		strb	r3, [r7, #71]
+ 574 031a 14E0     		b	.L39
+ 575              	.L65:
+ 576              		.align	2
+ 577              	.L64:
+ 578 031c 00000000 		.word	sys
+ 579 0320 00000000 		.word	settings
+ 580 0324 0000F8BF 		.word	-1074266112
+ 581 0328 00000000 		.word	sys_position
+ 582              	.L40:
+ 192:limits.c      ****                 else { axislock &= ~(step_pin[A_MOTOR]|step_pin[B_MOTOR]); }
+ 583              		.loc 1 192 0 is_stmt 1
+ 584 032c 3A7E     		ldrb	r2, [r7, #24]	@ zero_extendqisi2
+ 585 032e 7B7E     		ldrb	r3, [r7, #25]	@ zero_extendqisi2
+ 586 0330 1343     		orrs	r3, r3, r2
+ 587 0332 DBB2     		uxtb	r3, r3
+ 588 0334 5BB2     		sxtb	r3, r3
+ 589 0336 DB43     		mvns	r3, r3
+ 590 0338 5AB2     		sxtb	r2, r3
+ 591 033a 97F94730 		ldrsb	r3, [r7, #71]
+ 592 033e 1340     		ands	r3, r3, r2
+ 593 0340 5BB2     		sxtb	r3, r3
+ 594 0342 87F84730 		strb	r3, [r7, #71]
+ 595              	.L39:
+ 187:limits.c      ****           if (axislock & step_pin[idx]) {
+ 596              		.loc 1 187 0 discriminator 2
+ 597 0346 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 598 034a 0133     		adds	r3, r3, #1
+ 599 034c 87F84F30 		strb	r3, [r7, #79]
+ 600              	.L38:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 15
+
+
+ 187:limits.c      ****           if (axislock & step_pin[idx]) {
+ 601              		.loc 1 187 0 is_stmt 0 discriminator 1
+ 602 0350 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 603 0354 022B     		cmp	r3, #2
+ 604 0356 BBD9     		bls	.L41
+ 193:limits.c      ****               #else
+ 194:limits.c      ****                 axislock &= ~(step_pin[idx]);
+ 195:limits.c      ****               #endif
+ 196:limits.c      ****             }
+ 197:limits.c      ****           }
+ 198:limits.c      ****         }
+ 199:limits.c      ****         sys.homing_axis_lock = axislock;
+ 605              		.loc 1 199 0 is_stmt 1
+ 606 0358 904A     		ldr	r2, .L66
+ 607 035a 97F84730 		ldrb	r3, [r7, #71]
+ 608 035e 9371     		strb	r3, [r2, #6]
+ 609              	.L37:
+ 200:limits.c      ****       }
+ 201:limits.c      **** 
+ 202:limits.c      ****       st_prep_buffer(); // Check and prep segment buffer. NOTE: Should take no longer than 200us.
+ 610              		.loc 1 202 0
+ 611 0360 FFF7FEFF 		bl	st_prep_buffer
+ 203:limits.c      **** 
+ 204:limits.c      ****       // Exit routines: No time to run protocol_execute_realtime() in this loop.
+ 205:limits.c      ****       if (sys_rt_exec_state & (EXEC_SAFETY_DOOR | EXEC_RESET | EXEC_CYCLE_STOP)) {
+ 612              		.loc 1 205 0
+ 613 0364 8E4B     		ldr	r3, .L66+4
+ 614 0366 1B78     		ldrb	r3, [r3]
+ 615 0368 DBB2     		uxtb	r3, r3
+ 616 036a 03F03403 		and	r3, r3, #52
+ 617 036e 002B     		cmp	r3, #0
+ 618 0370 43D0     		beq	.L42
+ 619              	.LBB4:
+ 206:limits.c      ****         uint8_t rt_exec = sys_rt_exec_state;
+ 620              		.loc 1 206 0
+ 621 0372 8B4B     		ldr	r3, .L66+4
+ 622 0374 1B78     		ldrb	r3, [r3]
+ 623 0376 87F83230 		strb	r3, [r7, #50]
+ 207:limits.c      ****         // Homing failure condition: Reset issued during cycle.
+ 208:limits.c      ****         if (rt_exec & EXEC_RESET) { system_set_exec_alarm(EXEC_ALARM_HOMING_FAIL_RESET); }
+ 624              		.loc 1 208 0
+ 625 037a 97F83230 		ldrb	r3, [r7, #50]	@ zero_extendqisi2
+ 626 037e 03F01003 		and	r3, r3, #16
+ 627 0382 002B     		cmp	r3, #0
+ 628 0384 02D0     		beq	.L43
+ 629              		.loc 1 208 0 is_stmt 0 discriminator 1
+ 630 0386 0620     		movs	r0, #6
+ 631 0388 FFF7FEFF 		bl	system_set_exec_alarm
+ 632              	.L43:
+ 209:limits.c      ****         // Homing failure condition: Safety door was opened.
+ 210:limits.c      ****         if (rt_exec & EXEC_SAFETY_DOOR) { system_set_exec_alarm(EXEC_ALARM_HOMING_FAIL_DOOR); }
+ 633              		.loc 1 210 0 is_stmt 1
+ 634 038c 97F83230 		ldrb	r3, [r7, #50]	@ zero_extendqisi2
+ 635 0390 03F02003 		and	r3, r3, #32
+ 636 0394 002B     		cmp	r3, #0
+ 637 0396 02D0     		beq	.L44
+ 638              		.loc 1 210 0 is_stmt 0 discriminator 1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 16
+
+
+ 639 0398 0720     		movs	r0, #7
+ 640 039a FFF7FEFF 		bl	system_set_exec_alarm
+ 641              	.L44:
+ 211:limits.c      ****         // Homing failure condition: Limit switch still engaged after pull-off motion
+ 212:limits.c      ****         if (!approach && (limits_get_state() & cycle_mask)) { system_set_exec_alarm(EXEC_ALARM_HOMI
+ 642              		.loc 1 212 0 is_stmt 1
+ 643 039e 97F84E30 		ldrb	r3, [r7, #78]
+ 644 03a2 83F00103 		eor	r3, r3, #1
+ 645 03a6 DBB2     		uxtb	r3, r3
+ 646 03a8 002B     		cmp	r3, #0
+ 647 03aa 0BD0     		beq	.L45
+ 648              		.loc 1 212 0 is_stmt 0 discriminator 1
+ 649 03ac FFF7FEFF 		bl	limits_get_state
+ 650 03b0 0346     		mov	r3, r0
+ 651 03b2 1A46     		mov	r2, r3
+ 652 03b4 FB79     		ldrb	r3, [r7, #7]
+ 653 03b6 1340     		ands	r3, r3, r2
+ 654 03b8 DBB2     		uxtb	r3, r3
+ 655 03ba 002B     		cmp	r3, #0
+ 656 03bc 02D0     		beq	.L45
+ 657              		.loc 1 212 0 discriminator 2
+ 658 03be 0820     		movs	r0, #8
+ 659 03c0 FFF7FEFF 		bl	system_set_exec_alarm
+ 660              	.L45:
+ 213:limits.c      ****         // Homing failure condition: Limit switch not found during approach.
+ 214:limits.c      ****         if (approach && (rt_exec & EXEC_CYCLE_STOP)) { system_set_exec_alarm(EXEC_ALARM_HOMING_FAIL
+ 661              		.loc 1 214 0 is_stmt 1
+ 662 03c4 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 663 03c8 002B     		cmp	r3, #0
+ 664 03ca 08D0     		beq	.L46
+ 665              		.loc 1 214 0 is_stmt 0 discriminator 1
+ 666 03cc 97F83230 		ldrb	r3, [r7, #50]	@ zero_extendqisi2
+ 667 03d0 03F00403 		and	r3, r3, #4
+ 668 03d4 002B     		cmp	r3, #0
+ 669 03d6 02D0     		beq	.L46
+ 670              		.loc 1 214 0 discriminator 2
+ 671 03d8 0920     		movs	r0, #9
+ 672 03da FFF7FEFF 		bl	system_set_exec_alarm
+ 673              	.L46:
+ 215:limits.c      ****         if (sys_rt_exec_alarm) {
+ 674              		.loc 1 215 0 is_stmt 1
+ 675 03de 714B     		ldr	r3, .L66+8
+ 676 03e0 1B78     		ldrb	r3, [r3]
+ 677 03e2 DBB2     		uxtb	r3, r3
+ 678 03e4 002B     		cmp	r3, #0
+ 679 03e6 04D0     		beq	.L47
+ 216:limits.c      ****           mc_reset(); // Stop motors, if they are running.
+ 680              		.loc 1 216 0
+ 681 03e8 FFF7FEFF 		bl	mc_reset
+ 217:limits.c      ****           protocol_execute_realtime();
+ 682              		.loc 1 217 0
+ 683 03ec FFF7FEFF 		bl	protocol_execute_realtime
+ 218:limits.c      ****           return;
+ 684              		.loc 1 218 0
+ 685 03f0 D1E0     		b	.L15
+ 686              	.L47:
+ 219:limits.c      ****         } else {
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 17
+
+
+ 220:limits.c      ****           // Pull-off motion complete. Disable CYCLE_STOP from executing.
+ 221:limits.c      ****           system_clear_exec_state_flag(EXEC_CYCLE_STOP);
+ 687              		.loc 1 221 0
+ 688 03f2 0420     		movs	r0, #4
+ 689 03f4 FFF7FEFF 		bl	system_clear_exec_state_flag
+ 222:limits.c      ****           break;
+ 690              		.loc 1 222 0
+ 691 03f8 07E0     		b	.L48
+ 692              	.L42:
+ 693              	.LBE4:
+ 223:limits.c      ****         }
+ 224:limits.c      ****       }
+ 225:limits.c      **** 
+ 226:limits.c      ****     } while (STEP_MASK & axislock);
+ 694              		.loc 1 226 0
+ 695 03fa 97F84730 		ldrb	r3, [r7, #71]
+ 696 03fe 03F03F03 		and	r3, r3, #63
+ 697 0402 DBB2     		uxtb	r3, r3
+ 698 0404 002B     		cmp	r3, #0
+ 699 0406 7FF456AF 		bne	.L49
+ 700              	.L48:
+ 227:limits.c      **** 
+ 228:limits.c      ****     st_reset(); // Immediately force kill steppers and reset step segment buffer.
+ 701              		.loc 1 228 0
+ 702 040a FFF7FEFF 		bl	st_reset
+ 229:limits.c      ****     delay_ms(settings.homing_debounce_delay); // Delay to allow transient dynamics to dissipate.
+ 703              		.loc 1 229 0
+ 704 040e 664B     		ldr	r3, .L66+12
+ 705 0410 B3F85430 		ldrh	r3, [r3, #84]
+ 706 0414 1846     		mov	r0, r3
+ 707 0416 FFF7FEFF 		bl	CyDelay
+ 230:limits.c      **** 
+ 231:limits.c      ****     // Reverse direction and reset homing rate for locate cycle(s).
+ 232:limits.c      ****     approach = !approach;
+ 708              		.loc 1 232 0
+ 709 041a 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 710 041e 002B     		cmp	r3, #0
+ 711 0420 14BF     		ite	ne
+ 712 0422 0123     		movne	r3, #1
+ 713 0424 0023     		moveq	r3, #0
+ 714 0426 DBB2     		uxtb	r3, r3
+ 715 0428 83F00103 		eor	r3, r3, #1
+ 716 042c DBB2     		uxtb	r3, r3
+ 717 042e 87F84E30 		strb	r3, [r7, #78]
+ 718 0432 97F84E30 		ldrb	r3, [r7, #78]
+ 719 0436 03F00103 		and	r3, r3, #1
+ 720 043a 87F84E30 		strb	r3, [r7, #78]
+ 233:limits.c      **** 
+ 234:limits.c      ****     // After first cycle, homing enters locating phase. Shorten search to pull-off distance.
+ 235:limits.c      ****     if (approach) {
+ 721              		.loc 1 235 0
+ 722 043e 97F84E30 		ldrb	r3, [r7, #78]	@ zero_extendqisi2
+ 723 0442 002B     		cmp	r3, #0
+ 724 0444 0BD0     		beq	.L50
+ 236:limits.c      ****       max_travel = settings.homing_pulloff*HOMING_AXIS_LOCATE_SCALAR;
+ 725              		.loc 1 236 0
+ 726 0446 584B     		ldr	r3, .L66+12
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 18
+
+
+ 727 0448 9B6D     		ldr	r3, [r3, #88]	@ float
+ 728 044a 5849     		ldr	r1, .L66+16
+ 729 044c 1846     		mov	r0, r3
+ 730 044e FFF7FEFF 		bl	__aeabi_fmul
+ 731 0452 0346     		mov	r3, r0
+ 732 0454 3B65     		str	r3, [r7, #80]	@ float
+ 237:limits.c      ****       homing_rate = settings.homing_feed_rate;
+ 733              		.loc 1 237 0
+ 734 0456 544B     		ldr	r3, .L66+12
+ 735 0458 DB6C     		ldr	r3, [r3, #76]	@ float
+ 736 045a BB64     		str	r3, [r7, #72]	@ float
+ 737 045c 05E0     		b	.L51
+ 738              	.L50:
+ 238:limits.c      ****     } else {
+ 239:limits.c      ****       max_travel = settings.homing_pulloff;
+ 739              		.loc 1 239 0
+ 740 045e 524B     		ldr	r3, .L66+12
+ 741 0460 9B6D     		ldr	r3, [r3, #88]	@ float
+ 742 0462 3B65     		str	r3, [r7, #80]	@ float
+ 240:limits.c      ****       homing_rate = settings.homing_seek_rate;
+ 743              		.loc 1 240 0
+ 744 0464 504B     		ldr	r3, .L66+12
+ 745 0466 1B6D     		ldr	r3, [r3, #80]	@ float
+ 746 0468 BB64     		str	r3, [r7, #72]	@ float
+ 747              	.L51:
+ 241:limits.c      ****     }
+ 242:limits.c      **** 
+ 243:limits.c      ****   } while (n_cycle-- > 0);
+ 748              		.loc 1 243 0
+ 749 046a 97F85730 		ldrb	r3, [r7, #87]	@ zero_extendqisi2
+ 750 046e 5A1E     		subs	r2, r3, #1
+ 751 0470 87F85720 		strb	r2, [r7, #87]
+ 752 0474 002B     		cmp	r3, #0
+ 753 0476 7FF458AE 		bne	.L52
+ 244:limits.c      **** 
+ 245:limits.c      ****   // The active cycle axes should now be homed and machine limits have been located. By
+ 246:limits.c      ****   // default, Grbl defines machine space as all negative, as do most CNCs. Since limit switches
+ 247:limits.c      ****   // can be on either side of an axes, check and set axes machine zero appropriately. Also,
+ 248:limits.c      ****   // set up pull-off maneuver from axes limit switches that have been homed. This provides
+ 249:limits.c      ****   // some initial clearance off the switches and should also help prevent them from falsely
+ 250:limits.c      ****   // triggering when hard limits are enabled or when more than one axes shares a limit pin.
+ 251:limits.c      ****   int32_t set_axis_position;
+ 252:limits.c      ****   // Set machine positions for homed limit switches. Don't update non-homed axes.
+ 253:limits.c      ****   for (idx=0; idx<N_AXIS; idx++) {
+ 754              		.loc 1 253 0
+ 755 047a 0023     		movs	r3, #0
+ 756 047c 87F84F30 		strb	r3, [r7, #79]
+ 757 0480 7FE0     		b	.L53
+ 758              	.L59:
+ 254:limits.c      ****     // NOTE: settings.max_travel[] is stored as a negative value.
+ 255:limits.c      ****     if (cycle_mask & bit(idx)) {
+ 759              		.loc 1 255 0
+ 760 0482 FA79     		ldrb	r2, [r7, #7]	@ zero_extendqisi2
+ 761 0484 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 762 0488 42FA03F3 		asr	r3, r2, r3
+ 763 048c 03F00103 		and	r3, r3, #1
+ 764 0490 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 19
+
+
+ 765 0492 71D0     		beq	.L54
+ 256:limits.c      ****       #ifdef HOMING_FORCE_SET_ORIGIN
+ 257:limits.c      ****         set_axis_position = 0;
+ 258:limits.c      ****       #else
+ 259:limits.c      ****         if ( bit_istrue(settings.homing_dir_mask,bit(idx)) ) {
+ 766              		.loc 1 259 0
+ 767 0494 444B     		ldr	r3, .L66+12
+ 768 0496 93F84930 		ldrb	r3, [r3, #73]	@ zero_extendqisi2
+ 769 049a 1A46     		mov	r2, r3
+ 770 049c 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 771 04a0 42FA03F3 		asr	r3, r2, r3
+ 772 04a4 03F00103 		and	r3, r3, #1
+ 773 04a8 002B     		cmp	r3, #0
+ 774 04aa 22D0     		beq	.L55
+ 260:limits.c      ****           set_axis_position = lround((settings.max_travel[idx]+settings.homing_pulloff)*settings.st
+ 775              		.loc 1 260 0
+ 776 04ac 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 777 04b0 3D4A     		ldr	r2, .L66+12
+ 778 04b2 0833     		adds	r3, r3, #8
+ 779 04b4 9B00     		lsls	r3, r3, #2
+ 780 04b6 1344     		add	r3, r3, r2
+ 781 04b8 5A68     		ldr	r2, [r3, #4]	@ float
+ 782 04ba 3B4B     		ldr	r3, .L66+12
+ 783 04bc 9B6D     		ldr	r3, [r3, #88]	@ float
+ 784 04be 1946     		mov	r1, r3
+ 785 04c0 1046     		mov	r0, r2
+ 786 04c2 FFF7FEFF 		bl	__aeabi_fadd
+ 787 04c6 0346     		mov	r3, r0
+ 788 04c8 1846     		mov	r0, r3
+ 789 04ca 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 790 04ce 364A     		ldr	r2, .L66+12
+ 791 04d0 52F82330 		ldr	r3, [r2, r3, lsl #2]	@ float
+ 792 04d4 1946     		mov	r1, r3
+ 793 04d6 FFF7FEFF 		bl	__aeabi_fmul
+ 794 04da 0346     		mov	r3, r0
+ 795 04dc 1846     		mov	r0, r3
+ 796 04de FFF7FEFF 		bl	__aeabi_f2d
+ 797 04e2 0346     		mov	r3, r0
+ 798 04e4 0C46     		mov	r4, r1
+ 799 04e6 1846     		mov	r0, r3
+ 800 04e8 2146     		mov	r1, r4
+ 801 04ea FFF7FEFF 		bl	lround
+ 802 04ee 3864     		str	r0, [r7, #64]
+ 803 04f0 16E0     		b	.L56
+ 804              	.L55:
+ 261:limits.c      ****         } else {
+ 262:limits.c      ****           set_axis_position = lround(-settings.homing_pulloff*settings.steps_per_mm[idx]);
+ 805              		.loc 1 262 0
+ 806 04f2 2D4B     		ldr	r3, .L66+12
+ 807 04f4 9B6D     		ldr	r3, [r3, #88]	@ float
+ 808 04f6 83F00040 		eor	r0, r3, #-2147483648
+ 809 04fa 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 810 04fe 2A4A     		ldr	r2, .L66+12
+ 811 0500 52F82330 		ldr	r3, [r2, r3, lsl #2]	@ float
+ 812 0504 1946     		mov	r1, r3
+ 813 0506 FFF7FEFF 		bl	__aeabi_fmul
+ 814 050a 0346     		mov	r3, r0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 20
+
+
+ 815 050c 1846     		mov	r0, r3
+ 816 050e FFF7FEFF 		bl	__aeabi_f2d
+ 817 0512 0346     		mov	r3, r0
+ 818 0514 0C46     		mov	r4, r1
+ 819 0516 1846     		mov	r0, r3
+ 820 0518 2146     		mov	r1, r4
+ 821 051a FFF7FEFF 		bl	lround
+ 822 051e 3864     		str	r0, [r7, #64]
+ 823              	.L56:
+ 263:limits.c      ****         }
+ 264:limits.c      ****       #endif
+ 265:limits.c      **** 
+ 266:limits.c      ****       #ifdef COREXY
+ 267:limits.c      ****         if (idx==X_AXIS) {
+ 824              		.loc 1 267 0
+ 825 0520 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 826 0524 002B     		cmp	r3, #0
+ 827 0526 0ED1     		bne	.L57
+ 828              	.LBB5:
+ 268:limits.c      ****           int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys_position);
+ 829              		.loc 1 268 0
+ 830 0528 2148     		ldr	r0, .L66+20
+ 831 052a FFF7FEFF 		bl	system_convert_corexy_to_y_axis_steps
+ 832 052e F862     		str	r0, [r7, #44]
+ 269:limits.c      ****           sys_position[A_MOTOR] = set_axis_position + off_axis_position;
+ 833              		.loc 1 269 0
+ 834 0530 3A6C     		ldr	r2, [r7, #64]
+ 835 0532 FB6A     		ldr	r3, [r7, #44]
+ 836 0534 1344     		add	r3, r3, r2
+ 837 0536 1E4A     		ldr	r2, .L66+20
+ 838 0538 1360     		str	r3, [r2]
+ 270:limits.c      ****           sys_position[B_MOTOR] = set_axis_position - off_axis_position;
+ 839              		.loc 1 270 0
+ 840 053a 3A6C     		ldr	r2, [r7, #64]
+ 841 053c FB6A     		ldr	r3, [r7, #44]
+ 842 053e D31A     		subs	r3, r2, r3
+ 843 0540 1B4A     		ldr	r2, .L66+20
+ 844 0542 5360     		str	r3, [r2, #4]
+ 845              	.LBE5:
+ 846 0544 18E0     		b	.L54
+ 847              	.L57:
+ 271:limits.c      ****         } else if (idx==Y_AXIS) {
+ 848              		.loc 1 271 0
+ 849 0546 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 850 054a 012B     		cmp	r3, #1
+ 851 054c 0ED1     		bne	.L58
+ 852              	.LBB6:
+ 272:limits.c      ****           int32_t off_axis_position = system_convert_corexy_to_x_axis_steps(sys_position);
+ 853              		.loc 1 272 0
+ 854 054e 1848     		ldr	r0, .L66+20
+ 855 0550 FFF7FEFF 		bl	system_convert_corexy_to_x_axis_steps
+ 856 0554 B862     		str	r0, [r7, #40]
+ 273:limits.c      ****           sys_position[A_MOTOR] = off_axis_position + set_axis_position;
+ 857              		.loc 1 273 0
+ 858 0556 BA6A     		ldr	r2, [r7, #40]
+ 859 0558 3B6C     		ldr	r3, [r7, #64]
+ 860 055a 1344     		add	r3, r3, r2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 21
+
+
+ 861 055c 144A     		ldr	r2, .L66+20
+ 862 055e 1360     		str	r3, [r2]
+ 274:limits.c      ****           sys_position[B_MOTOR] = off_axis_position - set_axis_position;
+ 863              		.loc 1 274 0
+ 864 0560 BA6A     		ldr	r2, [r7, #40]
+ 865 0562 3B6C     		ldr	r3, [r7, #64]
+ 866 0564 D31A     		subs	r3, r2, r3
+ 867 0566 124A     		ldr	r2, .L66+20
+ 868 0568 5360     		str	r3, [r2, #4]
+ 869              	.LBE6:
+ 870 056a 05E0     		b	.L54
+ 871              	.L58:
+ 275:limits.c      ****         } else {
+ 276:limits.c      ****           sys_position[idx] = set_axis_position;
+ 872              		.loc 1 276 0
+ 873 056c 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 874 0570 0F49     		ldr	r1, .L66+20
+ 875 0572 3A6C     		ldr	r2, [r7, #64]
+ 876 0574 41F82320 		str	r2, [r1, r3, lsl #2]
+ 877              	.L54:
+ 253:limits.c      ****     // NOTE: settings.max_travel[] is stored as a negative value.
+ 878              		.loc 1 253 0 discriminator 2
+ 879 0578 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 880 057c 0133     		adds	r3, r3, #1
+ 881 057e 87F84F30 		strb	r3, [r7, #79]
+ 882              	.L53:
+ 253:limits.c      ****     // NOTE: settings.max_travel[] is stored as a negative value.
+ 883              		.loc 1 253 0 is_stmt 0 discriminator 1
+ 884 0582 97F84F30 		ldrb	r3, [r7, #79]	@ zero_extendqisi2
+ 885 0586 022B     		cmp	r3, #2
+ 886 0588 7FF67BAF 		bls	.L59
+ 277:limits.c      ****         }
+ 278:limits.c      ****       #else
+ 279:limits.c      ****         sys_position[idx] = set_axis_position;
+ 280:limits.c      ****       #endif
+ 281:limits.c      **** 
+ 282:limits.c      ****     }
+ 283:limits.c      ****   }
+ 284:limits.c      ****   sys.step_control = STEP_CONTROL_NORMAL_OP; // Return step control to normal operation.
+ 887              		.loc 1 284 0 is_stmt 1
+ 888 058c 034B     		ldr	r3, .L66
+ 889 058e 0022     		movs	r2, #0
+ 890 0590 1A71     		strb	r2, [r3, #4]
+ 891 0592 00E0     		b	.L15
+ 892              	.L63:
+  98:limits.c      **** 
+ 893              		.loc 1 98 0
+ 894 0594 00BF     		nop
+ 895              	.L15:
+ 285:limits.c      **** }
+ 896              		.loc 1 285 0
+ 897 0596 5837     		adds	r7, r7, #88
+ 898              		.cfi_def_cfa_offset 16
+ 899 0598 BD46     		mov	sp, r7
+ 900              		.cfi_def_cfa_register 13
+ 901              		@ sp needed
+ 902 059a B0BD     		pop	{r4, r5, r7, pc}
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 22
+
+
+ 903              	.L67:
+ 904              		.align	2
+ 905              	.L66:
+ 906 059c 00000000 		.word	sys
+ 907 05a0 00000000 		.word	sys_rt_exec_state
+ 908 05a4 00000000 		.word	sys_rt_exec_alarm
+ 909 05a8 00000000 		.word	settings
+ 910 05ac 0000A040 		.word	1084227584
+ 911 05b0 00000000 		.word	sys_position
+ 912              		.cfi_endproc
+ 913              	.LFE68:
+ 914              		.size	limits_go_home, .-limits_go_home
+ 915              		.section	.text.limits_soft_check,"ax",%progbits
+ 916              		.align	2
+ 917              		.global	limits_soft_check
+ 918              		.thumb
+ 919              		.thumb_func
+ 920              		.type	limits_soft_check, %function
+ 921              	limits_soft_check:
+ 922              	.LFB69:
+ 286:limits.c      **** 
+ 287:limits.c      **** 
+ 288:limits.c      **** // Performs a soft limit check. Called from mc_line() only. Assumes the machine has been homed,
+ 289:limits.c      **** // the workspace volume is in all negative space, and the system is in normal operation.
+ 290:limits.c      **** // NOTE: Used by jogging to limit travel within soft-limit volume.
+ 291:limits.c      **** void limits_soft_check(float *target)
+ 292:limits.c      **** {
+ 923              		.loc 1 292 0
+ 924              		.cfi_startproc
+ 925              		@ args = 0, pretend = 0, frame = 8
+ 926              		@ frame_needed = 1, uses_anonymous_args = 0
+ 927 0000 80B5     		push	{r7, lr}
+ 928              		.cfi_def_cfa_offset 8
+ 929              		.cfi_offset 7, -8
+ 930              		.cfi_offset 14, -4
+ 931 0002 82B0     		sub	sp, sp, #8
+ 932              		.cfi_def_cfa_offset 16
+ 933 0004 00AF     		add	r7, sp, #0
+ 934              		.cfi_def_cfa_register 7
+ 935 0006 7860     		str	r0, [r7, #4]
+ 293:limits.c      ****   if (system_check_travel_limits(target)) {
+ 936              		.loc 1 293 0
+ 937 0008 7868     		ldr	r0, [r7, #4]
+ 938 000a FFF7FEFF 		bl	system_check_travel_limits
+ 939 000e 0346     		mov	r3, r0
+ 940 0010 002B     		cmp	r3, #0
+ 941 0012 1DD0     		beq	.L68
+ 294:limits.c      ****     sys.soft_limit = true;
+ 942              		.loc 1 294 0
+ 943 0014 104B     		ldr	r3, .L74
+ 944 0016 0122     		movs	r2, #1
+ 945 0018 DA70     		strb	r2, [r3, #3]
+ 295:limits.c      ****     // Force feed hold if cycle is active. All buffered blocks are guaranteed to be within
+ 296:limits.c      ****     // workspace volume so just come to a controlled stop so position is not lost. When complete
+ 297:limits.c      ****     // enter alarm mode.
+ 298:limits.c      ****     if (sys.state == STATE_CYCLE) {
+ 946              		.loc 1 298 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 23
+
+
+ 947 001a 0F4B     		ldr	r3, .L74
+ 948 001c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 949 001e 082B     		cmp	r3, #8
+ 950 0020 0CD1     		bne	.L70
+ 299:limits.c      ****       system_set_exec_state_flag(EXEC_FEED_HOLD);
+ 951              		.loc 1 299 0
+ 952 0022 0820     		movs	r0, #8
+ 953 0024 FFF7FEFF 		bl	system_set_exec_state_flag
+ 954              	.L72:
+ 300:limits.c      ****       do {
+ 301:limits.c      ****         protocol_execute_realtime();
+ 955              		.loc 1 301 0
+ 956 0028 FFF7FEFF 		bl	protocol_execute_realtime
+ 302:limits.c      ****         if (sys.abort) { return; }
+ 957              		.loc 1 302 0
+ 958 002c 0A4B     		ldr	r3, .L74
+ 959 002e 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 960 0030 002B     		cmp	r3, #0
+ 961 0032 0CD1     		bne	.L73
+ 303:limits.c      ****       } while ( sys.state != STATE_IDLE );
+ 962              		.loc 1 303 0
+ 963 0034 084B     		ldr	r3, .L74
+ 964 0036 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 965 0038 002B     		cmp	r3, #0
+ 966 003a F5D1     		bne	.L72
+ 967              	.L70:
+ 304:limits.c      ****     }
+ 305:limits.c      ****     mc_reset(); // Issue system reset and ensure spindle and coolant are shutdown.
+ 968              		.loc 1 305 0
+ 969 003c FFF7FEFF 		bl	mc_reset
+ 306:limits.c      ****     system_set_exec_alarm(EXEC_ALARM_SOFT_LIMIT); // Indicate soft limit critical event
+ 970              		.loc 1 306 0
+ 971 0040 0220     		movs	r0, #2
+ 972 0042 FFF7FEFF 		bl	system_set_exec_alarm
+ 307:limits.c      ****     protocol_execute_realtime(); // Execute to enter critical event loop and system abort
+ 973              		.loc 1 307 0
+ 974 0046 FFF7FEFF 		bl	protocol_execute_realtime
+ 308:limits.c      ****     return;
+ 975              		.loc 1 308 0
+ 976 004a 00BF     		nop
+ 977 004c 00E0     		b	.L68
+ 978              	.L73:
+ 302:limits.c      ****       } while ( sys.state != STATE_IDLE );
+ 979              		.loc 1 302 0
+ 980 004e 00BF     		nop
+ 981              	.L68:
+ 309:limits.c      ****   }
+ 310:limits.c      **** }
+ 982              		.loc 1 310 0
+ 983 0050 0837     		adds	r7, r7, #8
+ 984              		.cfi_def_cfa_offset 8
+ 985 0052 BD46     		mov	sp, r7
+ 986              		.cfi_def_cfa_register 13
+ 987              		@ sp needed
+ 988 0054 80BD     		pop	{r7, pc}
+ 989              	.L75:
+ 990 0056 00BF     		.align	2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 24
+
+
+ 991              	.L74:
+ 992 0058 00000000 		.word	sys
+ 993              		.cfi_endproc
+ 994              	.LFE69:
+ 995              		.size	limits_soft_check, .-limits_soft_check
+ 996              		.text
+ 997              	.Letext0:
+ 998              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 999              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1000              		.file 4 "settings.h"
+ 1001              		.file 5 "system.h"
+ 1002              		.file 6 "planner.h"
+ 1003              		.file 7 "Generated_Source\\PSoC5/core_cm3.h"
+ 1004              		.section	.debug_info,"",%progbits
+ 1005              	.Ldebug_info0:
+ 1006 0000 75050000 		.4byte	0x575
+ 1007 0004 0400     		.2byte	0x4
+ 1008 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1009 000a 04       		.byte	0x4
+ 1010 000b 01       		.uleb128 0x1
+ 1011 000c 67000000 		.4byte	.LASF88
+ 1012 0010 0C       		.byte	0xc
+ 1013 0011 4B010000 		.4byte	.LASF89
+ 1014 0015 83040000 		.4byte	.LASF90
+ 1015 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1016 001d 00000000 		.4byte	0
+ 1017 0021 00000000 		.4byte	.Ldebug_line0
+ 1018 0025 02       		.uleb128 0x2
+ 1019 0026 01       		.byte	0x1
+ 1020 0027 06       		.byte	0x6
+ 1021 0028 5B020000 		.4byte	.LASF0
+ 1022 002c 03       		.uleb128 0x3
+ 1023 002d F6010000 		.4byte	.LASF3
+ 1024 0031 02       		.byte	0x2
+ 1025 0032 1D       		.byte	0x1d
+ 1026 0033 37000000 		.4byte	0x37
+ 1027 0037 02       		.uleb128 0x2
+ 1028 0038 01       		.byte	0x1
+ 1029 0039 08       		.byte	0x8
+ 1030 003a 3D020000 		.4byte	.LASF1
+ 1031 003e 02       		.uleb128 0x2
+ 1032 003f 02       		.byte	0x2
+ 1033 0040 05       		.byte	0x5
+ 1034 0041 4B000000 		.4byte	.LASF2
+ 1035 0045 03       		.uleb128 0x3
+ 1036 0046 FD000000 		.4byte	.LASF4
+ 1037 004a 02       		.byte	0x2
+ 1038 004b 2B       		.byte	0x2b
+ 1039 004c 50000000 		.4byte	0x50
+ 1040 0050 02       		.uleb128 0x2
+ 1041 0051 02       		.byte	0x2
+ 1042 0052 07       		.byte	0x7
+ 1043 0053 2C030000 		.4byte	.LASF5
+ 1044 0057 03       		.uleb128 0x3
+ 1045 0058 5B040000 		.4byte	.LASF6
+ 1046 005c 02       		.byte	0x2
+ 1047 005d 3F       		.byte	0x3f
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 25
+
+
+ 1048 005e 62000000 		.4byte	0x62
+ 1049 0062 02       		.uleb128 0x2
+ 1050 0063 04       		.byte	0x4
+ 1051 0064 05       		.byte	0x5
+ 1052 0065 D1010000 		.4byte	.LASF7
+ 1053 0069 02       		.uleb128 0x2
+ 1054 006a 04       		.byte	0x4
+ 1055 006b 07       		.byte	0x7
+ 1056 006c 0F040000 		.4byte	.LASF8
+ 1057 0070 02       		.uleb128 0x2
+ 1058 0071 08       		.byte	0x8
+ 1059 0072 05       		.byte	0x5
+ 1060 0073 8B010000 		.4byte	.LASF9
+ 1061 0077 02       		.uleb128 0x2
+ 1062 0078 08       		.byte	0x8
+ 1063 0079 07       		.byte	0x7
+ 1064 007a 6D020000 		.4byte	.LASF10
+ 1065 007e 04       		.uleb128 0x4
+ 1066 007f 04       		.byte	0x4
+ 1067 0080 05       		.byte	0x5
+ 1068 0081 696E7400 		.ascii	"int\000"
+ 1069 0085 02       		.uleb128 0x2
+ 1070 0086 04       		.byte	0x4
+ 1071 0087 07       		.byte	0x7
+ 1072 0088 96020000 		.4byte	.LASF11
+ 1073 008c 03       		.uleb128 0x3
+ 1074 008d 43010000 		.4byte	.LASF12
+ 1075 0091 03       		.byte	0x3
+ 1076 0092 18       		.byte	0x18
+ 1077 0093 2C000000 		.4byte	0x2c
+ 1078 0097 03       		.uleb128 0x3
+ 1079 0098 5F030000 		.4byte	.LASF13
+ 1080 009c 03       		.byte	0x3
+ 1081 009d 24       		.byte	0x24
+ 1082 009e 45000000 		.4byte	0x45
+ 1083 00a2 03       		.uleb128 0x3
+ 1084 00a3 78030000 		.4byte	.LASF14
+ 1085 00a7 03       		.byte	0x3
+ 1086 00a8 2C       		.byte	0x2c
+ 1087 00a9 57000000 		.4byte	0x57
+ 1088 00ad 02       		.uleb128 0x2
+ 1089 00ae 04       		.byte	0x4
+ 1090 00af 04       		.byte	0x4
+ 1091 00b0 7C010000 		.4byte	.LASF15
+ 1092 00b4 02       		.uleb128 0x2
+ 1093 00b5 08       		.byte	0x8
+ 1094 00b6 04       		.byte	0x4
+ 1095 00b7 21040000 		.4byte	.LASF16
+ 1096 00bb 02       		.uleb128 0x2
+ 1097 00bc 01       		.byte	0x1
+ 1098 00bd 08       		.byte	0x8
+ 1099 00be 5A030000 		.4byte	.LASF17
+ 1100 00c2 02       		.uleb128 0x2
+ 1101 00c3 08       		.byte	0x8
+ 1102 00c4 04       		.byte	0x4
+ 1103 00c5 21020000 		.4byte	.LASF18
+ 1104 00c9 02       		.uleb128 0x2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 26
+
+
+ 1105 00ca 04       		.byte	0x4
+ 1106 00cb 07       		.byte	0x7
+ 1107 00cc 55000000 		.4byte	.LASF19
+ 1108 00d0 05       		.uleb128 0x5
+ 1109 00d1 8C000000 		.4byte	0x8c
+ 1110 00d5 06       		.uleb128 0x6
+ 1111 00d6 5C       		.byte	0x5c
+ 1112 00d7 04       		.byte	0x4
+ 1113 00d8 4F       		.byte	0x4f
+ 1114 00d9 C2010000 		.4byte	0x1c2
+ 1115 00dd 07       		.uleb128 0x7
+ 1116 00de E9010000 		.4byte	.LASF20
+ 1117 00e2 04       		.byte	0x4
+ 1118 00e3 51       		.byte	0x51
+ 1119 00e4 C2010000 		.4byte	0x1c2
+ 1120 00e8 00       		.byte	0
+ 1121 00e9 07       		.uleb128 0x7
+ 1122 00ea 19050000 		.4byte	.LASF21
+ 1123 00ee 04       		.byte	0x4
+ 1124 00ef 52       		.byte	0x52
+ 1125 00f0 C2010000 		.4byte	0x1c2
+ 1126 00f4 0C       		.byte	0xc
+ 1127 00f5 07       		.uleb128 0x7
+ 1128 00f6 31000000 		.4byte	.LASF22
+ 1129 00fa 04       		.byte	0x4
+ 1130 00fb 53       		.byte	0x53
+ 1131 00fc C2010000 		.4byte	0x1c2
+ 1132 0100 18       		.byte	0x18
+ 1133 0101 07       		.uleb128 0x7
+ 1134 0102 78040000 		.4byte	.LASF23
+ 1135 0106 04       		.byte	0x4
+ 1136 0107 54       		.byte	0x54
+ 1137 0108 C2010000 		.4byte	0x1c2
+ 1138 010c 24       		.byte	0x24
+ 1139 010d 07       		.uleb128 0x7
+ 1140 010e D0030000 		.4byte	.LASF24
+ 1141 0112 04       		.byte	0x4
+ 1142 0113 57       		.byte	0x57
+ 1143 0114 8C000000 		.4byte	0x8c
+ 1144 0118 30       		.byte	0x30
+ 1145 0119 07       		.uleb128 0x7
+ 1146 011a 46050000 		.4byte	.LASF25
+ 1147 011e 04       		.byte	0x4
+ 1148 011f 58       		.byte	0x58
+ 1149 0120 8C000000 		.4byte	0x8c
+ 1150 0124 31       		.byte	0x31
+ 1151 0125 07       		.uleb128 0x7
+ 1152 0126 68030000 		.4byte	.LASF26
+ 1153 012a 04       		.byte	0x4
+ 1154 012b 59       		.byte	0x59
+ 1155 012c 8C000000 		.4byte	0x8c
+ 1156 0130 32       		.byte	0x32
+ 1157 0131 07       		.uleb128 0x7
+ 1158 0132 14010000 		.4byte	.LASF27
+ 1159 0136 04       		.byte	0x4
+ 1160 0137 5A       		.byte	0x5a
+ 1161 0138 8C000000 		.4byte	0x8c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 27
+
+
+ 1162 013c 33       		.byte	0x33
+ 1163 013d 07       		.uleb128 0x7
+ 1164 013e FE020000 		.4byte	.LASF28
+ 1165 0142 04       		.byte	0x4
+ 1166 0143 5B       		.byte	0x5b
+ 1167 0144 8C000000 		.4byte	0x8c
+ 1168 0148 34       		.byte	0x34
+ 1169 0149 07       		.uleb128 0x7
+ 1170 014a 65040000 		.4byte	.LASF29
+ 1171 014e 04       		.byte	0x4
+ 1172 014f 5C       		.byte	0x5c
+ 1173 0150 AD000000 		.4byte	0xad
+ 1174 0154 38       		.byte	0x38
+ 1175 0155 07       		.uleb128 0x7
+ 1176 0156 13020000 		.4byte	.LASF30
+ 1177 015a 04       		.byte	0x4
+ 1178 015b 5D       		.byte	0x5d
+ 1179 015c AD000000 		.4byte	0xad
+ 1180 0160 3C       		.byte	0x3c
+ 1181 0161 07       		.uleb128 0x7
+ 1182 0162 92030000 		.4byte	.LASF31
+ 1183 0166 04       		.byte	0x4
+ 1184 0167 5F       		.byte	0x5f
+ 1185 0168 AD000000 		.4byte	0xad
+ 1186 016c 40       		.byte	0x40
+ 1187 016d 07       		.uleb128 0x7
+ 1188 016e 39040000 		.4byte	.LASF32
+ 1189 0172 04       		.byte	0x4
+ 1190 0173 60       		.byte	0x60
+ 1191 0174 AD000000 		.4byte	0xad
+ 1192 0178 44       		.byte	0x44
+ 1193 0179 07       		.uleb128 0x7
+ 1194 017a 67020000 		.4byte	.LASF33
+ 1195 017e 04       		.byte	0x4
+ 1196 017f 62       		.byte	0x62
+ 1197 0180 8C000000 		.4byte	0x8c
+ 1198 0184 48       		.byte	0x48
+ 1199 0185 07       		.uleb128 0x7
+ 1200 0186 2D020000 		.4byte	.LASF34
+ 1201 018a 04       		.byte	0x4
+ 1202 018b 64       		.byte	0x64
+ 1203 018c 8C000000 		.4byte	0x8c
+ 1204 0190 49       		.byte	0x49
+ 1205 0191 07       		.uleb128 0x7
+ 1206 0192 C5040000 		.4byte	.LASF35
+ 1207 0196 04       		.byte	0x4
+ 1208 0197 65       		.byte	0x65
+ 1209 0198 AD000000 		.4byte	0xad
+ 1210 019c 4C       		.byte	0x4c
+ 1211 019d 07       		.uleb128 0x7
+ 1212 019e 28040000 		.4byte	.LASF36
+ 1213 01a2 04       		.byte	0x4
+ 1214 01a3 66       		.byte	0x66
+ 1215 01a4 AD000000 		.4byte	0xad
+ 1216 01a8 50       		.byte	0x50
+ 1217 01a9 07       		.uleb128 0x7
+ 1218 01aa BA030000 		.4byte	.LASF37
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 28
+
+
+ 1219 01ae 04       		.byte	0x4
+ 1220 01af 67       		.byte	0x67
+ 1221 01b0 97000000 		.4byte	0x97
+ 1222 01b4 54       		.byte	0x54
+ 1223 01b5 07       		.uleb128 0x7
+ 1224 01b6 62010000 		.4byte	.LASF38
+ 1225 01ba 04       		.byte	0x4
+ 1226 01bb 68       		.byte	0x68
+ 1227 01bc AD000000 		.4byte	0xad
+ 1228 01c0 58       		.byte	0x58
+ 1229 01c1 00       		.byte	0
+ 1230 01c2 08       		.uleb128 0x8
+ 1231 01c3 AD000000 		.4byte	0xad
+ 1232 01c7 D2010000 		.4byte	0x1d2
+ 1233 01cb 09       		.uleb128 0x9
+ 1234 01cc C9000000 		.4byte	0xc9
+ 1235 01d0 02       		.byte	0x2
+ 1236 01d1 00       		.byte	0
+ 1237 01d2 03       		.uleb128 0x3
+ 1238 01d3 71010000 		.4byte	.LASF39
+ 1239 01d7 04       		.byte	0x4
+ 1240 01d8 69       		.byte	0x69
+ 1241 01d9 D5000000 		.4byte	0xd5
+ 1242 01dd 06       		.uleb128 0x6
+ 1243 01de 14       		.byte	0x14
+ 1244 01df 05       		.byte	0x5
+ 1245 01e0 81       		.byte	0x81
+ 1246 01e1 8E020000 		.4byte	0x28e
+ 1247 01e5 07       		.uleb128 0x7
+ 1248 01e6 3E000000 		.4byte	.LASF40
+ 1249 01ea 05       		.byte	0x5
+ 1250 01eb 82       		.byte	0x82
+ 1251 01ec 8C000000 		.4byte	0x8c
+ 1252 01f0 00       		.byte	0
+ 1253 01f1 07       		.uleb128 0x7
+ 1254 01f2 55020000 		.4byte	.LASF41
+ 1255 01f6 05       		.byte	0x5
+ 1256 01f7 83       		.byte	0x83
+ 1257 01f8 8C000000 		.4byte	0x8c
+ 1258 01fc 01       		.byte	0x1
+ 1259 01fd 07       		.uleb128 0x7
+ 1260 01fe A7030000 		.4byte	.LASF42
+ 1261 0202 05       		.byte	0x5
+ 1262 0203 84       		.byte	0x84
+ 1263 0204 8C000000 		.4byte	0x8c
+ 1264 0208 02       		.byte	0x2
+ 1265 0209 07       		.uleb128 0x7
+ 1266 020a AF030000 		.4byte	.LASF43
+ 1267 020e 05       		.byte	0x5
+ 1268 020f 85       		.byte	0x85
+ 1269 0210 8C000000 		.4byte	0x8c
+ 1270 0214 03       		.byte	0x3
+ 1271 0215 07       		.uleb128 0x7
+ 1272 0216 9A030000 		.4byte	.LASF44
+ 1273 021a 05       		.byte	0x5
+ 1274 021b 86       		.byte	0x86
+ 1275 021c 8C000000 		.4byte	0x8c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 29
+
+
+ 1276 0220 04       		.byte	0x4
+ 1277 0221 07       		.uleb128 0x7
+ 1278 0222 C1010000 		.4byte	.LASF45
+ 1279 0226 05       		.byte	0x5
+ 1280 0227 87       		.byte	0x87
+ 1281 0228 8C000000 		.4byte	0x8c
+ 1282 022c 05       		.byte	0x5
+ 1283 022d 07       		.uleb128 0x7
+ 1284 022e 11030000 		.4byte	.LASF46
+ 1285 0232 05       		.byte	0x5
+ 1286 0233 88       		.byte	0x88
+ 1287 0234 8C000000 		.4byte	0x8c
+ 1288 0238 06       		.byte	0x6
+ 1289 0239 07       		.uleb128 0x7
+ 1290 023a A3020000 		.4byte	.LASF47
+ 1291 023e 05       		.byte	0x5
+ 1292 023f 89       		.byte	0x89
+ 1293 0240 8C000000 		.4byte	0x8c
+ 1294 0244 07       		.byte	0x7
+ 1295 0245 07       		.uleb128 0x7
+ 1296 0246 D6040000 		.4byte	.LASF48
+ 1297 024a 05       		.byte	0x5
+ 1298 024b 8A       		.byte	0x8a
+ 1299 024c 8C000000 		.4byte	0x8c
+ 1300 0250 08       		.byte	0x8
+ 1301 0251 07       		.uleb128 0x7
+ 1302 0252 99010000 		.4byte	.LASF49
+ 1303 0256 05       		.byte	0x5
+ 1304 0257 8B       		.byte	0x8b
+ 1305 0258 8C000000 		.4byte	0x8c
+ 1306 025c 09       		.byte	0x9
+ 1307 025d 07       		.uleb128 0x7
+ 1308 025e FE030000 		.4byte	.LASF50
+ 1309 0262 05       		.byte	0x5
+ 1310 0263 8C       		.byte	0x8c
+ 1311 0264 8C000000 		.4byte	0x8c
+ 1312 0268 0A       		.byte	0xa
+ 1313 0269 07       		.uleb128 0x7
+ 1314 026a 00020000 		.4byte	.LASF51
+ 1315 026e 05       		.byte	0x5
+ 1316 026f 8D       		.byte	0x8d
+ 1317 0270 8C000000 		.4byte	0x8c
+ 1318 0274 0B       		.byte	0xb
+ 1319 0275 07       		.uleb128 0x7
+ 1320 0276 BC020000 		.4byte	.LASF52
+ 1321 027a 05       		.byte	0x5
+ 1322 027b 8E       		.byte	0x8e
+ 1323 027c 8C000000 		.4byte	0x8c
+ 1324 0280 0C       		.byte	0xc
+ 1325 0281 07       		.uleb128 0x7
+ 1326 0282 AE020000 		.4byte	.LASF53
+ 1327 0286 05       		.byte	0x5
+ 1328 0287 90       		.byte	0x90
+ 1329 0288 AD000000 		.4byte	0xad
+ 1330 028c 10       		.byte	0x10
+ 1331 028d 00       		.byte	0
+ 1332 028e 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 30
+
+
+ 1333 028f 5E000000 		.4byte	.LASF54
+ 1334 0293 05       		.byte	0x5
+ 1335 0294 92       		.byte	0x92
+ 1336 0295 DD010000 		.4byte	0x1dd
+ 1337 0299 06       		.uleb128 0x6
+ 1338 029a 0C       		.byte	0xc
+ 1339 029b 06       		.byte	0x6
+ 1340 029c 5C       		.byte	0x5c
+ 1341 029d C6020000 		.4byte	0x2c6
+ 1342 02a1 07       		.uleb128 0x7
+ 1343 02a2 22030000 		.4byte	.LASF55
+ 1344 02a6 06       		.byte	0x6
+ 1345 02a7 5D       		.byte	0x5d
+ 1346 02a8 AD000000 		.4byte	0xad
+ 1347 02ac 00       		.byte	0
+ 1348 02ad 07       		.uleb128 0x7
+ 1349 02ae AE020000 		.4byte	.LASF53
+ 1350 02b2 06       		.byte	0x6
+ 1351 02b3 5E       		.byte	0x5e
+ 1352 02b4 AD000000 		.4byte	0xad
+ 1353 02b8 04       		.byte	0x4
+ 1354 02b9 07       		.uleb128 0x7
+ 1355 02ba 3F030000 		.4byte	.LASF56
+ 1356 02be 06       		.byte	0x6
+ 1357 02bf 5F       		.byte	0x5f
+ 1358 02c0 8C000000 		.4byte	0x8c
+ 1359 02c4 08       		.byte	0x8
+ 1360 02c5 00       		.byte	0
+ 1361 02c6 03       		.uleb128 0x3
+ 1362 02c7 49030000 		.4byte	.LASF57
+ 1363 02cb 06       		.byte	0x6
+ 1364 02cc 63       		.byte	0x63
+ 1365 02cd 99020000 		.4byte	0x299
+ 1366 02d1 0A       		.uleb128 0xa
+ 1367 02d2 4F040000 		.4byte	.LASF58
+ 1368 02d6 01       		.byte	0x1
+ 1369 02d7 23       		.byte	0x23
+ 1370 02d8 00000000 		.4byte	.LFB64
+ 1371 02dc 30000000 		.4byte	.LFE64-.LFB64
+ 1372 02e0 01       		.uleb128 0x1
+ 1373 02e1 9C       		.byte	0x9c
+ 1374 02e2 0A       		.uleb128 0xa
+ 1375 02e3 2B010000 		.4byte	.LASF59
+ 1376 02e7 01       		.byte	0x1
+ 1377 02e8 31       		.byte	0x31
+ 1378 02e9 00000000 		.4byte	.LFB65
+ 1379 02ed 10000000 		.4byte	.LFE65-.LFB65
+ 1380 02f1 01       		.uleb128 0x1
+ 1381 02f2 9C       		.byte	0x9c
+ 1382 02f3 0B       		.uleb128 0xb
+ 1383 02f4 57050000 		.4byte	.LASF91
+ 1384 02f8 01       		.byte	0x1
+ 1385 02f9 3C       		.byte	0x3c
+ 1386 02fa 8C000000 		.4byte	0x8c
+ 1387 02fe 00000000 		.4byte	.LFB66
+ 1388 0302 0E000000 		.4byte	.LFE66-.LFB66
+ 1389 0306 01       		.uleb128 0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 31
+
+
+ 1390 0307 9C       		.byte	0x9c
+ 1391 0308 0A       		.uleb128 0xa
+ 1392 0309 68050000 		.4byte	.LASF60
+ 1393 030d 01       		.byte	0x1
+ 1394 030e 42       		.byte	0x42
+ 1395 030f 00000000 		.4byte	.LFB67
+ 1396 0313 2C000000 		.4byte	.LFE67-.LFB67
+ 1397 0317 01       		.uleb128 0x1
+ 1398 0318 9C       		.byte	0x9c
+ 1399 0319 0C       		.uleb128 0xc
+ 1400 031a DA010000 		.4byte	.LASF76
+ 1401 031e 01       		.byte	0x1
+ 1402 031f 60       		.byte	0x60
+ 1403 0320 00000000 		.4byte	.LFB68
+ 1404 0324 B4050000 		.4byte	.LFE68-.LFB68
+ 1405 0328 01       		.uleb128 0x1
+ 1406 0329 9C       		.byte	0x9c
+ 1407 032a 81040000 		.4byte	0x481
+ 1408 032e 0D       		.uleb128 0xd
+ 1409 032f E3030000 		.4byte	.LASF78
+ 1410 0333 01       		.byte	0x1
+ 1411 0334 60       		.byte	0x60
+ 1412 0335 8C000000 		.4byte	0x8c
+ 1413 0339 03       		.uleb128 0x3
+ 1414 033a 91       		.byte	0x91
+ 1415 033b 9F7F     		.sleb128 -97
+ 1416 033d 0E       		.uleb128 0xe
+ 1417 033e 4B020000 		.4byte	.LASF61
+ 1418 0342 01       		.byte	0x1
+ 1419 0343 65       		.byte	0x65
+ 1420 0344 C6020000 		.4byte	0x2c6
+ 1421 0348 03       		.uleb128 0x3
+ 1422 0349 91       		.byte	0x91
+ 1423 034a B47F     		.sleb128 -76
+ 1424 034c 0E       		.uleb128 0xe
+ 1425 034d 04050000 		.4byte	.LASF62
+ 1426 0351 01       		.byte	0x1
+ 1427 0352 66       		.byte	0x66
+ 1428 0353 81040000 		.4byte	0x481
+ 1429 0357 02       		.uleb128 0x2
+ 1430 0358 91       		.byte	0x91
+ 1431 0359 54       		.sleb128 -44
+ 1432 035a 0E       		.uleb128 0xe
+ 1433 035b FC040000 		.4byte	.LASF63
+ 1434 035f 01       		.byte	0x1
+ 1435 0360 6E       		.byte	0x6e
+ 1436 0361 8C000000 		.4byte	0x8c
+ 1437 0365 02       		.uleb128 0x2
+ 1438 0366 91       		.byte	0x91
+ 1439 0367 6F       		.sleb128 -17
+ 1440 0368 0E       		.uleb128 0xe
+ 1441 0369 AB010000 		.4byte	.LASF64
+ 1442 036d 01       		.byte	0x1
+ 1443 036e 6F       		.byte	0x6f
+ 1444 036f 87040000 		.4byte	0x487
+ 1445 0373 03       		.uleb128 0x3
+ 1446 0374 91       		.byte	0x91
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 32
+
+
+ 1447 0375 B07F     		.sleb128 -80
+ 1448 0377 0E       		.uleb128 0xe
+ 1449 0378 44000000 		.4byte	.LASF65
+ 1450 037c 01       		.byte	0x1
+ 1451 037d 70       		.byte	0x70
+ 1452 037e C2010000 		.4byte	0x1c2
+ 1453 0382 03       		.uleb128 0x3
+ 1454 0383 91       		.byte	0x91
+ 1455 0384 A47F     		.sleb128 -92
+ 1456 0386 0E       		.uleb128 0xe
+ 1457 0387 78040000 		.4byte	.LASF23
+ 1458 038b 01       		.byte	0x1
+ 1459 038c 71       		.byte	0x71
+ 1460 038d AD000000 		.4byte	0xad
+ 1461 0391 02       		.uleb128 0x2
+ 1462 0392 91       		.byte	0x91
+ 1463 0393 68       		.sleb128 -24
+ 1464 0394 0F       		.uleb128 0xf
+ 1465 0395 69647800 		.ascii	"idx\000"
+ 1466 0399 01       		.byte	0x1
+ 1467 039a 72       		.byte	0x72
+ 1468 039b 8C000000 		.4byte	0x8c
+ 1469 039f 02       		.uleb128 0x2
+ 1470 03a0 91       		.byte	0x91
+ 1471 03a1 67       		.sleb128 -25
+ 1472 03a2 0E       		.uleb128 0xe
+ 1473 03a3 E1040000 		.4byte	.LASF66
+ 1474 03a7 01       		.byte	0x1
+ 1475 03a8 82       		.byte	0x82
+ 1476 03a9 97040000 		.4byte	0x497
+ 1477 03ad 02       		.uleb128 0x2
+ 1478 03ae 91       		.byte	0x91
+ 1479 03af 66       		.sleb128 -26
+ 1480 03b0 0E       		.uleb128 0xe
+ 1481 03b1 80030000 		.4byte	.LASF67
+ 1482 03b5 01       		.byte	0x1
+ 1483 03b6 83       		.byte	0x83
+ 1484 03b7 AD000000 		.4byte	0xad
+ 1485 03bb 02       		.uleb128 0x2
+ 1486 03bc 91       		.byte	0x91
+ 1487 03bd 60       		.sleb128 -32
+ 1488 03be 0E       		.uleb128 0xe
+ 1489 03bf 08010000 		.4byte	.LASF68
+ 1490 03c3 01       		.byte	0x1
+ 1491 03c4 85       		.byte	0x85
+ 1492 03c5 8C000000 		.4byte	0x8c
+ 1493 03c9 02       		.uleb128 0x2
+ 1494 03ca 91       		.byte	0x91
+ 1495 03cb 4B       		.sleb128 -53
+ 1496 03cc 0E       		.uleb128 0xe
+ 1497 03cd 3A010000 		.4byte	.LASF69
+ 1498 03d1 01       		.byte	0x1
+ 1499 03d2 85       		.byte	0x85
+ 1500 03d3 8C000000 		.4byte	0x8c
+ 1501 03d7 02       		.uleb128 0x2
+ 1502 03d8 91       		.byte	0x91
+ 1503 03d9 5F       		.sleb128 -33
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 33
+
+
+ 1504 03da 0E       		.uleb128 0xe
+ 1505 03db 54010000 		.4byte	.LASF70
+ 1506 03df 01       		.byte	0x1
+ 1507 03e0 85       		.byte	0x85
+ 1508 03e1 8C000000 		.4byte	0x8c
+ 1509 03e5 02       		.uleb128 0x2
+ 1510 03e6 91       		.byte	0x91
+ 1511 03e7 5E       		.sleb128 -34
+ 1512 03e8 0E       		.uleb128 0xe
+ 1513 03e9 34050000 		.4byte	.LASF71
+ 1514 03ed 01       		.byte	0x1
+ 1515 03ee FB       		.byte	0xfb
+ 1516 03ef A2000000 		.4byte	0xa2
+ 1517 03f3 02       		.uleb128 0x2
+ 1518 03f4 91       		.byte	0x91
+ 1519 03f5 58       		.sleb128 -40
+ 1520 03f6 10       		.uleb128 0x10
+ 1521 03f7 6E010000 		.4byte	.LBB2
+ 1522 03fb 16000000 		.4byte	.LBE2-.LBB2
+ 1523 03ff 12040000 		.4byte	0x412
+ 1524 0403 0E       		.uleb128 0xe
+ 1525 0404 41040000 		.4byte	.LASF72
+ 1526 0408 01       		.byte	0x1
+ 1527 0409 93       		.byte	0x93
+ 1528 040a A2000000 		.4byte	0xa2
+ 1529 040e 02       		.uleb128 0x2
+ 1530 040f 91       		.byte	0x91
+ 1531 0410 50       		.sleb128 -48
+ 1532 0411 00       		.byte	0
+ 1533 0412 10       		.uleb128 0x10
+ 1534 0413 8E010000 		.4byte	.LBB3
+ 1535 0417 16000000 		.4byte	.LBE3-.LBB3
+ 1536 041b 2E040000 		.4byte	0x42e
+ 1537 041f 0E       		.uleb128 0xe
+ 1538 0420 41040000 		.4byte	.LASF72
+ 1539 0424 01       		.byte	0x1
+ 1540 0425 97       		.byte	0x97
+ 1541 0426 A2000000 		.4byte	0xa2
+ 1542 042a 02       		.uleb128 0x2
+ 1543 042b 91       		.byte	0x91
+ 1544 042c 4C       		.sleb128 -52
+ 1545 042d 00       		.byte	0
+ 1546 042e 10       		.uleb128 0x10
+ 1547 042f 72030000 		.4byte	.LBB4
+ 1548 0433 88000000 		.4byte	.LBE4-.LBB4
+ 1549 0437 4A040000 		.4byte	0x44a
+ 1550 043b 0E       		.uleb128 0xe
+ 1551 043c F5000000 		.4byte	.LASF73
+ 1552 0440 01       		.byte	0x1
+ 1553 0441 CE       		.byte	0xce
+ 1554 0442 8C000000 		.4byte	0x8c
+ 1555 0446 02       		.uleb128 0x2
+ 1556 0447 91       		.byte	0x91
+ 1557 0448 4A       		.sleb128 -54
+ 1558 0449 00       		.byte	0
+ 1559 044a 10       		.uleb128 0x10
+ 1560 044b 28050000 		.4byte	.LBB5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 34
+
+
+ 1561 044f 1C000000 		.4byte	.LBE5-.LBB5
+ 1562 0453 67040000 		.4byte	0x467
+ 1563 0457 11       		.uleb128 0x11
+ 1564 0458 84020000 		.4byte	.LASF74
+ 1565 045c 01       		.byte	0x1
+ 1566 045d 0C01     		.2byte	0x10c
+ 1567 045f A2000000 		.4byte	0xa2
+ 1568 0463 02       		.uleb128 0x2
+ 1569 0464 91       		.byte	0x91
+ 1570 0465 44       		.sleb128 -60
+ 1571 0466 00       		.byte	0
+ 1572 0467 12       		.uleb128 0x12
+ 1573 0468 4E050000 		.4byte	.LBB6
+ 1574 046c 1C000000 		.4byte	.LBE6-.LBB6
+ 1575 0470 11       		.uleb128 0x11
+ 1576 0471 84020000 		.4byte	.LASF74
+ 1577 0475 01       		.byte	0x1
+ 1578 0476 1001     		.2byte	0x110
+ 1579 0478 A2000000 		.4byte	0xa2
+ 1580 047c 02       		.uleb128 0x2
+ 1581 047d 91       		.byte	0x91
+ 1582 047e 40       		.sleb128 -64
+ 1583 047f 00       		.byte	0
+ 1584 0480 00       		.byte	0
+ 1585 0481 13       		.uleb128 0x13
+ 1586 0482 04       		.byte	0x4
+ 1587 0483 C6020000 		.4byte	0x2c6
+ 1588 0487 08       		.uleb128 0x8
+ 1589 0488 8C000000 		.4byte	0x8c
+ 1590 048c 97040000 		.4byte	0x497
+ 1591 0490 09       		.uleb128 0x9
+ 1592 0491 C9000000 		.4byte	0xc9
+ 1593 0495 02       		.byte	0x2
+ 1594 0496 00       		.byte	0
+ 1595 0497 02       		.uleb128 0x2
+ 1596 0498 01       		.byte	0x1
+ 1597 0499 02       		.byte	0x2
+ 1598 049a 8C030000 		.4byte	.LASF75
+ 1599 049e 14       		.uleb128 0x14
+ 1600 049f EA040000 		.4byte	.LASF77
+ 1601 04a3 01       		.byte	0x1
+ 1602 04a4 2301     		.2byte	0x123
+ 1603 04a6 00000000 		.4byte	.LFB69
+ 1604 04aa 5C000000 		.4byte	.LFE69-.LFB69
+ 1605 04ae 01       		.uleb128 0x1
+ 1606 04af 9C       		.byte	0x9c
+ 1607 04b0 C4040000 		.4byte	0x4c4
+ 1608 04b4 15       		.uleb128 0x15
+ 1609 04b5 44000000 		.4byte	.LASF65
+ 1610 04b9 01       		.byte	0x1
+ 1611 04ba 2301     		.2byte	0x123
+ 1612 04bc C4040000 		.4byte	0x4c4
+ 1613 04c0 02       		.uleb128 0x2
+ 1614 04c1 91       		.byte	0x91
+ 1615 04c2 74       		.sleb128 -12
+ 1616 04c3 00       		.byte	0
+ 1617 04c4 13       		.uleb128 0x13
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 35
+
+
+ 1618 04c5 04       		.byte	0x4
+ 1619 04c6 AD000000 		.4byte	0xad
+ 1620 04ca 16       		.uleb128 0x16
+ 1621 04cb 0C050000 		.4byte	.LASF79
+ 1622 04cf 07       		.byte	0x7
+ 1623 04d0 1207     		.2byte	0x712
+ 1624 04d2 D6040000 		.4byte	0x4d6
+ 1625 04d6 05       		.uleb128 0x5
+ 1626 04d7 A2000000 		.4byte	0xa2
+ 1627 04db 17       		.uleb128 0x17
+ 1628 04dc 82010000 		.4byte	.LASF80
+ 1629 04e0 04       		.byte	0x4
+ 1630 04e1 6A       		.byte	0x6a
+ 1631 04e2 D2010000 		.4byte	0x1d2
+ 1632 04e6 18       		.uleb128 0x18
+ 1633 04e7 73797300 		.ascii	"sys\000"
+ 1634 04eb 05       		.byte	0x5
+ 1635 04ec 93       		.byte	0x93
+ 1636 04ed 8E020000 		.4byte	0x28e
+ 1637 04f1 08       		.uleb128 0x8
+ 1638 04f2 A2000000 		.4byte	0xa2
+ 1639 04f6 01050000 		.4byte	0x501
+ 1640 04fa 09       		.uleb128 0x9
+ 1641 04fb C9000000 		.4byte	0xc9
+ 1642 04ff 02       		.byte	0x2
+ 1643 0500 00       		.byte	0
+ 1644 0501 19       		.uleb128 0x19
+ 1645 0502 B4010000 		.4byte	.LASF81
+ 1646 0506 05       		.byte	0x5
+ 1647 0507 96       		.byte	0x96
+ 1648 0508 F1040000 		.4byte	0x4f1
+ 1649 050c 05       		.uleb128 0x5
+ 1650 050d 03       		.byte	0x3
+ 1651 050e 00000000 		.4byte	sys_position
+ 1652 0512 19       		.uleb128 0x19
+ 1653 0513 CF020000 		.4byte	.LASF82
+ 1654 0517 05       		.byte	0x5
+ 1655 0518 97       		.byte	0x97
+ 1656 0519 F1040000 		.4byte	0x4f1
+ 1657 051d 05       		.uleb128 0x5
+ 1658 051e 03       		.byte	0x3
+ 1659 051f 00000000 		.4byte	sys_probe_position
+ 1660 0523 19       		.uleb128 0x19
+ 1661 0524 EE030000 		.4byte	.LASF83
+ 1662 0528 05       		.byte	0x5
+ 1663 0529 99       		.byte	0x99
+ 1664 052a D0000000 		.4byte	0xd0
+ 1665 052e 05       		.uleb128 0x5
+ 1666 052f 03       		.byte	0x3
+ 1667 0530 00000000 		.4byte	sys_probe_state
+ 1668 0534 19       		.uleb128 0x19
+ 1669 0535 22050000 		.4byte	.LASF84
+ 1670 0539 05       		.byte	0x5
+ 1671 053a 9A       		.byte	0x9a
+ 1672 053b D0000000 		.4byte	0xd0
+ 1673 053f 05       		.uleb128 0x5
+ 1674 0540 03       		.byte	0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 36
+
+
+ 1675 0541 00000000 		.4byte	sys_rt_exec_state
+ 1676 0545 19       		.uleb128 0x19
+ 1677 0546 00000000 		.4byte	.LASF85
+ 1678 054a 05       		.byte	0x5
+ 1679 054b 9B       		.byte	0x9b
+ 1680 054c D0000000 		.4byte	0xd0
+ 1681 0550 05       		.uleb128 0x5
+ 1682 0551 03       		.byte	0x3
+ 1683 0552 00000000 		.4byte	sys_rt_exec_alarm
+ 1684 0556 19       		.uleb128 0x19
+ 1685 0557 E2020000 		.4byte	.LASF86
+ 1686 055b 05       		.byte	0x5
+ 1687 055c 9C       		.byte	0x9c
+ 1688 055d D0000000 		.4byte	0xd0
+ 1689 0561 05       		.uleb128 0x5
+ 1690 0562 03       		.byte	0x3
+ 1691 0563 00000000 		.4byte	sys_rt_exec_motion_override
+ 1692 0567 19       		.uleb128 0x19
+ 1693 0568 12000000 		.4byte	.LASF87
+ 1694 056c 05       		.byte	0x5
+ 1695 056d 9D       		.byte	0x9d
+ 1696 056e D0000000 		.4byte	0xd0
+ 1697 0572 05       		.uleb128 0x5
+ 1698 0573 03       		.byte	0x3
+ 1699 0574 00000000 		.4byte	sys_rt_exec_accessory_override
+ 1700 0578 00       		.byte	0
+ 1701              		.section	.debug_abbrev,"",%progbits
+ 1702              	.Ldebug_abbrev0:
+ 1703 0000 01       		.uleb128 0x1
+ 1704 0001 11       		.uleb128 0x11
+ 1705 0002 01       		.byte	0x1
+ 1706 0003 25       		.uleb128 0x25
+ 1707 0004 0E       		.uleb128 0xe
+ 1708 0005 13       		.uleb128 0x13
+ 1709 0006 0B       		.uleb128 0xb
+ 1710 0007 03       		.uleb128 0x3
+ 1711 0008 0E       		.uleb128 0xe
+ 1712 0009 1B       		.uleb128 0x1b
+ 1713 000a 0E       		.uleb128 0xe
+ 1714 000b 55       		.uleb128 0x55
+ 1715 000c 17       		.uleb128 0x17
+ 1716 000d 11       		.uleb128 0x11
+ 1717 000e 01       		.uleb128 0x1
+ 1718 000f 10       		.uleb128 0x10
+ 1719 0010 17       		.uleb128 0x17
+ 1720 0011 00       		.byte	0
+ 1721 0012 00       		.byte	0
+ 1722 0013 02       		.uleb128 0x2
+ 1723 0014 24       		.uleb128 0x24
+ 1724 0015 00       		.byte	0
+ 1725 0016 0B       		.uleb128 0xb
+ 1726 0017 0B       		.uleb128 0xb
+ 1727 0018 3E       		.uleb128 0x3e
+ 1728 0019 0B       		.uleb128 0xb
+ 1729 001a 03       		.uleb128 0x3
+ 1730 001b 0E       		.uleb128 0xe
+ 1731 001c 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 37
+
+
+ 1732 001d 00       		.byte	0
+ 1733 001e 03       		.uleb128 0x3
+ 1734 001f 16       		.uleb128 0x16
+ 1735 0020 00       		.byte	0
+ 1736 0021 03       		.uleb128 0x3
+ 1737 0022 0E       		.uleb128 0xe
+ 1738 0023 3A       		.uleb128 0x3a
+ 1739 0024 0B       		.uleb128 0xb
+ 1740 0025 3B       		.uleb128 0x3b
+ 1741 0026 0B       		.uleb128 0xb
+ 1742 0027 49       		.uleb128 0x49
+ 1743 0028 13       		.uleb128 0x13
+ 1744 0029 00       		.byte	0
+ 1745 002a 00       		.byte	0
+ 1746 002b 04       		.uleb128 0x4
+ 1747 002c 24       		.uleb128 0x24
+ 1748 002d 00       		.byte	0
+ 1749 002e 0B       		.uleb128 0xb
+ 1750 002f 0B       		.uleb128 0xb
+ 1751 0030 3E       		.uleb128 0x3e
+ 1752 0031 0B       		.uleb128 0xb
+ 1753 0032 03       		.uleb128 0x3
+ 1754 0033 08       		.uleb128 0x8
+ 1755 0034 00       		.byte	0
+ 1756 0035 00       		.byte	0
+ 1757 0036 05       		.uleb128 0x5
+ 1758 0037 35       		.uleb128 0x35
+ 1759 0038 00       		.byte	0
+ 1760 0039 49       		.uleb128 0x49
+ 1761 003a 13       		.uleb128 0x13
+ 1762 003b 00       		.byte	0
+ 1763 003c 00       		.byte	0
+ 1764 003d 06       		.uleb128 0x6
+ 1765 003e 13       		.uleb128 0x13
+ 1766 003f 01       		.byte	0x1
+ 1767 0040 0B       		.uleb128 0xb
+ 1768 0041 0B       		.uleb128 0xb
+ 1769 0042 3A       		.uleb128 0x3a
+ 1770 0043 0B       		.uleb128 0xb
+ 1771 0044 3B       		.uleb128 0x3b
+ 1772 0045 0B       		.uleb128 0xb
+ 1773 0046 01       		.uleb128 0x1
+ 1774 0047 13       		.uleb128 0x13
+ 1775 0048 00       		.byte	0
+ 1776 0049 00       		.byte	0
+ 1777 004a 07       		.uleb128 0x7
+ 1778 004b 0D       		.uleb128 0xd
+ 1779 004c 00       		.byte	0
+ 1780 004d 03       		.uleb128 0x3
+ 1781 004e 0E       		.uleb128 0xe
+ 1782 004f 3A       		.uleb128 0x3a
+ 1783 0050 0B       		.uleb128 0xb
+ 1784 0051 3B       		.uleb128 0x3b
+ 1785 0052 0B       		.uleb128 0xb
+ 1786 0053 49       		.uleb128 0x49
+ 1787 0054 13       		.uleb128 0x13
+ 1788 0055 38       		.uleb128 0x38
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 38
+
+
+ 1789 0056 0B       		.uleb128 0xb
+ 1790 0057 00       		.byte	0
+ 1791 0058 00       		.byte	0
+ 1792 0059 08       		.uleb128 0x8
+ 1793 005a 01       		.uleb128 0x1
+ 1794 005b 01       		.byte	0x1
+ 1795 005c 49       		.uleb128 0x49
+ 1796 005d 13       		.uleb128 0x13
+ 1797 005e 01       		.uleb128 0x1
+ 1798 005f 13       		.uleb128 0x13
+ 1799 0060 00       		.byte	0
+ 1800 0061 00       		.byte	0
+ 1801 0062 09       		.uleb128 0x9
+ 1802 0063 21       		.uleb128 0x21
+ 1803 0064 00       		.byte	0
+ 1804 0065 49       		.uleb128 0x49
+ 1805 0066 13       		.uleb128 0x13
+ 1806 0067 2F       		.uleb128 0x2f
+ 1807 0068 0B       		.uleb128 0xb
+ 1808 0069 00       		.byte	0
+ 1809 006a 00       		.byte	0
+ 1810 006b 0A       		.uleb128 0xa
+ 1811 006c 2E       		.uleb128 0x2e
+ 1812 006d 00       		.byte	0
+ 1813 006e 3F       		.uleb128 0x3f
+ 1814 006f 19       		.uleb128 0x19
+ 1815 0070 03       		.uleb128 0x3
+ 1816 0071 0E       		.uleb128 0xe
+ 1817 0072 3A       		.uleb128 0x3a
+ 1818 0073 0B       		.uleb128 0xb
+ 1819 0074 3B       		.uleb128 0x3b
+ 1820 0075 0B       		.uleb128 0xb
+ 1821 0076 11       		.uleb128 0x11
+ 1822 0077 01       		.uleb128 0x1
+ 1823 0078 12       		.uleb128 0x12
+ 1824 0079 06       		.uleb128 0x6
+ 1825 007a 40       		.uleb128 0x40
+ 1826 007b 18       		.uleb128 0x18
+ 1827 007c 9642     		.uleb128 0x2116
+ 1828 007e 19       		.uleb128 0x19
+ 1829 007f 00       		.byte	0
+ 1830 0080 00       		.byte	0
+ 1831 0081 0B       		.uleb128 0xb
+ 1832 0082 2E       		.uleb128 0x2e
+ 1833 0083 00       		.byte	0
+ 1834 0084 3F       		.uleb128 0x3f
+ 1835 0085 19       		.uleb128 0x19
+ 1836 0086 03       		.uleb128 0x3
+ 1837 0087 0E       		.uleb128 0xe
+ 1838 0088 3A       		.uleb128 0x3a
+ 1839 0089 0B       		.uleb128 0xb
+ 1840 008a 3B       		.uleb128 0x3b
+ 1841 008b 0B       		.uleb128 0xb
+ 1842 008c 49       		.uleb128 0x49
+ 1843 008d 13       		.uleb128 0x13
+ 1844 008e 11       		.uleb128 0x11
+ 1845 008f 01       		.uleb128 0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 39
+
+
+ 1846 0090 12       		.uleb128 0x12
+ 1847 0091 06       		.uleb128 0x6
+ 1848 0092 40       		.uleb128 0x40
+ 1849 0093 18       		.uleb128 0x18
+ 1850 0094 9642     		.uleb128 0x2116
+ 1851 0096 19       		.uleb128 0x19
+ 1852 0097 00       		.byte	0
+ 1853 0098 00       		.byte	0
+ 1854 0099 0C       		.uleb128 0xc
+ 1855 009a 2E       		.uleb128 0x2e
+ 1856 009b 01       		.byte	0x1
+ 1857 009c 3F       		.uleb128 0x3f
+ 1858 009d 19       		.uleb128 0x19
+ 1859 009e 03       		.uleb128 0x3
+ 1860 009f 0E       		.uleb128 0xe
+ 1861 00a0 3A       		.uleb128 0x3a
+ 1862 00a1 0B       		.uleb128 0xb
+ 1863 00a2 3B       		.uleb128 0x3b
+ 1864 00a3 0B       		.uleb128 0xb
+ 1865 00a4 27       		.uleb128 0x27
+ 1866 00a5 19       		.uleb128 0x19
+ 1867 00a6 11       		.uleb128 0x11
+ 1868 00a7 01       		.uleb128 0x1
+ 1869 00a8 12       		.uleb128 0x12
+ 1870 00a9 06       		.uleb128 0x6
+ 1871 00aa 40       		.uleb128 0x40
+ 1872 00ab 18       		.uleb128 0x18
+ 1873 00ac 9642     		.uleb128 0x2116
+ 1874 00ae 19       		.uleb128 0x19
+ 1875 00af 01       		.uleb128 0x1
+ 1876 00b0 13       		.uleb128 0x13
+ 1877 00b1 00       		.byte	0
+ 1878 00b2 00       		.byte	0
+ 1879 00b3 0D       		.uleb128 0xd
+ 1880 00b4 05       		.uleb128 0x5
+ 1881 00b5 00       		.byte	0
+ 1882 00b6 03       		.uleb128 0x3
+ 1883 00b7 0E       		.uleb128 0xe
+ 1884 00b8 3A       		.uleb128 0x3a
+ 1885 00b9 0B       		.uleb128 0xb
+ 1886 00ba 3B       		.uleb128 0x3b
+ 1887 00bb 0B       		.uleb128 0xb
+ 1888 00bc 49       		.uleb128 0x49
+ 1889 00bd 13       		.uleb128 0x13
+ 1890 00be 02       		.uleb128 0x2
+ 1891 00bf 18       		.uleb128 0x18
+ 1892 00c0 00       		.byte	0
+ 1893 00c1 00       		.byte	0
+ 1894 00c2 0E       		.uleb128 0xe
+ 1895 00c3 34       		.uleb128 0x34
+ 1896 00c4 00       		.byte	0
+ 1897 00c5 03       		.uleb128 0x3
+ 1898 00c6 0E       		.uleb128 0xe
+ 1899 00c7 3A       		.uleb128 0x3a
+ 1900 00c8 0B       		.uleb128 0xb
+ 1901 00c9 3B       		.uleb128 0x3b
+ 1902 00ca 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 40
+
+
+ 1903 00cb 49       		.uleb128 0x49
+ 1904 00cc 13       		.uleb128 0x13
+ 1905 00cd 02       		.uleb128 0x2
+ 1906 00ce 18       		.uleb128 0x18
+ 1907 00cf 00       		.byte	0
+ 1908 00d0 00       		.byte	0
+ 1909 00d1 0F       		.uleb128 0xf
+ 1910 00d2 34       		.uleb128 0x34
+ 1911 00d3 00       		.byte	0
+ 1912 00d4 03       		.uleb128 0x3
+ 1913 00d5 08       		.uleb128 0x8
+ 1914 00d6 3A       		.uleb128 0x3a
+ 1915 00d7 0B       		.uleb128 0xb
+ 1916 00d8 3B       		.uleb128 0x3b
+ 1917 00d9 0B       		.uleb128 0xb
+ 1918 00da 49       		.uleb128 0x49
+ 1919 00db 13       		.uleb128 0x13
+ 1920 00dc 02       		.uleb128 0x2
+ 1921 00dd 18       		.uleb128 0x18
+ 1922 00de 00       		.byte	0
+ 1923 00df 00       		.byte	0
+ 1924 00e0 10       		.uleb128 0x10
+ 1925 00e1 0B       		.uleb128 0xb
+ 1926 00e2 01       		.byte	0x1
+ 1927 00e3 11       		.uleb128 0x11
+ 1928 00e4 01       		.uleb128 0x1
+ 1929 00e5 12       		.uleb128 0x12
+ 1930 00e6 06       		.uleb128 0x6
+ 1931 00e7 01       		.uleb128 0x1
+ 1932 00e8 13       		.uleb128 0x13
+ 1933 00e9 00       		.byte	0
+ 1934 00ea 00       		.byte	0
+ 1935 00eb 11       		.uleb128 0x11
+ 1936 00ec 34       		.uleb128 0x34
+ 1937 00ed 00       		.byte	0
+ 1938 00ee 03       		.uleb128 0x3
+ 1939 00ef 0E       		.uleb128 0xe
+ 1940 00f0 3A       		.uleb128 0x3a
+ 1941 00f1 0B       		.uleb128 0xb
+ 1942 00f2 3B       		.uleb128 0x3b
+ 1943 00f3 05       		.uleb128 0x5
+ 1944 00f4 49       		.uleb128 0x49
+ 1945 00f5 13       		.uleb128 0x13
+ 1946 00f6 02       		.uleb128 0x2
+ 1947 00f7 18       		.uleb128 0x18
+ 1948 00f8 00       		.byte	0
+ 1949 00f9 00       		.byte	0
+ 1950 00fa 12       		.uleb128 0x12
+ 1951 00fb 0B       		.uleb128 0xb
+ 1952 00fc 01       		.byte	0x1
+ 1953 00fd 11       		.uleb128 0x11
+ 1954 00fe 01       		.uleb128 0x1
+ 1955 00ff 12       		.uleb128 0x12
+ 1956 0100 06       		.uleb128 0x6
+ 1957 0101 00       		.byte	0
+ 1958 0102 00       		.byte	0
+ 1959 0103 13       		.uleb128 0x13
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 41
+
+
+ 1960 0104 0F       		.uleb128 0xf
+ 1961 0105 00       		.byte	0
+ 1962 0106 0B       		.uleb128 0xb
+ 1963 0107 0B       		.uleb128 0xb
+ 1964 0108 49       		.uleb128 0x49
+ 1965 0109 13       		.uleb128 0x13
+ 1966 010a 00       		.byte	0
+ 1967 010b 00       		.byte	0
+ 1968 010c 14       		.uleb128 0x14
+ 1969 010d 2E       		.uleb128 0x2e
+ 1970 010e 01       		.byte	0x1
+ 1971 010f 3F       		.uleb128 0x3f
+ 1972 0110 19       		.uleb128 0x19
+ 1973 0111 03       		.uleb128 0x3
+ 1974 0112 0E       		.uleb128 0xe
+ 1975 0113 3A       		.uleb128 0x3a
+ 1976 0114 0B       		.uleb128 0xb
+ 1977 0115 3B       		.uleb128 0x3b
+ 1978 0116 05       		.uleb128 0x5
+ 1979 0117 27       		.uleb128 0x27
+ 1980 0118 19       		.uleb128 0x19
+ 1981 0119 11       		.uleb128 0x11
+ 1982 011a 01       		.uleb128 0x1
+ 1983 011b 12       		.uleb128 0x12
+ 1984 011c 06       		.uleb128 0x6
+ 1985 011d 40       		.uleb128 0x40
+ 1986 011e 18       		.uleb128 0x18
+ 1987 011f 9642     		.uleb128 0x2116
+ 1988 0121 19       		.uleb128 0x19
+ 1989 0122 01       		.uleb128 0x1
+ 1990 0123 13       		.uleb128 0x13
+ 1991 0124 00       		.byte	0
+ 1992 0125 00       		.byte	0
+ 1993 0126 15       		.uleb128 0x15
+ 1994 0127 05       		.uleb128 0x5
+ 1995 0128 00       		.byte	0
+ 1996 0129 03       		.uleb128 0x3
+ 1997 012a 0E       		.uleb128 0xe
+ 1998 012b 3A       		.uleb128 0x3a
+ 1999 012c 0B       		.uleb128 0xb
+ 2000 012d 3B       		.uleb128 0x3b
+ 2001 012e 05       		.uleb128 0x5
+ 2002 012f 49       		.uleb128 0x49
+ 2003 0130 13       		.uleb128 0x13
+ 2004 0131 02       		.uleb128 0x2
+ 2005 0132 18       		.uleb128 0x18
+ 2006 0133 00       		.byte	0
+ 2007 0134 00       		.byte	0
+ 2008 0135 16       		.uleb128 0x16
+ 2009 0136 34       		.uleb128 0x34
+ 2010 0137 00       		.byte	0
+ 2011 0138 03       		.uleb128 0x3
+ 2012 0139 0E       		.uleb128 0xe
+ 2013 013a 3A       		.uleb128 0x3a
+ 2014 013b 0B       		.uleb128 0xb
+ 2015 013c 3B       		.uleb128 0x3b
+ 2016 013d 05       		.uleb128 0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 42
+
+
+ 2017 013e 49       		.uleb128 0x49
+ 2018 013f 13       		.uleb128 0x13
+ 2019 0140 3F       		.uleb128 0x3f
+ 2020 0141 19       		.uleb128 0x19
+ 2021 0142 3C       		.uleb128 0x3c
+ 2022 0143 19       		.uleb128 0x19
+ 2023 0144 00       		.byte	0
+ 2024 0145 00       		.byte	0
+ 2025 0146 17       		.uleb128 0x17
+ 2026 0147 34       		.uleb128 0x34
+ 2027 0148 00       		.byte	0
+ 2028 0149 03       		.uleb128 0x3
+ 2029 014a 0E       		.uleb128 0xe
+ 2030 014b 3A       		.uleb128 0x3a
+ 2031 014c 0B       		.uleb128 0xb
+ 2032 014d 3B       		.uleb128 0x3b
+ 2033 014e 0B       		.uleb128 0xb
+ 2034 014f 49       		.uleb128 0x49
+ 2035 0150 13       		.uleb128 0x13
+ 2036 0151 3F       		.uleb128 0x3f
+ 2037 0152 19       		.uleb128 0x19
+ 2038 0153 3C       		.uleb128 0x3c
+ 2039 0154 19       		.uleb128 0x19
+ 2040 0155 00       		.byte	0
+ 2041 0156 00       		.byte	0
+ 2042 0157 18       		.uleb128 0x18
+ 2043 0158 34       		.uleb128 0x34
+ 2044 0159 00       		.byte	0
+ 2045 015a 03       		.uleb128 0x3
+ 2046 015b 08       		.uleb128 0x8
+ 2047 015c 3A       		.uleb128 0x3a
+ 2048 015d 0B       		.uleb128 0xb
+ 2049 015e 3B       		.uleb128 0x3b
+ 2050 015f 0B       		.uleb128 0xb
+ 2051 0160 49       		.uleb128 0x49
+ 2052 0161 13       		.uleb128 0x13
+ 2053 0162 3F       		.uleb128 0x3f
+ 2054 0163 19       		.uleb128 0x19
+ 2055 0164 3C       		.uleb128 0x3c
+ 2056 0165 19       		.uleb128 0x19
+ 2057 0166 00       		.byte	0
+ 2058 0167 00       		.byte	0
+ 2059 0168 19       		.uleb128 0x19
+ 2060 0169 34       		.uleb128 0x34
+ 2061 016a 00       		.byte	0
+ 2062 016b 03       		.uleb128 0x3
+ 2063 016c 0E       		.uleb128 0xe
+ 2064 016d 3A       		.uleb128 0x3a
+ 2065 016e 0B       		.uleb128 0xb
+ 2066 016f 3B       		.uleb128 0x3b
+ 2067 0170 0B       		.uleb128 0xb
+ 2068 0171 49       		.uleb128 0x49
+ 2069 0172 13       		.uleb128 0x13
+ 2070 0173 3F       		.uleb128 0x3f
+ 2071 0174 19       		.uleb128 0x19
+ 2072 0175 02       		.uleb128 0x2
+ 2073 0176 18       		.uleb128 0x18
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 43
+
+
+ 2074 0177 00       		.byte	0
+ 2075 0178 00       		.byte	0
+ 2076 0179 00       		.byte	0
+ 2077              		.section	.debug_aranges,"",%progbits
+ 2078 0000 44000000 		.4byte	0x44
+ 2079 0004 0200     		.2byte	0x2
+ 2080 0006 00000000 		.4byte	.Ldebug_info0
+ 2081 000a 04       		.byte	0x4
+ 2082 000b 00       		.byte	0
+ 2083 000c 0000     		.2byte	0
+ 2084 000e 0000     		.2byte	0
+ 2085 0010 00000000 		.4byte	.LFB64
+ 2086 0014 30000000 		.4byte	.LFE64-.LFB64
+ 2087 0018 00000000 		.4byte	.LFB65
+ 2088 001c 10000000 		.4byte	.LFE65-.LFB65
+ 2089 0020 00000000 		.4byte	.LFB66
+ 2090 0024 0E000000 		.4byte	.LFE66-.LFB66
+ 2091 0028 00000000 		.4byte	.LFB67
+ 2092 002c 2C000000 		.4byte	.LFE67-.LFB67
+ 2093 0030 00000000 		.4byte	.LFB68
+ 2094 0034 B4050000 		.4byte	.LFE68-.LFB68
+ 2095 0038 00000000 		.4byte	.LFB69
+ 2096 003c 5C000000 		.4byte	.LFE69-.LFB69
+ 2097 0040 00000000 		.4byte	0
+ 2098 0044 00000000 		.4byte	0
+ 2099              		.section	.debug_ranges,"",%progbits
+ 2100              	.Ldebug_ranges0:
+ 2101 0000 00000000 		.4byte	.LFB64
+ 2102 0004 30000000 		.4byte	.LFE64
+ 2103 0008 00000000 		.4byte	.LFB65
+ 2104 000c 10000000 		.4byte	.LFE65
+ 2105 0010 00000000 		.4byte	.LFB66
+ 2106 0014 0E000000 		.4byte	.LFE66
+ 2107 0018 00000000 		.4byte	.LFB67
+ 2108 001c 2C000000 		.4byte	.LFE67
+ 2109 0020 00000000 		.4byte	.LFB68
+ 2110 0024 B4050000 		.4byte	.LFE68
+ 2111 0028 00000000 		.4byte	.LFB69
+ 2112 002c 5C000000 		.4byte	.LFE69
+ 2113 0030 00000000 		.4byte	0
+ 2114 0034 00000000 		.4byte	0
+ 2115              		.section	.debug_line,"",%progbits
+ 2116              	.Ldebug_line0:
+ 2117 0000 E9020000 		.section	.debug_str,"MS",%progbits,1
+ 2117      02006801 
+ 2117      00000201 
+ 2117      FB0E0D00 
+ 2117      01010101 
+ 2118              	.LASF85:
+ 2119 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 2119      72745F65 
+ 2119      7865635F 
+ 2119      616C6172 
+ 2119      6D00
+ 2120              	.LASF87:
+ 2121 0012 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 2121      72745F65 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 44
+
+
+ 2121      7865635F 
+ 2121      61636365 
+ 2121      73736F72 
+ 2122              	.LASF22:
+ 2123 0031 61636365 		.ascii	"acceleration\000"
+ 2123      6C657261 
+ 2123      74696F6E 
+ 2123      00
+ 2124              	.LASF40:
+ 2125 003e 73746174 		.ascii	"state\000"
+ 2125      6500
+ 2126              	.LASF65:
+ 2127 0044 74617267 		.ascii	"target\000"
+ 2127      657400
+ 2128              	.LASF2:
+ 2129 004b 73686F72 		.ascii	"short int\000"
+ 2129      7420696E 
+ 2129      7400
+ 2130              	.LASF19:
+ 2131 0055 73697A65 		.ascii	"sizetype\000"
+ 2131      74797065 
+ 2131      00
+ 2132              	.LASF54:
+ 2133 005e 73797374 		.ascii	"system_t\000"
+ 2133      656D5F74 
+ 2133      00
+ 2134              	.LASF88:
+ 2135 0067 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 2135      43313120 
+ 2135      352E342E 
+ 2135      31203230 
+ 2135      31363036 
+ 2136 009a 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 2136      20726576 
+ 2136      6973696F 
+ 2136      6E203233 
+ 2136      37373135 
+ 2137 00cd 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 2137      66756E63 
+ 2137      74696F6E 
+ 2137      2D736563 
+ 2137      74696F6E 
+ 2138              	.LASF73:
+ 2139 00f5 72745F65 		.ascii	"rt_exec\000"
+ 2139      78656300 
+ 2140              	.LASF4:
+ 2141 00fd 5F5F7569 		.ascii	"__uint16_t\000"
+ 2141      6E743136 
+ 2141      5F7400
+ 2142              	.LASF68:
+ 2143 0108 6C696D69 		.ascii	"limit_state\000"
+ 2143      745F7374 
+ 2143      61746500 
+ 2144              	.LASF27:
+ 2145 0114 73746570 		.ascii	"stepper_idle_lock_time\000"
+ 2145      7065725F 
+ 2145      69646C65 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 45
+
+
+ 2145      5F6C6F63 
+ 2145      6B5F7469 
+ 2146              	.LASF59:
+ 2147 012b 6C696D69 		.ascii	"limits_disable\000"
+ 2147      74735F64 
+ 2147      69736162 
+ 2147      6C6500
+ 2148              	.LASF69:
+ 2149 013a 61786973 		.ascii	"axislock\000"
+ 2149      6C6F636B 
+ 2149      00
+ 2150              	.LASF12:
+ 2151 0143 75696E74 		.ascii	"uint8_t\000"
+ 2151      385F7400 
+ 2152              	.LASF89:
+ 2153 014b 6C696D69 		.ascii	"limits.c\000"
+ 2153      74732E63 
+ 2153      00
+ 2154              	.LASF70:
+ 2155 0154 6E5F6163 		.ascii	"n_active_axis\000"
+ 2155      74697665 
+ 2155      5F617869 
+ 2155      7300
+ 2156              	.LASF38:
+ 2157 0162 686F6D69 		.ascii	"homing_pulloff\000"
+ 2157      6E675F70 
+ 2157      756C6C6F 
+ 2157      666600
+ 2158              	.LASF39:
+ 2159 0171 73657474 		.ascii	"settings_t\000"
+ 2159      696E6773 
+ 2159      5F7400
+ 2160              	.LASF15:
+ 2161 017c 666C6F61 		.ascii	"float\000"
+ 2161      7400
+ 2162              	.LASF80:
+ 2163 0182 73657474 		.ascii	"settings\000"
+ 2163      696E6773 
+ 2163      00
+ 2164              	.LASF9:
+ 2165 018b 6C6F6E67 		.ascii	"long long int\000"
+ 2165      206C6F6E 
+ 2165      6720696E 
+ 2165      7400
+ 2166              	.LASF49:
+ 2167 0199 7370696E 		.ascii	"spindle_speed_ovr\000"
+ 2167      646C655F 
+ 2167      73706565 
+ 2167      645F6F76 
+ 2167      7200
+ 2168              	.LASF64:
+ 2169 01ab 73746570 		.ascii	"step_pin\000"
+ 2169      5F70696E 
+ 2169      00
+ 2170              	.LASF81:
+ 2171 01b4 7379735F 		.ascii	"sys_position\000"
+ 2171      706F7369 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 46
+
+
+ 2171      74696F6E 
+ 2171      00
+ 2172              	.LASF45:
+ 2173 01c1 70726F62 		.ascii	"probe_succeeded\000"
+ 2173      655F7375 
+ 2173      63636565 
+ 2173      64656400 
+ 2174              	.LASF7:
+ 2175 01d1 6C6F6E67 		.ascii	"long int\000"
+ 2175      20696E74 
+ 2175      00
+ 2176              	.LASF76:
+ 2177 01da 6C696D69 		.ascii	"limits_go_home\000"
+ 2177      74735F67 
+ 2177      6F5F686F 
+ 2177      6D6500
+ 2178              	.LASF20:
+ 2179 01e9 73746570 		.ascii	"steps_per_mm\000"
+ 2179      735F7065 
+ 2179      725F6D6D 
+ 2179      00
+ 2180              	.LASF3:
+ 2181 01f6 5F5F7569 		.ascii	"__uint8_t\000"
+ 2181      6E74385F 
+ 2181      7400
+ 2182              	.LASF51:
+ 2183 0200 7265706F 		.ascii	"report_ovr_counter\000"
+ 2183      72745F6F 
+ 2183      76725F63 
+ 2183      6F756E74 
+ 2183      657200
+ 2184              	.LASF30:
+ 2185 0213 6172635F 		.ascii	"arc_tolerance\000"
+ 2185      746F6C65 
+ 2185      72616E63 
+ 2185      6500
+ 2186              	.LASF18:
+ 2187 0221 6C6F6E67 		.ascii	"long double\000"
+ 2187      20646F75 
+ 2187      626C6500 
+ 2188              	.LASF34:
+ 2189 022d 686F6D69 		.ascii	"homing_dir_mask\000"
+ 2189      6E675F64 
+ 2189      69725F6D 
+ 2189      61736B00 
+ 2190              	.LASF1:
+ 2191 023d 756E7369 		.ascii	"unsigned char\000"
+ 2191      676E6564 
+ 2191      20636861 
+ 2191      7200
+ 2192              	.LASF61:
+ 2193 024b 706C616E 		.ascii	"plan_data\000"
+ 2193      5F646174 
+ 2193      6100
+ 2194              	.LASF41:
+ 2195 0255 61626F72 		.ascii	"abort\000"
+ 2195      7400
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 47
+
+
+ 2196              	.LASF0:
+ 2197 025b 7369676E 		.ascii	"signed char\000"
+ 2197      65642063 
+ 2197      68617200 
+ 2198              	.LASF33:
+ 2199 0267 666C6167 		.ascii	"flags\000"
+ 2199      7300
+ 2200              	.LASF10:
+ 2201 026d 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 2201      206C6F6E 
+ 2201      6720756E 
+ 2201      7369676E 
+ 2201      65642069 
+ 2202              	.LASF74:
+ 2203 0284 6F66665F 		.ascii	"off_axis_position\000"
+ 2203      61786973 
+ 2203      5F706F73 
+ 2203      6974696F 
+ 2203      6E00
+ 2204              	.LASF11:
+ 2205 0296 756E7369 		.ascii	"unsigned int\000"
+ 2205      676E6564 
+ 2205      20696E74 
+ 2205      00
+ 2206              	.LASF47:
+ 2207 02a3 665F6F76 		.ascii	"f_override\000"
+ 2207      65727269 
+ 2207      646500
+ 2208              	.LASF53:
+ 2209 02ae 7370696E 		.ascii	"spindle_speed\000"
+ 2209      646C655F 
+ 2209      73706565 
+ 2209      6400
+ 2210              	.LASF52:
+ 2211 02bc 7265706F 		.ascii	"report_wco_counter\000"
+ 2211      72745F77 
+ 2211      636F5F63 
+ 2211      6F756E74 
+ 2211      657200
+ 2212              	.LASF82:
+ 2213 02cf 7379735F 		.ascii	"sys_probe_position\000"
+ 2213      70726F62 
+ 2213      655F706F 
+ 2213      73697469 
+ 2213      6F6E00
+ 2214              	.LASF86:
+ 2215 02e2 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 2215      72745F65 
+ 2215      7865635F 
+ 2215      6D6F7469 
+ 2215      6F6E5F6F 
+ 2216              	.LASF28:
+ 2217 02fe 73746174 		.ascii	"status_report_mask\000"
+ 2217      75735F72 
+ 2217      65706F72 
+ 2217      745F6D61 
+ 2217      736B00
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 48
+
+
+ 2218              	.LASF46:
+ 2219 0311 686F6D69 		.ascii	"homing_axis_lock\000"
+ 2219      6E675F61 
+ 2219      7869735F 
+ 2219      6C6F636B 
+ 2219      00
+ 2220              	.LASF55:
+ 2221 0322 66656564 		.ascii	"feed_rate\000"
+ 2221      5F726174 
+ 2221      6500
+ 2222              	.LASF5:
+ 2223 032c 73686F72 		.ascii	"short unsigned int\000"
+ 2223      7420756E 
+ 2223      7369676E 
+ 2223      65642069 
+ 2223      6E7400
+ 2224              	.LASF56:
+ 2225 033f 636F6E64 		.ascii	"condition\000"
+ 2225      6974696F 
+ 2225      6E00
+ 2226              	.LASF57:
+ 2227 0349 706C616E 		.ascii	"plan_line_data_t\000"
+ 2227      5F6C696E 
+ 2227      655F6461 
+ 2227      74615F74 
+ 2227      00
+ 2228              	.LASF17:
+ 2229 035a 63686172 		.ascii	"char\000"
+ 2229      00
+ 2230              	.LASF13:
+ 2231 035f 75696E74 		.ascii	"uint16_t\000"
+ 2231      31365F74 
+ 2231      00
+ 2232              	.LASF26:
+ 2233 0368 6469725F 		.ascii	"dir_invert_mask\000"
+ 2233      696E7665 
+ 2233      72745F6D 
+ 2233      61736B00 
+ 2234              	.LASF14:
+ 2235 0378 696E7433 		.ascii	"int32_t\000"
+ 2235      325F7400 
+ 2236              	.LASF67:
+ 2237 0380 686F6D69 		.ascii	"homing_rate\000"
+ 2237      6E675F72 
+ 2237      61746500 
+ 2238              	.LASF75:
+ 2239 038c 5F426F6F 		.ascii	"_Bool\000"
+ 2239      6C00
+ 2240              	.LASF31:
+ 2241 0392 72706D5F 		.ascii	"rpm_max\000"
+ 2241      6D617800 
+ 2242              	.LASF44:
+ 2243 039a 73746570 		.ascii	"step_control\000"
+ 2243      5F636F6E 
+ 2243      74726F6C 
+ 2243      00
+ 2244              	.LASF42:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 49
+
+
+ 2245 03a7 73757370 		.ascii	"suspend\000"
+ 2245      656E6400 
+ 2246              	.LASF43:
+ 2247 03af 736F6674 		.ascii	"soft_limit\000"
+ 2247      5F6C696D 
+ 2247      697400
+ 2248              	.LASF37:
+ 2249 03ba 686F6D69 		.ascii	"homing_debounce_delay\000"
+ 2249      6E675F64 
+ 2249      65626F75 
+ 2249      6E63655F 
+ 2249      64656C61 
+ 2250              	.LASF24:
+ 2251 03d0 70756C73 		.ascii	"pulse_microseconds\000"
+ 2251      655F6D69 
+ 2251      63726F73 
+ 2251      65636F6E 
+ 2251      647300
+ 2252              	.LASF78:
+ 2253 03e3 6379636C 		.ascii	"cycle_mask\000"
+ 2253      655F6D61 
+ 2253      736B00
+ 2254              	.LASF83:
+ 2255 03ee 7379735F 		.ascii	"sys_probe_state\000"
+ 2255      70726F62 
+ 2255      655F7374 
+ 2255      61746500 
+ 2256              	.LASF50:
+ 2257 03fe 7370696E 		.ascii	"spindle_stop_ovr\000"
+ 2257      646C655F 
+ 2257      73746F70 
+ 2257      5F6F7672 
+ 2257      00
+ 2258              	.LASF8:
+ 2259 040f 6C6F6E67 		.ascii	"long unsigned int\000"
+ 2259      20756E73 
+ 2259      69676E65 
+ 2259      6420696E 
+ 2259      7400
+ 2260              	.LASF16:
+ 2261 0421 646F7562 		.ascii	"double\000"
+ 2261      6C6500
+ 2262              	.LASF36:
+ 2263 0428 686F6D69 		.ascii	"homing_seek_rate\000"
+ 2263      6E675F73 
+ 2263      65656B5F 
+ 2263      72617465 
+ 2263      00
+ 2264              	.LASF32:
+ 2265 0439 72706D5F 		.ascii	"rpm_min\000"
+ 2265      6D696E00 
+ 2266              	.LASF72:
+ 2267 0441 61786973 		.ascii	"axis_position\000"
+ 2267      5F706F73 
+ 2267      6974696F 
+ 2267      6E00
+ 2268              	.LASF58:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 50
+
+
+ 2269 044f 6C696D69 		.ascii	"limits_init\000"
+ 2269      74735F69 
+ 2269      6E697400 
+ 2270              	.LASF6:
+ 2271 045b 5F5F696E 		.ascii	"__int32_t\000"
+ 2271      7433325F 
+ 2271      7400
+ 2272              	.LASF29:
+ 2273 0465 6A756E63 		.ascii	"junction_deviation\000"
+ 2273      74696F6E 
+ 2273      5F646576 
+ 2273      69617469 
+ 2273      6F6E00
+ 2274              	.LASF23:
+ 2275 0478 6D61785F 		.ascii	"max_travel\000"
+ 2275      74726176 
+ 2275      656C00
+ 2276              	.LASF90:
+ 2277 0483 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 2277      73657273 
+ 2277      5C626172 
+ 2277      746F5C44 
+ 2277      726F7062 
+ 2278 04b0 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 2278      5553425F 
+ 2278      4E617469 
+ 2278      76652E63 
+ 2278      7964736E 
+ 2279              	.LASF35:
+ 2280 04c5 686F6D69 		.ascii	"homing_feed_rate\000"
+ 2280      6E675F66 
+ 2280      6565645F 
+ 2280      72617465 
+ 2280      00
+ 2281              	.LASF48:
+ 2282 04d6 725F6F76 		.ascii	"r_override\000"
+ 2282      65727269 
+ 2282      646500
+ 2283              	.LASF66:
+ 2284 04e1 61707072 		.ascii	"approach\000"
+ 2284      6F616368 
+ 2284      00
+ 2285              	.LASF77:
+ 2286 04ea 6C696D69 		.ascii	"limits_soft_check\000"
+ 2286      74735F73 
+ 2286      6F66745F 
+ 2286      63686563 
+ 2286      6B00
+ 2287              	.LASF63:
+ 2288 04fc 6E5F6379 		.ascii	"n_cycle\000"
+ 2288      636C6500 
+ 2289              	.LASF62:
+ 2290 0504 706C5F64 		.ascii	"pl_data\000"
+ 2290      61746100 
+ 2291              	.LASF79:
+ 2292 050c 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 2292      52784275 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccamTRzO.s 			page 51
+
+
+ 2292      66666572 
+ 2292      00
+ 2293              	.LASF21:
+ 2294 0519 6D61785F 		.ascii	"max_rate\000"
+ 2294      72617465 
+ 2294      00
+ 2295              	.LASF84:
+ 2296 0522 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 2296      72745F65 
+ 2296      7865635F 
+ 2296      73746174 
+ 2296      6500
+ 2297              	.LASF71:
+ 2298 0534 7365745F 		.ascii	"set_axis_position\000"
+ 2298      61786973 
+ 2298      5F706F73 
+ 2298      6974696F 
+ 2298      6E00
+ 2299              	.LASF25:
+ 2300 0546 73746570 		.ascii	"step_invert_mask\000"
+ 2300      5F696E76 
+ 2300      6572745F 
+ 2300      6D61736B 
+ 2300      00
+ 2301              	.LASF91:
+ 2302 0557 6C696D69 		.ascii	"limits_get_state\000"
+ 2302      74735F67 
+ 2302      65745F73 
+ 2302      74617465 
+ 2302      00
+ 2303              	.LASF60:
+ 2304 0568 6C696D69 		.ascii	"limit_isr_handler\000"
+ 2304      745F6973 
+ 2304      725F6861 
+ 2304      6E646C65 
+ 2304      7200
+ 2305              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

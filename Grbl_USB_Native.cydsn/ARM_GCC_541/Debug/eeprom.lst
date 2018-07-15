@@ -1,0 +1,976 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"eeprom.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.eeprom_get_char,"ax",%progbits
+  20              		.align	2
+  21              		.global	eeprom_get_char
+  22              		.thumb
+  23              		.thumb_func
+  24              		.type	eeprom_get_char, %function
+  25              	eeprom_get_char:
+  26              	.LFB0:
+  27              		.file 1 "eeprom.c"
+   1:eeprom.c      **** // This file has been prepared for Doxygen automatic documentation generation.
+   2:eeprom.c      **** /*! \file ********************************************************************
+   3:eeprom.c      **** *
+   4:eeprom.c      **** * Atmel Corporation
+   5:eeprom.c      **** *
+   6:eeprom.c      **** * \li File:               eeprom.c
+   7:eeprom.c      **** * \li Compiler:           IAR EWAAVR 3.10c
+   8:eeprom.c      **** * \li Support mail:       avr@atmel.com
+   9:eeprom.c      **** *
+  10:eeprom.c      **** * \li Supported devices:  All devices with split EEPROM erase/write
+  11:eeprom.c      **** *                         capabilities can be used.
+  12:eeprom.c      **** *                         The example is written for ATmega48.
+  13:eeprom.c      **** *
+  14:eeprom.c      **** * \li AppNote:            AVR103 - Using the EEPROM Programming Modes.
+  15:eeprom.c      **** *
+  16:eeprom.c      **** * \li Description:        Example on how to use the split EEPROM erase/write
+  17:eeprom.c      **** *                         capabilities in e.g. ATmega48. All EEPROM
+  18:eeprom.c      **** *                         programming modes are tested, i.e. Erase+Write,
+  19:eeprom.c      **** *                         Erase-only and Write-only.
+  20:eeprom.c      **** *
+  21:eeprom.c      **** *                         $Revision: 1.6 $
+  22:eeprom.c      **** *                         $Date: Friday, February 11, 2005 07:16:44 UTC $
+  23:eeprom.c      **** 
+  24:eeprom.c      **** Updated For PSoC/Grbl 2017-2018 Barton Dring buildlog.net
+  25:eeprom.c      **** 
+  26:eeprom.c      **** ****************************************************************************/
+  27:eeprom.c      **** 
+  28:eeprom.c      **** 
+  29:eeprom.c      **** #include "EEPROM_PSoC.h"
+  30:eeprom.c      **** 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 2
+
+
+  31:eeprom.c      **** 
+  32:eeprom.c      **** unsigned char eeprom_get_char( unsigned int addr )
+  33:eeprom.c      **** {
+  28              		.loc 1 33 0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 8
+  31              		@ frame_needed = 1, uses_anonymous_args = 0
+  32 0000 80B5     		push	{r7, lr}
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 7, -8
+  35              		.cfi_offset 14, -4
+  36 0002 82B0     		sub	sp, sp, #8
+  37              		.cfi_def_cfa_offset 16
+  38 0004 00AF     		add	r7, sp, #0
+  39              		.cfi_def_cfa_register 7
+  40 0006 7860     		str	r0, [r7, #4]
+  34:eeprom.c      **** 	return EEPROM_PSoC_ReadByte(addr);
+  41              		.loc 1 34 0
+  42 0008 7B68     		ldr	r3, [r7, #4]
+  43 000a 9BB2     		uxth	r3, r3
+  44 000c 1846     		mov	r0, r3
+  45 000e FFF7FEFF 		bl	EEPROM_PSoC_ReadByte
+  46 0012 0346     		mov	r3, r0
+  35:eeprom.c      **** }
+  47              		.loc 1 35 0
+  48 0014 1846     		mov	r0, r3
+  49 0016 0837     		adds	r7, r7, #8
+  50              		.cfi_def_cfa_offset 8
+  51 0018 BD46     		mov	sp, r7
+  52              		.cfi_def_cfa_register 13
+  53              		@ sp needed
+  54 001a 80BD     		pop	{r7, pc}
+  55              		.cfi_endproc
+  56              	.LFE0:
+  57              		.size	eeprom_get_char, .-eeprom_get_char
+  58              		.section	.text.eeprom_put_char,"ax",%progbits
+  59              		.align	2
+  60              		.global	eeprom_put_char
+  61              		.thumb
+  62              		.thumb_func
+  63              		.type	eeprom_put_char, %function
+  64              	eeprom_put_char:
+  65              	.LFB1:
+  36:eeprom.c      **** 
+  37:eeprom.c      **** /*! \brief  Write byte to EEPROM.
+  38:eeprom.c      ****  *
+  39:eeprom.c      ****  *  This function writes one byte to a given EEPROM address.
+  40:eeprom.c      ****  *  The differences between the existing byte and the new value is used
+  41:eeprom.c      ****  *  to select the most efficient EEPROM programming mode.
+  42:eeprom.c      ****  *
+  43:eeprom.c      ****  *  \note  The CPU is halted for 2 clock cycles during EEPROM programming.
+  44:eeprom.c      ****  *
+  45:eeprom.c      ****  *  \note  When this function returns, the new EEPROM value is not available
+  46:eeprom.c      ****  *         until the EEPROM programming time has passed. The EEPE bit in EECR
+  47:eeprom.c      ****  *         should be polled to check whether the programming is finished.
+  48:eeprom.c      ****  *
+  49:eeprom.c      ****  *  \note  The EEPROM_GetChar() function checks the EEPE bit automatically.
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 3
+
+
+  50:eeprom.c      ****  *
+  51:eeprom.c      ****  *  \param  addr  EEPROM address to write to.
+  52:eeprom.c      ****  *  \param  new_value  New EEPROM value.
+  53:eeprom.c      ****  */
+  54:eeprom.c      **** void eeprom_put_char( unsigned int addr, unsigned char new_value )
+  55:eeprom.c      **** {	
+  66              		.loc 1 55 0
+  67              		.cfi_startproc
+  68              		@ args = 0, pretend = 0, frame = 8
+  69              		@ frame_needed = 1, uses_anonymous_args = 0
+  70 0000 80B5     		push	{r7, lr}
+  71              		.cfi_def_cfa_offset 8
+  72              		.cfi_offset 7, -8
+  73              		.cfi_offset 14, -4
+  74 0002 82B0     		sub	sp, sp, #8
+  75              		.cfi_def_cfa_offset 16
+  76 0004 00AF     		add	r7, sp, #0
+  77              		.cfi_def_cfa_register 7
+  78 0006 7860     		str	r0, [r7, #4]
+  79 0008 0B46     		mov	r3, r1
+  80 000a FB70     		strb	r3, [r7, #3]
+  56:eeprom.c      ****     EEPROM_PSoC_WriteByte(new_value, addr);
+  81              		.loc 1 56 0
+  82 000c 7B68     		ldr	r3, [r7, #4]
+  83 000e 9AB2     		uxth	r2, r3
+  84 0010 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+  85 0012 1146     		mov	r1, r2
+  86 0014 1846     		mov	r0, r3
+  87 0016 FFF7FEFF 		bl	EEPROM_PSoC_WriteByte
+  57:eeprom.c      **** }
+  88              		.loc 1 57 0
+  89 001a 00BF     		nop
+  90 001c 0837     		adds	r7, r7, #8
+  91              		.cfi_def_cfa_offset 8
+  92 001e BD46     		mov	sp, r7
+  93              		.cfi_def_cfa_register 13
+  94              		@ sp needed
+  95 0020 80BD     		pop	{r7, pc}
+  96              		.cfi_endproc
+  97              	.LFE1:
+  98              		.size	eeprom_put_char, .-eeprom_put_char
+  99 0022 00BF     		.section	.text.memcpy_to_eeprom_with_checksum,"ax",%progbits
+ 100              		.align	2
+ 101              		.global	memcpy_to_eeprom_with_checksum
+ 102              		.thumb
+ 103              		.thumb_func
+ 104              		.type	memcpy_to_eeprom_with_checksum, %function
+ 105              	memcpy_to_eeprom_with_checksum:
+ 106              	.LFB2:
+  58:eeprom.c      **** 
+  59:eeprom.c      **** // Extensions added as part of Grbl 
+  60:eeprom.c      **** 
+  61:eeprom.c      **** 
+  62:eeprom.c      **** void memcpy_to_eeprom_with_checksum(unsigned int destination, char *source, unsigned int size) {
+ 107              		.loc 1 62 0
+ 108              		.cfi_startproc
+ 109              		@ args = 0, pretend = 0, frame = 24
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 4
+
+
+ 110              		@ frame_needed = 1, uses_anonymous_args = 0
+ 111 0000 80B5     		push	{r7, lr}
+ 112              		.cfi_def_cfa_offset 8
+ 113              		.cfi_offset 7, -8
+ 114              		.cfi_offset 14, -4
+ 115 0002 86B0     		sub	sp, sp, #24
+ 116              		.cfi_def_cfa_offset 32
+ 117 0004 00AF     		add	r7, sp, #0
+ 118              		.cfi_def_cfa_register 7
+ 119 0006 F860     		str	r0, [r7, #12]
+ 120 0008 B960     		str	r1, [r7, #8]
+ 121 000a 7A60     		str	r2, [r7, #4]
+  63:eeprom.c      ****   unsigned char checksum = 0;
+ 122              		.loc 1 63 0
+ 123 000c 0023     		movs	r3, #0
+ 124 000e FB75     		strb	r3, [r7, #23]
+  64:eeprom.c      ****   for(; size > 0; size--) { 
+ 125              		.loc 1 64 0
+ 126 0010 1EE0     		b	.L5
+ 127              	.L9:
+  65:eeprom.c      ****     checksum = (checksum << 1) || (checksum >> 7);
+ 128              		.loc 1 65 0
+ 129 0012 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 130 0014 5B00     		lsls	r3, r3, #1
+ 131 0016 002B     		cmp	r3, #0
+ 132 0018 03D1     		bne	.L6
+ 133              		.loc 1 65 0 is_stmt 0 discriminator 2
+ 134 001a 97F91730 		ldrsb	r3, [r7, #23]
+ 135 001e 002B     		cmp	r3, #0
+ 136 0020 01DA     		bge	.L7
+ 137              	.L6:
+ 138              		.loc 1 65 0 discriminator 3
+ 139 0022 0123     		movs	r3, #1
+ 140 0024 00E0     		b	.L8
+ 141              	.L7:
+ 142              		.loc 1 65 0 discriminator 4
+ 143 0026 0023     		movs	r3, #0
+ 144              	.L8:
+ 145              		.loc 1 65 0 discriminator 6
+ 146 0028 FB75     		strb	r3, [r7, #23]
+  66:eeprom.c      ****     checksum += *source;
+ 147              		.loc 1 66 0 is_stmt 1 discriminator 6
+ 148 002a BB68     		ldr	r3, [r7, #8]
+ 149 002c 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 150 002e FB7D     		ldrb	r3, [r7, #23]
+ 151 0030 1344     		add	r3, r3, r2
+ 152 0032 FB75     		strb	r3, [r7, #23]
+  67:eeprom.c      ****     eeprom_put_char(destination++, *(source++)); 
+ 153              		.loc 1 67 0 discriminator 6
+ 154 0034 FA68     		ldr	r2, [r7, #12]
+ 155 0036 531C     		adds	r3, r2, #1
+ 156 0038 FB60     		str	r3, [r7, #12]
+ 157 003a BB68     		ldr	r3, [r7, #8]
+ 158 003c 591C     		adds	r1, r3, #1
+ 159 003e B960     		str	r1, [r7, #8]
+ 160 0040 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 161 0042 1946     		mov	r1, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 5
+
+
+ 162 0044 1046     		mov	r0, r2
+ 163 0046 FFF7FEFF 		bl	eeprom_put_char
+  64:eeprom.c      ****     checksum = (checksum << 1) || (checksum >> 7);
+ 164              		.loc 1 64 0 discriminator 6
+ 165 004a 7B68     		ldr	r3, [r7, #4]
+ 166 004c 013B     		subs	r3, r3, #1
+ 167 004e 7B60     		str	r3, [r7, #4]
+ 168              	.L5:
+  64:eeprom.c      ****     checksum = (checksum << 1) || (checksum >> 7);
+ 169              		.loc 1 64 0 is_stmt 0 discriminator 1
+ 170 0050 7B68     		ldr	r3, [r7, #4]
+ 171 0052 002B     		cmp	r3, #0
+ 172 0054 DDD1     		bne	.L9
+  68:eeprom.c      ****   }
+  69:eeprom.c      ****   eeprom_put_char(destination, checksum);
+ 173              		.loc 1 69 0 is_stmt 1
+ 174 0056 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 175 0058 1946     		mov	r1, r3
+ 176 005a F868     		ldr	r0, [r7, #12]
+ 177 005c FFF7FEFF 		bl	eeprom_put_char
+  70:eeprom.c      **** }
+ 178              		.loc 1 70 0
+ 179 0060 00BF     		nop
+ 180 0062 1837     		adds	r7, r7, #24
+ 181              		.cfi_def_cfa_offset 8
+ 182 0064 BD46     		mov	sp, r7
+ 183              		.cfi_def_cfa_register 13
+ 184              		@ sp needed
+ 185 0066 80BD     		pop	{r7, pc}
+ 186              		.cfi_endproc
+ 187              	.LFE2:
+ 188              		.size	memcpy_to_eeprom_with_checksum, .-memcpy_to_eeprom_with_checksum
+ 189              		.section	.text.memcpy_from_eeprom_with_checksum,"ax",%progbits
+ 190              		.align	2
+ 191              		.global	memcpy_from_eeprom_with_checksum
+ 192              		.thumb
+ 193              		.thumb_func
+ 194              		.type	memcpy_from_eeprom_with_checksum, %function
+ 195              	memcpy_from_eeprom_with_checksum:
+ 196              	.LFB3:
+  71:eeprom.c      **** 
+  72:eeprom.c      **** int memcpy_from_eeprom_with_checksum(char *destination, unsigned int source, unsigned int size) {
+ 197              		.loc 1 72 0
+ 198              		.cfi_startproc
+ 199              		@ args = 0, pretend = 0, frame = 24
+ 200              		@ frame_needed = 1, uses_anonymous_args = 0
+ 201 0000 80B5     		push	{r7, lr}
+ 202              		.cfi_def_cfa_offset 8
+ 203              		.cfi_offset 7, -8
+ 204              		.cfi_offset 14, -4
+ 205 0002 86B0     		sub	sp, sp, #24
+ 206              		.cfi_def_cfa_offset 32
+ 207 0004 00AF     		add	r7, sp, #0
+ 208              		.cfi_def_cfa_register 7
+ 209 0006 F860     		str	r0, [r7, #12]
+ 210 0008 B960     		str	r1, [r7, #8]
+ 211 000a 7A60     		str	r2, [r7, #4]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 6
+
+
+  73:eeprom.c      ****   unsigned char data, checksum = 0;
+ 212              		.loc 1 73 0
+ 213 000c 0023     		movs	r3, #0
+ 214 000e FB75     		strb	r3, [r7, #23]
+  74:eeprom.c      ****   for(; size > 0; size--) { 
+ 215              		.loc 1 74 0
+ 216 0010 1FE0     		b	.L11
+ 217              	.L15:
+  75:eeprom.c      ****     data = eeprom_get_char(source++);
+ 218              		.loc 1 75 0
+ 219 0012 BB68     		ldr	r3, [r7, #8]
+ 220 0014 5A1C     		adds	r2, r3, #1
+ 221 0016 BA60     		str	r2, [r7, #8]
+ 222 0018 1846     		mov	r0, r3
+ 223 001a FFF7FEFF 		bl	eeprom_get_char
+ 224 001e 0346     		mov	r3, r0
+ 225 0020 BB75     		strb	r3, [r7, #22]
+  76:eeprom.c      ****     checksum = (checksum << 1) || (checksum >> 7);
+ 226              		.loc 1 76 0
+ 227 0022 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 228 0024 5B00     		lsls	r3, r3, #1
+ 229 0026 002B     		cmp	r3, #0
+ 230 0028 03D1     		bne	.L12
+ 231              		.loc 1 76 0 is_stmt 0 discriminator 2
+ 232 002a 97F91730 		ldrsb	r3, [r7, #23]
+ 233 002e 002B     		cmp	r3, #0
+ 234 0030 01DA     		bge	.L13
+ 235              	.L12:
+ 236              		.loc 1 76 0 discriminator 3
+ 237 0032 0123     		movs	r3, #1
+ 238 0034 00E0     		b	.L14
+ 239              	.L13:
+ 240              		.loc 1 76 0 discriminator 4
+ 241 0036 0023     		movs	r3, #0
+ 242              	.L14:
+ 243              		.loc 1 76 0 discriminator 6
+ 244 0038 FB75     		strb	r3, [r7, #23]
+  77:eeprom.c      ****     checksum += data;    
+ 245              		.loc 1 77 0 is_stmt 1 discriminator 6
+ 246 003a FA7D     		ldrb	r2, [r7, #23]
+ 247 003c BB7D     		ldrb	r3, [r7, #22]
+ 248 003e 1344     		add	r3, r3, r2
+ 249 0040 FB75     		strb	r3, [r7, #23]
+  78:eeprom.c      ****     *(destination++) = data; 
+ 250              		.loc 1 78 0 discriminator 6
+ 251 0042 FB68     		ldr	r3, [r7, #12]
+ 252 0044 5A1C     		adds	r2, r3, #1
+ 253 0046 FA60     		str	r2, [r7, #12]
+ 254 0048 BA7D     		ldrb	r2, [r7, #22]
+ 255 004a 1A70     		strb	r2, [r3]
+  74:eeprom.c      ****     data = eeprom_get_char(source++);
+ 256              		.loc 1 74 0 discriminator 6
+ 257 004c 7B68     		ldr	r3, [r7, #4]
+ 258 004e 013B     		subs	r3, r3, #1
+ 259 0050 7B60     		str	r3, [r7, #4]
+ 260              	.L11:
+  74:eeprom.c      ****     data = eeprom_get_char(source++);
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 7
+
+
+ 261              		.loc 1 74 0 is_stmt 0 discriminator 1
+ 262 0052 7B68     		ldr	r3, [r7, #4]
+ 263 0054 002B     		cmp	r3, #0
+ 264 0056 DCD1     		bne	.L15
+  79:eeprom.c      ****   }
+  80:eeprom.c      ****   return(checksum == eeprom_get_char(source));
+ 265              		.loc 1 80 0 is_stmt 1
+ 266 0058 B868     		ldr	r0, [r7, #8]
+ 267 005a FFF7FEFF 		bl	eeprom_get_char
+ 268 005e 0346     		mov	r3, r0
+ 269 0060 1A46     		mov	r2, r3
+ 270 0062 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 271 0064 9342     		cmp	r3, r2
+ 272 0066 0CBF     		ite	eq
+ 273 0068 0123     		moveq	r3, #1
+ 274 006a 0023     		movne	r3, #0
+ 275 006c DBB2     		uxtb	r3, r3
+  81:eeprom.c      **** }
+ 276              		.loc 1 81 0
+ 277 006e 1846     		mov	r0, r3
+ 278 0070 1837     		adds	r7, r7, #24
+ 279              		.cfi_def_cfa_offset 8
+ 280 0072 BD46     		mov	sp, r7
+ 281              		.cfi_def_cfa_register 13
+ 282              		@ sp needed
+ 283 0074 80BD     		pop	{r7, pc}
+ 284              		.cfi_endproc
+ 285              	.LFE3:
+ 286              		.size	memcpy_from_eeprom_with_checksum, .-memcpy_from_eeprom_with_checksum
+ 287 0076 00BF     		.text
+ 288              	.Letext0:
+ 289              		.section	.debug_info,"",%progbits
+ 290              	.Ldebug_info0:
+ 291 0000 95010000 		.4byte	0x195
+ 292 0004 0400     		.2byte	0x4
+ 293 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 294 000a 04       		.byte	0x4
+ 295 000b 01       		.uleb128 0x1
+ 296 000c 84000000 		.4byte	.LASF24
+ 297 0010 0C       		.byte	0xc
+ 298 0011 07020000 		.4byte	.LASF25
+ 299 0015 94010000 		.4byte	.LASF26
+ 300 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 301 001d 00000000 		.4byte	0
+ 302 0021 00000000 		.4byte	.Ldebug_line0
+ 303 0025 02       		.uleb128 0x2
+ 304 0026 01       		.byte	0x1
+ 305 0027 06       		.byte	0x6
+ 306 0028 83010000 		.4byte	.LASF0
+ 307 002c 02       		.uleb128 0x2
+ 308 002d 01       		.byte	0x1
+ 309 002e 08       		.byte	0x8
+ 310 002f 1C010000 		.4byte	.LASF1
+ 311 0033 02       		.uleb128 0x2
+ 312 0034 02       		.byte	0x2
+ 313 0035 05       		.byte	0x5
+ 314 0036 59000000 		.4byte	.LASF2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 8
+
+
+ 315 003a 02       		.uleb128 0x2
+ 316 003b 02       		.byte	0x2
+ 317 003c 07       		.byte	0x7
+ 318 003d 70010000 		.4byte	.LASF3
+ 319 0041 02       		.uleb128 0x2
+ 320 0042 04       		.byte	0x4
+ 321 0043 05       		.byte	0x5
+ 322 0044 36010000 		.4byte	.LASF4
+ 323 0048 02       		.uleb128 0x2
+ 324 0049 04       		.byte	0x4
+ 325 004a 07       		.byte	0x7
+ 326 004b 47000000 		.4byte	.LASF5
+ 327 004f 02       		.uleb128 0x2
+ 328 0050 08       		.byte	0x8
+ 329 0051 05       		.byte	0x5
+ 330 0052 00000000 		.4byte	.LASF6
+ 331 0056 02       		.uleb128 0x2
+ 332 0057 08       		.byte	0x8
+ 333 0058 07       		.byte	0x7
+ 334 0059 63000000 		.4byte	.LASF7
+ 335 005d 03       		.uleb128 0x3
+ 336 005e 04       		.byte	0x4
+ 337 005f 05       		.byte	0x5
+ 338 0060 696E7400 		.ascii	"int\000"
+ 339 0064 02       		.uleb128 0x2
+ 340 0065 04       		.byte	0x4
+ 341 0066 07       		.byte	0x7
+ 342 0067 1E000000 		.4byte	.LASF8
+ 343 006b 02       		.uleb128 0x2
+ 344 006c 04       		.byte	0x4
+ 345 006d 04       		.byte	0x4
+ 346 006e 01020000 		.4byte	.LASF9
+ 347 0072 02       		.uleb128 0x2
+ 348 0073 08       		.byte	0x8
+ 349 0074 04       		.byte	0x4
+ 350 0075 60010000 		.4byte	.LASF10
+ 351 0079 02       		.uleb128 0x2
+ 352 007a 01       		.byte	0x1
+ 353 007b 08       		.byte	0x8
+ 354 007c 7F000000 		.4byte	.LASF11
+ 355 0080 02       		.uleb128 0x2
+ 356 0081 08       		.byte	0x8
+ 357 0082 04       		.byte	0x4
+ 358 0083 D6010000 		.4byte	.LASF12
+ 359 0087 02       		.uleb128 0x2
+ 360 0088 04       		.byte	0x4
+ 361 0089 07       		.byte	0x7
+ 362 008a 10020000 		.4byte	.LASF13
+ 363 008e 04       		.uleb128 0x4
+ 364 008f 04       		.byte	0x4
+ 365 0090 79000000 		.4byte	0x79
+ 366 0094 05       		.uleb128 0x5
+ 367 0095 37000000 		.4byte	.LASF27
+ 368 0099 01       		.byte	0x1
+ 369 009a 20       		.byte	0x20
+ 370 009b 2C000000 		.4byte	0x2c
+ 371 009f 00000000 		.4byte	.LFB0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 9
+
+
+ 372 00a3 1C000000 		.4byte	.LFE0-.LFB0
+ 373 00a7 01       		.uleb128 0x1
+ 374 00a8 9C       		.byte	0x9c
+ 375 00a9 BC000000 		.4byte	0xbc
+ 376 00ad 06       		.uleb128 0x6
+ 377 00ae 7A000000 		.4byte	.LASF14
+ 378 00b2 01       		.byte	0x1
+ 379 00b3 20       		.byte	0x20
+ 380 00b4 64000000 		.4byte	0x64
+ 381 00b8 02       		.uleb128 0x2
+ 382 00b9 91       		.byte	0x91
+ 383 00ba 74       		.sleb128 -12
+ 384 00bb 00       		.byte	0
+ 385 00bc 07       		.uleb128 0x7
+ 386 00bd 0E000000 		.4byte	.LASF16
+ 387 00c1 01       		.byte	0x1
+ 388 00c2 36       		.byte	0x36
+ 389 00c3 00000000 		.4byte	.LFB1
+ 390 00c7 22000000 		.4byte	.LFE1-.LFB1
+ 391 00cb 01       		.uleb128 0x1
+ 392 00cc 9C       		.byte	0x9c
+ 393 00cd EE000000 		.4byte	0xee
+ 394 00d1 06       		.uleb128 0x6
+ 395 00d2 7A000000 		.4byte	.LASF14
+ 396 00d6 01       		.byte	0x1
+ 397 00d7 36       		.byte	0x36
+ 398 00d8 64000000 		.4byte	0x64
+ 399 00dc 02       		.uleb128 0x2
+ 400 00dd 91       		.byte	0x91
+ 401 00de 74       		.sleb128 -12
+ 402 00df 06       		.uleb128 0x6
+ 403 00e0 12010000 		.4byte	.LASF15
+ 404 00e4 01       		.byte	0x1
+ 405 00e5 36       		.byte	0x36
+ 406 00e6 2C000000 		.4byte	0x2c
+ 407 00ea 02       		.uleb128 0x2
+ 408 00eb 91       		.byte	0x91
+ 409 00ec 73       		.sleb128 -13
+ 410 00ed 00       		.byte	0
+ 411 00ee 07       		.uleb128 0x7
+ 412 00ef E2010000 		.4byte	.LASF17
+ 413 00f3 01       		.byte	0x1
+ 414 00f4 3E       		.byte	0x3e
+ 415 00f5 00000000 		.4byte	.LFB2
+ 416 00f9 68000000 		.4byte	.LFE2-.LFB2
+ 417 00fd 01       		.uleb128 0x1
+ 418 00fe 9C       		.byte	0x9c
+ 419 00ff 3C010000 		.4byte	0x13c
+ 420 0103 06       		.uleb128 0x6
+ 421 0104 2B000000 		.4byte	.LASF18
+ 422 0108 01       		.byte	0x1
+ 423 0109 3E       		.byte	0x3e
+ 424 010a 64000000 		.4byte	0x64
+ 425 010e 02       		.uleb128 0x2
+ 426 010f 91       		.byte	0x91
+ 427 0110 6C       		.sleb128 -20
+ 428 0111 06       		.uleb128 0x6
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 10
+
+
+ 429 0112 2F010000 		.4byte	.LASF19
+ 430 0116 01       		.byte	0x1
+ 431 0117 3E       		.byte	0x3e
+ 432 0118 8E000000 		.4byte	0x8e
+ 433 011c 02       		.uleb128 0x2
+ 434 011d 91       		.byte	0x91
+ 435 011e 68       		.sleb128 -24
+ 436 011f 06       		.uleb128 0x6
+ 437 0120 8F010000 		.4byte	.LASF20
+ 438 0124 01       		.byte	0x1
+ 439 0125 3E       		.byte	0x3e
+ 440 0126 64000000 		.4byte	0x64
+ 441 012a 02       		.uleb128 0x2
+ 442 012b 91       		.byte	0x91
+ 443 012c 64       		.sleb128 -28
+ 444 012d 08       		.uleb128 0x8
+ 445 012e 67010000 		.4byte	.LASF22
+ 446 0132 01       		.byte	0x1
+ 447 0133 3F       		.byte	0x3f
+ 448 0134 2C000000 		.4byte	0x2c
+ 449 0138 02       		.uleb128 0x2
+ 450 0139 91       		.byte	0x91
+ 451 013a 77       		.sleb128 -9
+ 452 013b 00       		.byte	0
+ 453 013c 09       		.uleb128 0x9
+ 454 013d 3F010000 		.4byte	.LASF21
+ 455 0141 01       		.byte	0x1
+ 456 0142 48       		.byte	0x48
+ 457 0143 5D000000 		.4byte	0x5d
+ 458 0147 00000000 		.4byte	.LFB3
+ 459 014b 76000000 		.4byte	.LFE3-.LFB3
+ 460 014f 01       		.uleb128 0x1
+ 461 0150 9C       		.byte	0x9c
+ 462 0151 06       		.uleb128 0x6
+ 463 0152 2B000000 		.4byte	.LASF18
+ 464 0156 01       		.byte	0x1
+ 465 0157 48       		.byte	0x48
+ 466 0158 8E000000 		.4byte	0x8e
+ 467 015c 02       		.uleb128 0x2
+ 468 015d 91       		.byte	0x91
+ 469 015e 6C       		.sleb128 -20
+ 470 015f 06       		.uleb128 0x6
+ 471 0160 2F010000 		.4byte	.LASF19
+ 472 0164 01       		.byte	0x1
+ 473 0165 48       		.byte	0x48
+ 474 0166 64000000 		.4byte	0x64
+ 475 016a 02       		.uleb128 0x2
+ 476 016b 91       		.byte	0x91
+ 477 016c 68       		.sleb128 -24
+ 478 016d 06       		.uleb128 0x6
+ 479 016e 8F010000 		.4byte	.LASF20
+ 480 0172 01       		.byte	0x1
+ 481 0173 48       		.byte	0x48
+ 482 0174 64000000 		.4byte	0x64
+ 483 0178 02       		.uleb128 0x2
+ 484 0179 91       		.byte	0x91
+ 485 017a 64       		.sleb128 -28
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 11
+
+
+ 486 017b 08       		.uleb128 0x8
+ 487 017c 2A010000 		.4byte	.LASF23
+ 488 0180 01       		.byte	0x1
+ 489 0181 49       		.byte	0x49
+ 490 0182 2C000000 		.4byte	0x2c
+ 491 0186 02       		.uleb128 0x2
+ 492 0187 91       		.byte	0x91
+ 493 0188 76       		.sleb128 -10
+ 494 0189 08       		.uleb128 0x8
+ 495 018a 67010000 		.4byte	.LASF22
+ 496 018e 01       		.byte	0x1
+ 497 018f 49       		.byte	0x49
+ 498 0190 2C000000 		.4byte	0x2c
+ 499 0194 02       		.uleb128 0x2
+ 500 0195 91       		.byte	0x91
+ 501 0196 77       		.sleb128 -9
+ 502 0197 00       		.byte	0
+ 503 0198 00       		.byte	0
+ 504              		.section	.debug_abbrev,"",%progbits
+ 505              	.Ldebug_abbrev0:
+ 506 0000 01       		.uleb128 0x1
+ 507 0001 11       		.uleb128 0x11
+ 508 0002 01       		.byte	0x1
+ 509 0003 25       		.uleb128 0x25
+ 510 0004 0E       		.uleb128 0xe
+ 511 0005 13       		.uleb128 0x13
+ 512 0006 0B       		.uleb128 0xb
+ 513 0007 03       		.uleb128 0x3
+ 514 0008 0E       		.uleb128 0xe
+ 515 0009 1B       		.uleb128 0x1b
+ 516 000a 0E       		.uleb128 0xe
+ 517 000b 55       		.uleb128 0x55
+ 518 000c 17       		.uleb128 0x17
+ 519 000d 11       		.uleb128 0x11
+ 520 000e 01       		.uleb128 0x1
+ 521 000f 10       		.uleb128 0x10
+ 522 0010 17       		.uleb128 0x17
+ 523 0011 00       		.byte	0
+ 524 0012 00       		.byte	0
+ 525 0013 02       		.uleb128 0x2
+ 526 0014 24       		.uleb128 0x24
+ 527 0015 00       		.byte	0
+ 528 0016 0B       		.uleb128 0xb
+ 529 0017 0B       		.uleb128 0xb
+ 530 0018 3E       		.uleb128 0x3e
+ 531 0019 0B       		.uleb128 0xb
+ 532 001a 03       		.uleb128 0x3
+ 533 001b 0E       		.uleb128 0xe
+ 534 001c 00       		.byte	0
+ 535 001d 00       		.byte	0
+ 536 001e 03       		.uleb128 0x3
+ 537 001f 24       		.uleb128 0x24
+ 538 0020 00       		.byte	0
+ 539 0021 0B       		.uleb128 0xb
+ 540 0022 0B       		.uleb128 0xb
+ 541 0023 3E       		.uleb128 0x3e
+ 542 0024 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 12
+
+
+ 543 0025 03       		.uleb128 0x3
+ 544 0026 08       		.uleb128 0x8
+ 545 0027 00       		.byte	0
+ 546 0028 00       		.byte	0
+ 547 0029 04       		.uleb128 0x4
+ 548 002a 0F       		.uleb128 0xf
+ 549 002b 00       		.byte	0
+ 550 002c 0B       		.uleb128 0xb
+ 551 002d 0B       		.uleb128 0xb
+ 552 002e 49       		.uleb128 0x49
+ 553 002f 13       		.uleb128 0x13
+ 554 0030 00       		.byte	0
+ 555 0031 00       		.byte	0
+ 556 0032 05       		.uleb128 0x5
+ 557 0033 2E       		.uleb128 0x2e
+ 558 0034 01       		.byte	0x1
+ 559 0035 3F       		.uleb128 0x3f
+ 560 0036 19       		.uleb128 0x19
+ 561 0037 03       		.uleb128 0x3
+ 562 0038 0E       		.uleb128 0xe
+ 563 0039 3A       		.uleb128 0x3a
+ 564 003a 0B       		.uleb128 0xb
+ 565 003b 3B       		.uleb128 0x3b
+ 566 003c 0B       		.uleb128 0xb
+ 567 003d 27       		.uleb128 0x27
+ 568 003e 19       		.uleb128 0x19
+ 569 003f 49       		.uleb128 0x49
+ 570 0040 13       		.uleb128 0x13
+ 571 0041 11       		.uleb128 0x11
+ 572 0042 01       		.uleb128 0x1
+ 573 0043 12       		.uleb128 0x12
+ 574 0044 06       		.uleb128 0x6
+ 575 0045 40       		.uleb128 0x40
+ 576 0046 18       		.uleb128 0x18
+ 577 0047 9642     		.uleb128 0x2116
+ 578 0049 19       		.uleb128 0x19
+ 579 004a 01       		.uleb128 0x1
+ 580 004b 13       		.uleb128 0x13
+ 581 004c 00       		.byte	0
+ 582 004d 00       		.byte	0
+ 583 004e 06       		.uleb128 0x6
+ 584 004f 05       		.uleb128 0x5
+ 585 0050 00       		.byte	0
+ 586 0051 03       		.uleb128 0x3
+ 587 0052 0E       		.uleb128 0xe
+ 588 0053 3A       		.uleb128 0x3a
+ 589 0054 0B       		.uleb128 0xb
+ 590 0055 3B       		.uleb128 0x3b
+ 591 0056 0B       		.uleb128 0xb
+ 592 0057 49       		.uleb128 0x49
+ 593 0058 13       		.uleb128 0x13
+ 594 0059 02       		.uleb128 0x2
+ 595 005a 18       		.uleb128 0x18
+ 596 005b 00       		.byte	0
+ 597 005c 00       		.byte	0
+ 598 005d 07       		.uleb128 0x7
+ 599 005e 2E       		.uleb128 0x2e
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 13
+
+
+ 600 005f 01       		.byte	0x1
+ 601 0060 3F       		.uleb128 0x3f
+ 602 0061 19       		.uleb128 0x19
+ 603 0062 03       		.uleb128 0x3
+ 604 0063 0E       		.uleb128 0xe
+ 605 0064 3A       		.uleb128 0x3a
+ 606 0065 0B       		.uleb128 0xb
+ 607 0066 3B       		.uleb128 0x3b
+ 608 0067 0B       		.uleb128 0xb
+ 609 0068 27       		.uleb128 0x27
+ 610 0069 19       		.uleb128 0x19
+ 611 006a 11       		.uleb128 0x11
+ 612 006b 01       		.uleb128 0x1
+ 613 006c 12       		.uleb128 0x12
+ 614 006d 06       		.uleb128 0x6
+ 615 006e 40       		.uleb128 0x40
+ 616 006f 18       		.uleb128 0x18
+ 617 0070 9642     		.uleb128 0x2116
+ 618 0072 19       		.uleb128 0x19
+ 619 0073 01       		.uleb128 0x1
+ 620 0074 13       		.uleb128 0x13
+ 621 0075 00       		.byte	0
+ 622 0076 00       		.byte	0
+ 623 0077 08       		.uleb128 0x8
+ 624 0078 34       		.uleb128 0x34
+ 625 0079 00       		.byte	0
+ 626 007a 03       		.uleb128 0x3
+ 627 007b 0E       		.uleb128 0xe
+ 628 007c 3A       		.uleb128 0x3a
+ 629 007d 0B       		.uleb128 0xb
+ 630 007e 3B       		.uleb128 0x3b
+ 631 007f 0B       		.uleb128 0xb
+ 632 0080 49       		.uleb128 0x49
+ 633 0081 13       		.uleb128 0x13
+ 634 0082 02       		.uleb128 0x2
+ 635 0083 18       		.uleb128 0x18
+ 636 0084 00       		.byte	0
+ 637 0085 00       		.byte	0
+ 638 0086 09       		.uleb128 0x9
+ 639 0087 2E       		.uleb128 0x2e
+ 640 0088 01       		.byte	0x1
+ 641 0089 3F       		.uleb128 0x3f
+ 642 008a 19       		.uleb128 0x19
+ 643 008b 03       		.uleb128 0x3
+ 644 008c 0E       		.uleb128 0xe
+ 645 008d 3A       		.uleb128 0x3a
+ 646 008e 0B       		.uleb128 0xb
+ 647 008f 3B       		.uleb128 0x3b
+ 648 0090 0B       		.uleb128 0xb
+ 649 0091 27       		.uleb128 0x27
+ 650 0092 19       		.uleb128 0x19
+ 651 0093 49       		.uleb128 0x49
+ 652 0094 13       		.uleb128 0x13
+ 653 0095 11       		.uleb128 0x11
+ 654 0096 01       		.uleb128 0x1
+ 655 0097 12       		.uleb128 0x12
+ 656 0098 06       		.uleb128 0x6
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 14
+
+
+ 657 0099 40       		.uleb128 0x40
+ 658 009a 18       		.uleb128 0x18
+ 659 009b 9642     		.uleb128 0x2116
+ 660 009d 19       		.uleb128 0x19
+ 661 009e 00       		.byte	0
+ 662 009f 00       		.byte	0
+ 663 00a0 00       		.byte	0
+ 664              		.section	.debug_aranges,"",%progbits
+ 665 0000 34000000 		.4byte	0x34
+ 666 0004 0200     		.2byte	0x2
+ 667 0006 00000000 		.4byte	.Ldebug_info0
+ 668 000a 04       		.byte	0x4
+ 669 000b 00       		.byte	0
+ 670 000c 0000     		.2byte	0
+ 671 000e 0000     		.2byte	0
+ 672 0010 00000000 		.4byte	.LFB0
+ 673 0014 1C000000 		.4byte	.LFE0-.LFB0
+ 674 0018 00000000 		.4byte	.LFB1
+ 675 001c 22000000 		.4byte	.LFE1-.LFB1
+ 676 0020 00000000 		.4byte	.LFB2
+ 677 0024 68000000 		.4byte	.LFE2-.LFB2
+ 678 0028 00000000 		.4byte	.LFB3
+ 679 002c 76000000 		.4byte	.LFE3-.LFB3
+ 680 0030 00000000 		.4byte	0
+ 681 0034 00000000 		.4byte	0
+ 682              		.section	.debug_ranges,"",%progbits
+ 683              	.Ldebug_ranges0:
+ 684 0000 00000000 		.4byte	.LFB0
+ 685 0004 1C000000 		.4byte	.LFE0
+ 686 0008 00000000 		.4byte	.LFB1
+ 687 000c 22000000 		.4byte	.LFE1
+ 688 0010 00000000 		.4byte	.LFB2
+ 689 0014 68000000 		.4byte	.LFE2
+ 690 0018 00000000 		.4byte	.LFB3
+ 691 001c 76000000 		.4byte	.LFE3
+ 692 0020 00000000 		.4byte	0
+ 693 0024 00000000 		.4byte	0
+ 694              		.section	.debug_line,"",%progbits
+ 695              	.Ldebug_line0:
+ 696 0000 C9000000 		.section	.debug_str,"MS",%progbits,1
+ 696      02001F00 
+ 696      00000201 
+ 696      FB0E0D00 
+ 696      01010101 
+ 697              	.LASF6:
+ 698 0000 6C6F6E67 		.ascii	"long long int\000"
+ 698      206C6F6E 
+ 698      6720696E 
+ 698      7400
+ 699              	.LASF16:
+ 700 000e 65657072 		.ascii	"eeprom_put_char\000"
+ 700      6F6D5F70 
+ 700      75745F63 
+ 700      68617200 
+ 701              	.LASF8:
+ 702 001e 756E7369 		.ascii	"unsigned int\000"
+ 702      676E6564 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 15
+
+
+ 702      20696E74 
+ 702      00
+ 703              	.LASF18:
+ 704 002b 64657374 		.ascii	"destination\000"
+ 704      696E6174 
+ 704      696F6E00 
+ 705              	.LASF27:
+ 706 0037 65657072 		.ascii	"eeprom_get_char\000"
+ 706      6F6D5F67 
+ 706      65745F63 
+ 706      68617200 
+ 707              	.LASF5:
+ 708 0047 6C6F6E67 		.ascii	"long unsigned int\000"
+ 708      20756E73 
+ 708      69676E65 
+ 708      6420696E 
+ 708      7400
+ 709              	.LASF2:
+ 710 0059 73686F72 		.ascii	"short int\000"
+ 710      7420696E 
+ 710      7400
+ 711              	.LASF7:
+ 712 0063 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 712      206C6F6E 
+ 712      6720756E 
+ 712      7369676E 
+ 712      65642069 
+ 713              	.LASF14:
+ 714 007a 61646472 		.ascii	"addr\000"
+ 714      00
+ 715              	.LASF11:
+ 716 007f 63686172 		.ascii	"char\000"
+ 716      00
+ 717              	.LASF24:
+ 718 0084 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 718      43313120 
+ 718      352E342E 
+ 718      31203230 
+ 718      31363036 
+ 719 00b7 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 719      20726576 
+ 719      6973696F 
+ 719      6E203233 
+ 719      37373135 
+ 720 00ea 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 720      66756E63 
+ 720      74696F6E 
+ 720      2D736563 
+ 720      74696F6E 
+ 721              	.LASF15:
+ 722 0112 6E65775F 		.ascii	"new_value\000"
+ 722      76616C75 
+ 722      6500
+ 723              	.LASF1:
+ 724 011c 756E7369 		.ascii	"unsigned char\000"
+ 724      676E6564 
+ 724      20636861 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 16
+
+
+ 724      7200
+ 725              	.LASF23:
+ 726 012a 64617461 		.ascii	"data\000"
+ 726      00
+ 727              	.LASF19:
+ 728 012f 736F7572 		.ascii	"source\000"
+ 728      636500
+ 729              	.LASF4:
+ 730 0136 6C6F6E67 		.ascii	"long int\000"
+ 730      20696E74 
+ 730      00
+ 731              	.LASF21:
+ 732 013f 6D656D63 		.ascii	"memcpy_from_eeprom_with_checksum\000"
+ 732      70795F66 
+ 732      726F6D5F 
+ 732      65657072 
+ 732      6F6D5F77 
+ 733              	.LASF10:
+ 734 0160 646F7562 		.ascii	"double\000"
+ 734      6C6500
+ 735              	.LASF22:
+ 736 0167 63686563 		.ascii	"checksum\000"
+ 736      6B73756D 
+ 736      00
+ 737              	.LASF3:
+ 738 0170 73686F72 		.ascii	"short unsigned int\000"
+ 738      7420756E 
+ 738      7369676E 
+ 738      65642069 
+ 738      6E7400
+ 739              	.LASF0:
+ 740 0183 7369676E 		.ascii	"signed char\000"
+ 740      65642063 
+ 740      68617200 
+ 741              	.LASF20:
+ 742 018f 73697A65 		.ascii	"size\000"
+ 742      00
+ 743              	.LASF26:
+ 744 0194 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 744      73657273 
+ 744      5C626172 
+ 744      746F5C44 
+ 744      726F7062 
+ 745 01c1 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 745      5553425F 
+ 745      4E617469 
+ 745      76652E63 
+ 745      7964736E 
+ 746              	.LASF12:
+ 747 01d6 6C6F6E67 		.ascii	"long double\000"
+ 747      20646F75 
+ 747      626C6500 
+ 748              	.LASF17:
+ 749 01e2 6D656D63 		.ascii	"memcpy_to_eeprom_with_checksum\000"
+ 749      70795F74 
+ 749      6F5F6565 
+ 749      70726F6D 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccXFYTGd.s 			page 17
+
+
+ 749      5F776974 
+ 750              	.LASF9:
+ 751 0201 666C6F61 		.ascii	"float\000"
+ 751      7400
+ 752              	.LASF25:
+ 753 0207 65657072 		.ascii	"eeprom.c\000"
+ 753      6F6D2E63 
+ 753      00
+ 754              	.LASF13:
+ 755 0210 73697A65 		.ascii	"sizetype\000"
+ 755      74797065 
+ 755      00
+ 756              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

@@ -1,0 +1,2645 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"nut_bolts.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.global	__aeabi_ui2f
+  27              		.global	__aeabi_fcmpeq
+  28              		.global	__aeabi_f2d
+  29              		.global	__aeabi_dmul
+  30              		.global	__aeabi_d2f
+  31              		.global	__aeabi_fmul
+  32              		.section	.text.read_float,"ax",%progbits
+  33              		.align	2
+  34              		.global	read_float
+  35              		.thumb
+  36              		.thumb_func
+  37              		.type	read_float, %function
+  38              	read_float:
+  39              	.LFB64:
+  40              		.file 1 "nut_bolts.c"
+   1:nut_bolts.c   **** /*
+   2:nut_bolts.c   ****   nuts_bolts.c - Shared functions
+   3:nut_bolts.c   ****   Part of Grbl
+   4:nut_bolts.c   **** 
+   5:nut_bolts.c   ****   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
+   6:nut_bolts.c   ****   Copyright (c) 2009-2011 Simen Svale Skogsrud
+   7:nut_bolts.c   ****       Updated For PSOC BJD 2017
+   8:nut_bolts.c   **** 
+   9:nut_bolts.c   ****   Grbl is free software: you can redistribute it and/or modify
+  10:nut_bolts.c   ****   it under the terms of the GNU General Public License as published by
+  11:nut_bolts.c   ****   the Free Software Foundation, either version 3 of the License, or
+  12:nut_bolts.c   ****   (at your option) any later version.
+  13:nut_bolts.c   **** 
+  14:nut_bolts.c   ****   Grbl is distributed in the hope that it will be useful,
+  15:nut_bolts.c   ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:nut_bolts.c   ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:nut_bolts.c   ****   GNU General Public License for more details.
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 2
+
+
+  18:nut_bolts.c   **** 
+  19:nut_bolts.c   ****   You should have received a copy of the GNU General Public License
+  20:nut_bolts.c   ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  21:nut_bolts.c   **** */
+  22:nut_bolts.c   **** 
+  23:nut_bolts.c   **** #include "grbl.h"
+  24:nut_bolts.c   **** 
+  25:nut_bolts.c   **** 
+  26:nut_bolts.c   **** #define MAX_INT_DIGITS 8 // Maximum number of digits in int32 (and float)
+  27:nut_bolts.c   **** 
+  28:nut_bolts.c   **** 
+  29:nut_bolts.c   **** // Extracts a floating point value from a string. The following code is based loosely on
+  30:nut_bolts.c   **** // the avr-libc strtod() function by Michael Stumpf and Dmitry Xmelkov and many freely
+  31:nut_bolts.c   **** // available conversion method examples, but has been highly optimized for Grbl. For known
+  32:nut_bolts.c   **** // CNC applications, the typical decimal value is expected to be in the range of E0 to E-4.
+  33:nut_bolts.c   **** // Scientific notation is officially not supported by g-code, and the 'E' character may
+  34:nut_bolts.c   **** // be a g-code word on some CNC systems. So, 'E' notation will not be recognized.
+  35:nut_bolts.c   **** // NOTE: Thanks to Radu-Eosif Mihailescu for identifying the issues with using strtod().
+  36:nut_bolts.c   **** uint8_t read_float(char *line, uint8_t *char_counter, float *float_ptr)
+  37:nut_bolts.c   **** {
+  41              		.loc 1 37 0
+  42              		.cfi_startproc
+  43              		@ args = 0, pretend = 0, frame = 40
+  44              		@ frame_needed = 1, uses_anonymous_args = 0
+  45 0000 90B5     		push	{r4, r7, lr}
+  46              		.cfi_def_cfa_offset 12
+  47              		.cfi_offset 4, -12
+  48              		.cfi_offset 7, -8
+  49              		.cfi_offset 14, -4
+  50 0002 8BB0     		sub	sp, sp, #44
+  51              		.cfi_def_cfa_offset 56
+  52 0004 00AF     		add	r7, sp, #0
+  53              		.cfi_def_cfa_register 7
+  54 0006 F860     		str	r0, [r7, #12]
+  55 0008 B960     		str	r1, [r7, #8]
+  56 000a 7A60     		str	r2, [r7, #4]
+  38:nut_bolts.c   ****   char *ptr = line + *char_counter;
+  57              		.loc 1 38 0
+  58 000c BB68     		ldr	r3, [r7, #8]
+  59 000e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  60 0010 1A46     		mov	r2, r3
+  61 0012 FB68     		ldr	r3, [r7, #12]
+  62 0014 1344     		add	r3, r3, r2
+  63 0016 7B62     		str	r3, [r7, #36]
+  39:nut_bolts.c   ****   unsigned char c;
+  40:nut_bolts.c   **** 
+  41:nut_bolts.c   ****   // Grab first character and increment pointer. No spaces assumed in line.
+  42:nut_bolts.c   ****   c = *ptr++;
+  64              		.loc 1 42 0
+  65 0018 7B6A     		ldr	r3, [r7, #36]
+  66 001a 5A1C     		adds	r2, r3, #1
+  67 001c 7A62     		str	r2, [r7, #36]
+  68 001e 1B78     		ldrb	r3, [r3]
+  69 0020 87F82330 		strb	r3, [r7, #35]
+  43:nut_bolts.c   **** 
+  44:nut_bolts.c   ****   // Capture initial positive/minus character
+  45:nut_bolts.c   ****   bool isnegative = false;
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 3
+
+
+  70              		.loc 1 45 0
+  71 0024 0023     		movs	r3, #0
+  72 0026 87F82230 		strb	r3, [r7, #34]
+  46:nut_bolts.c   ****   if (c == '-') {
+  73              		.loc 1 46 0
+  74 002a 97F82330 		ldrb	r3, [r7, #35]	@ zero_extendqisi2
+  75 002e 2D2B     		cmp	r3, #45
+  76 0030 09D1     		bne	.L2
+  47:nut_bolts.c   ****     isnegative = true;
+  77              		.loc 1 47 0
+  78 0032 0123     		movs	r3, #1
+  79 0034 87F82230 		strb	r3, [r7, #34]
+  48:nut_bolts.c   ****     c = *ptr++;
+  80              		.loc 1 48 0
+  81 0038 7B6A     		ldr	r3, [r7, #36]
+  82 003a 5A1C     		adds	r2, r3, #1
+  83 003c 7A62     		str	r2, [r7, #36]
+  84 003e 1B78     		ldrb	r3, [r3]
+  85 0040 87F82330 		strb	r3, [r7, #35]
+  86 0044 09E0     		b	.L3
+  87              	.L2:
+  49:nut_bolts.c   ****   } else if (c == '+') {
+  88              		.loc 1 49 0
+  89 0046 97F82330 		ldrb	r3, [r7, #35]	@ zero_extendqisi2
+  90 004a 2B2B     		cmp	r3, #43
+  91 004c 05D1     		bne	.L3
+  50:nut_bolts.c   ****     c = *ptr++;
+  92              		.loc 1 50 0
+  93 004e 7B6A     		ldr	r3, [r7, #36]
+  94 0050 5A1C     		adds	r2, r3, #1
+  95 0052 7A62     		str	r2, [r7, #36]
+  96 0054 1B78     		ldrb	r3, [r3]
+  97 0056 87F82330 		strb	r3, [r7, #35]
+  98              	.L3:
+  51:nut_bolts.c   ****   }
+  52:nut_bolts.c   **** 
+  53:nut_bolts.c   ****   // Extract number into fast integer. Track decimal in terms of exponent value.
+  54:nut_bolts.c   ****   uint32_t intval = 0;
+  99              		.loc 1 54 0
+ 100 005a 0023     		movs	r3, #0
+ 101 005c FB61     		str	r3, [r7, #28]
+  55:nut_bolts.c   ****   int8_t exp = 0;
+ 102              		.loc 1 55 0
+ 103 005e 0023     		movs	r3, #0
+ 104 0060 FB76     		strb	r3, [r7, #27]
+  56:nut_bolts.c   ****   uint8_t ndigit = 0;
+ 105              		.loc 1 56 0
+ 106 0062 0023     		movs	r3, #0
+ 107 0064 BB76     		strb	r3, [r7, #26]
+  57:nut_bolts.c   ****   bool isdecimal = false;
+ 108              		.loc 1 57 0
+ 109 0066 0023     		movs	r3, #0
+ 110 0068 7B76     		strb	r3, [r7, #25]
+ 111              	.L10:
+  58:nut_bolts.c   ****   while(1) {
+  59:nut_bolts.c   ****     c -= '0';
+ 112              		.loc 1 59 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 4
+
+
+ 113 006a 97F82330 		ldrb	r3, [r7, #35]
+ 114 006e 303B     		subs	r3, r3, #48
+ 115 0070 87F82330 		strb	r3, [r7, #35]
+  60:nut_bolts.c   ****     if (c <= 9) {
+ 116              		.loc 1 60 0
+ 117 0074 97F82330 		ldrb	r3, [r7, #35]	@ zero_extendqisi2
+ 118 0078 092B     		cmp	r3, #9
+ 119 007a 25D8     		bhi	.L4
+  61:nut_bolts.c   ****       ndigit++;
+ 120              		.loc 1 61 0
+ 121 007c BB7E     		ldrb	r3, [r7, #26]	@ zero_extendqisi2
+ 122 007e 0133     		adds	r3, r3, #1
+ 123 0080 BB76     		strb	r3, [r7, #26]
+  62:nut_bolts.c   ****       if (ndigit <= MAX_INT_DIGITS) {
+ 124              		.loc 1 62 0
+ 125 0082 BB7E     		ldrb	r3, [r7, #26]	@ zero_extendqisi2
+ 126 0084 082B     		cmp	r3, #8
+ 127 0086 12D8     		bhi	.L5
+  63:nut_bolts.c   ****         if (isdecimal) { exp--; }
+ 128              		.loc 1 63 0
+ 129 0088 7B7E     		ldrb	r3, [r7, #25]	@ zero_extendqisi2
+ 130 008a 002B     		cmp	r3, #0
+ 131 008c 05D0     		beq	.L6
+ 132              		.loc 1 63 0 is_stmt 0 discriminator 1
+ 133 008e 97F91B30 		ldrsb	r3, [r7, #27]
+ 134 0092 DBB2     		uxtb	r3, r3
+ 135 0094 013B     		subs	r3, r3, #1
+ 136 0096 DBB2     		uxtb	r3, r3
+ 137 0098 FB76     		strb	r3, [r7, #27]
+ 138              	.L6:
+  64:nut_bolts.c   ****         intval = (((intval << 2) + intval) << 1) + c; // intval*10 + c
+ 139              		.loc 1 64 0 is_stmt 1
+ 140 009a FB69     		ldr	r3, [r7, #28]
+ 141 009c 9A00     		lsls	r2, r3, #2
+ 142 009e FB69     		ldr	r3, [r7, #28]
+ 143 00a0 1344     		add	r3, r3, r2
+ 144 00a2 5A00     		lsls	r2, r3, #1
+ 145 00a4 97F82330 		ldrb	r3, [r7, #35]	@ zero_extendqisi2
+ 146 00a8 1344     		add	r3, r3, r2
+ 147 00aa FB61     		str	r3, [r7, #28]
+ 148 00ac 18E0     		b	.L8
+ 149              	.L5:
+  65:nut_bolts.c   ****       } else {
+  66:nut_bolts.c   ****         if (!(isdecimal)) { exp++; }  // Drop overflow digits
+ 150              		.loc 1 66 0
+ 151 00ae 7B7E     		ldrb	r3, [r7, #25]
+ 152 00b0 83F00103 		eor	r3, r3, #1
+ 153 00b4 DBB2     		uxtb	r3, r3
+ 154 00b6 002B     		cmp	r3, #0
+ 155 00b8 12D0     		beq	.L8
+ 156              		.loc 1 66 0 is_stmt 0 discriminator 1
+ 157 00ba 97F91B30 		ldrsb	r3, [r7, #27]
+ 158 00be DBB2     		uxtb	r3, r3
+ 159 00c0 0133     		adds	r3, r3, #1
+ 160 00c2 DBB2     		uxtb	r3, r3
+ 161 00c4 FB76     		strb	r3, [r7, #27]
+ 162 00c6 0BE0     		b	.L8
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 5
+
+
+ 163              	.L4:
+  67:nut_bolts.c   ****       }
+  68:nut_bolts.c   ****     } else if (c == (('.'-'0') & 0xff)  &&  !(isdecimal)) {
+ 164              		.loc 1 68 0 is_stmt 1
+ 165 00c8 97F82330 		ldrb	r3, [r7, #35]	@ zero_extendqisi2
+ 166 00cc FE2B     		cmp	r3, #254
+ 167 00ce 0ED1     		bne	.L9
+ 168              		.loc 1 68 0 is_stmt 0 discriminator 1
+ 169 00d0 7B7E     		ldrb	r3, [r7, #25]
+ 170 00d2 83F00103 		eor	r3, r3, #1
+ 171 00d6 DBB2     		uxtb	r3, r3
+ 172 00d8 002B     		cmp	r3, #0
+ 173 00da 08D0     		beq	.L9
+  69:nut_bolts.c   ****       isdecimal = true;
+ 174              		.loc 1 69 0 is_stmt 1
+ 175 00dc 0123     		movs	r3, #1
+ 176 00de 7B76     		strb	r3, [r7, #25]
+ 177              	.L8:
+  70:nut_bolts.c   ****     } else {
+  71:nut_bolts.c   ****       break;
+  72:nut_bolts.c   ****     }
+  73:nut_bolts.c   ****     c = *ptr++;
+ 178              		.loc 1 73 0
+ 179 00e0 7B6A     		ldr	r3, [r7, #36]
+ 180 00e2 5A1C     		adds	r2, r3, #1
+ 181 00e4 7A62     		str	r2, [r7, #36]
+ 182 00e6 1B78     		ldrb	r3, [r3]
+ 183 00e8 87F82330 		strb	r3, [r7, #35]
+  74:nut_bolts.c   ****   }
+ 184              		.loc 1 74 0
+ 185 00ec BDE7     		b	.L10
+ 186              	.L9:
+  75:nut_bolts.c   **** 
+  76:nut_bolts.c   ****   // Return if no digits have been read.
+  77:nut_bolts.c   ****   if (!ndigit) { return(false); };
+ 187              		.loc 1 77 0
+ 188 00ee BB7E     		ldrb	r3, [r7, #26]	@ zero_extendqisi2
+ 189 00f0 002B     		cmp	r3, #0
+ 190 00f2 01D1     		bne	.L11
+ 191              		.loc 1 77 0 is_stmt 0 discriminator 1
+ 192 00f4 0023     		movs	r3, #0
+ 193 00f6 63E0     		b	.L12
+ 194              	.L11:
+  78:nut_bolts.c   **** 
+  79:nut_bolts.c   ****   // Convert integer into floating point.
+  80:nut_bolts.c   ****   float fval;
+  81:nut_bolts.c   ****   fval = (float)intval;
+ 195              		.loc 1 81 0 is_stmt 1
+ 196 00f8 F869     		ldr	r0, [r7, #28]
+ 197 00fa FFF7FEFF 		bl	__aeabi_ui2f
+ 198 00fe 0346     		mov	r3, r0
+ 199 0100 7B61     		str	r3, [r7, #20]	@ float
+  82:nut_bolts.c   **** 
+  83:nut_bolts.c   ****   // Apply decimal. Should perform no more than two floating point multiplications for the
+  84:nut_bolts.c   ****   // expected range of E0 to E-4.
+  85:nut_bolts.c   ****   if (fval != 0) {
+ 200              		.loc 1 85 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 6
+
+
+ 201 0102 4FF00001 		mov	r1, #0
+ 202 0106 7869     		ldr	r0, [r7, #20]	@ float
+ 203 0108 FFF7FEFF 		bl	__aeabi_fcmpeq
+ 204 010c 0346     		mov	r3, r0
+ 205 010e 002B     		cmp	r3, #0
+ 206 0110 40D1     		bne	.L13
+  86:nut_bolts.c   ****     while (exp <= -2) {
+ 207              		.loc 1 86 0
+ 208 0112 13E0     		b	.L15
+ 209              	.L16:
+  87:nut_bolts.c   ****       fval *= 0.01;
+ 210              		.loc 1 87 0
+ 211 0114 7869     		ldr	r0, [r7, #20]	@ float
+ 212 0116 FFF7FEFF 		bl	__aeabi_f2d
+ 213 011a 2BA3     		adr	r3, .L22
+ 214 011c D3E90023 		ldrd	r2, [r3]
+ 215 0120 FFF7FEFF 		bl	__aeabi_dmul
+ 216 0124 0346     		mov	r3, r0
+ 217 0126 0C46     		mov	r4, r1
+ 218 0128 1846     		mov	r0, r3
+ 219 012a 2146     		mov	r1, r4
+ 220 012c FFF7FEFF 		bl	__aeabi_d2f
+ 221 0130 0346     		mov	r3, r0
+ 222 0132 7B61     		str	r3, [r7, #20]	@ float
+  88:nut_bolts.c   ****       exp += 2;
+ 223              		.loc 1 88 0
+ 224 0134 FB7E     		ldrb	r3, [r7, #27]	@ zero_extendqisi2
+ 225 0136 0233     		adds	r3, r3, #2
+ 226 0138 DBB2     		uxtb	r3, r3
+ 227 013a FB76     		strb	r3, [r7, #27]
+ 228              	.L15:
+  86:nut_bolts.c   ****     while (exp <= -2) {
+ 229              		.loc 1 86 0
+ 230 013c 97F91B30 		ldrsb	r3, [r7, #27]
+ 231 0140 B3F1FF3F 		cmp	r3, #-1
+ 232 0144 E6DB     		blt	.L16
+  89:nut_bolts.c   ****     }
+  90:nut_bolts.c   ****     if (exp < 0) {
+ 233              		.loc 1 90 0
+ 234 0146 97F91B30 		ldrsb	r3, [r7, #27]
+ 235 014a 002B     		cmp	r3, #0
+ 236 014c 10DA     		bge	.L17
+  91:nut_bolts.c   ****       fval *= 0.1;
+ 237              		.loc 1 91 0
+ 238 014e 7869     		ldr	r0, [r7, #20]	@ float
+ 239 0150 FFF7FEFF 		bl	__aeabi_f2d
+ 240 0154 1EA3     		adr	r3, .L22+8
+ 241 0156 D3E90023 		ldrd	r2, [r3]
+ 242 015a FFF7FEFF 		bl	__aeabi_dmul
+ 243 015e 0346     		mov	r3, r0
+ 244 0160 0C46     		mov	r4, r1
+ 245 0162 1846     		mov	r0, r3
+ 246 0164 2146     		mov	r1, r4
+ 247 0166 FFF7FEFF 		bl	__aeabi_d2f
+ 248 016a 0346     		mov	r3, r0
+ 249 016c 7B61     		str	r3, [r7, #20]	@ float
+ 250 016e 11E0     		b	.L13
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 7
+
+
+ 251              	.L17:
+  92:nut_bolts.c   ****     } else if (exp > 0) {
+ 252              		.loc 1 92 0
+ 253 0170 97F91B30 		ldrsb	r3, [r7, #27]
+ 254 0174 002B     		cmp	r3, #0
+ 255 0176 0DDD     		ble	.L13
+ 256              	.L18:
+  93:nut_bolts.c   ****       do {
+  94:nut_bolts.c   ****         fval *= 10.0;
+ 257              		.loc 1 94 0 discriminator 1
+ 258 0178 1749     		ldr	r1, .L22+16
+ 259 017a 7869     		ldr	r0, [r7, #20]	@ float
+ 260 017c FFF7FEFF 		bl	__aeabi_fmul
+ 261 0180 0346     		mov	r3, r0
+ 262 0182 7B61     		str	r3, [r7, #20]	@ float
+  95:nut_bolts.c   ****       } while (--exp > 0);
+ 263              		.loc 1 95 0 discriminator 1
+ 264 0184 FB7E     		ldrb	r3, [r7, #27]	@ zero_extendqisi2
+ 265 0186 013B     		subs	r3, r3, #1
+ 266 0188 DBB2     		uxtb	r3, r3
+ 267 018a FB76     		strb	r3, [r7, #27]
+ 268 018c 97F91B30 		ldrsb	r3, [r7, #27]
+ 269 0190 002B     		cmp	r3, #0
+ 270 0192 F1DC     		bgt	.L18
+ 271              	.L13:
+  96:nut_bolts.c   ****     }
+  97:nut_bolts.c   ****   }
+  98:nut_bolts.c   **** 
+  99:nut_bolts.c   ****   // Assign floating point value with correct sign.
+ 100:nut_bolts.c   ****   if (isnegative) {
+ 272              		.loc 1 100 0
+ 273 0194 97F82230 		ldrb	r3, [r7, #34]	@ zero_extendqisi2
+ 274 0198 002B     		cmp	r3, #0
+ 275 019a 05D0     		beq	.L19
+ 101:nut_bolts.c   ****     *float_ptr = -fval;
+ 276              		.loc 1 101 0
+ 277 019c 7B69     		ldr	r3, [r7, #20]
+ 278 019e 83F00042 		eor	r2, r3, #-2147483648
+ 279 01a2 7B68     		ldr	r3, [r7, #4]
+ 280 01a4 1A60     		str	r2, [r3]	@ float
+ 281 01a6 02E0     		b	.L20
+ 282              	.L19:
+ 102:nut_bolts.c   ****   } else {
+ 103:nut_bolts.c   ****     *float_ptr = fval;
+ 283              		.loc 1 103 0
+ 284 01a8 7B68     		ldr	r3, [r7, #4]
+ 285 01aa 7A69     		ldr	r2, [r7, #20]	@ float
+ 286 01ac 1A60     		str	r2, [r3]	@ float
+ 287              	.L20:
+ 104:nut_bolts.c   ****   }
+ 105:nut_bolts.c   **** 
+ 106:nut_bolts.c   ****   *char_counter = ptr - line - 1; // Set char_counter to next statement
+ 288              		.loc 1 106 0
+ 289 01ae 7A6A     		ldr	r2, [r7, #36]
+ 290 01b0 FB68     		ldr	r3, [r7, #12]
+ 291 01b2 D31A     		subs	r3, r2, r3
+ 292 01b4 DBB2     		uxtb	r3, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 8
+
+
+ 293 01b6 013B     		subs	r3, r3, #1
+ 294 01b8 DAB2     		uxtb	r2, r3
+ 295 01ba BB68     		ldr	r3, [r7, #8]
+ 296 01bc 1A70     		strb	r2, [r3]
+ 107:nut_bolts.c   **** 
+ 108:nut_bolts.c   ****   return(true);
+ 297              		.loc 1 108 0
+ 298 01be 0123     		movs	r3, #1
+ 299              	.L12:
+ 109:nut_bolts.c   **** }
+ 300              		.loc 1 109 0
+ 301 01c0 1846     		mov	r0, r3
+ 302 01c2 2C37     		adds	r7, r7, #44
+ 303              		.cfi_def_cfa_offset 12
+ 304 01c4 BD46     		mov	sp, r7
+ 305              		.cfi_def_cfa_register 13
+ 306              		@ sp needed
+ 307 01c6 90BD     		pop	{r4, r7, pc}
+ 308              	.L23:
+ 309              		.align	3
+ 310              	.L22:
+ 311 01c8 7B14AE47 		.word	1202590843
+ 312 01cc E17A843F 		.word	1065646817
+ 313 01d0 9A999999 		.word	-1717986918
+ 314 01d4 9999B93F 		.word	1069128089
+ 315 01d8 00002041 		.word	1092616192
+ 316              		.cfi_endproc
+ 317              	.LFE64:
+ 318              		.size	read_float, .-read_float
+ 319              		.global	__aeabi_d2uiz
+ 320              		.section	.text.delay_sec,"ax",%progbits
+ 321              		.align	2
+ 322              		.global	delay_sec
+ 323              		.thumb
+ 324              		.thumb_func
+ 325              		.type	delay_sec, %function
+ 326              	delay_sec:
+ 327              	.LFB65:
+ 110:nut_bolts.c   **** 
+ 111:nut_bolts.c   **** 
+ 112:nut_bolts.c   **** // Non-blocking delay function used for general operation and suspend features.
+ 113:nut_bolts.c   **** void delay_sec(float seconds, uint8_t mode)
+ 114:nut_bolts.c   **** {
+ 328              		.loc 1 114 0
+ 329              		.cfi_startproc
+ 330              		@ args = 0, pretend = 0, frame = 16
+ 331              		@ frame_needed = 1, uses_anonymous_args = 0
+ 332 0000 90B5     		push	{r4, r7, lr}
+ 333              		.cfi_def_cfa_offset 12
+ 334              		.cfi_offset 4, -12
+ 335              		.cfi_offset 7, -8
+ 336              		.cfi_offset 14, -4
+ 337 0002 85B0     		sub	sp, sp, #20
+ 338              		.cfi_def_cfa_offset 32
+ 339 0004 00AF     		add	r7, sp, #0
+ 340              		.cfi_def_cfa_register 7
+ 341 0006 7860     		str	r0, [r7, #4]	@ float
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 9
+
+
+ 342 0008 0B46     		mov	r3, r1
+ 343 000a FB70     		strb	r3, [r7, #3]
+ 115:nut_bolts.c   ****  	uint16_t i = ceil(1000/DWELL_TIME_STEP*seconds);
+ 344              		.loc 1 115 0
+ 345 000c 1B49     		ldr	r1, .L33
+ 346 000e 7868     		ldr	r0, [r7, #4]	@ float
+ 347 0010 FFF7FEFF 		bl	__aeabi_fmul
+ 348 0014 0346     		mov	r3, r0
+ 349 0016 1846     		mov	r0, r3
+ 350 0018 FFF7FEFF 		bl	__aeabi_f2d
+ 351 001c 0346     		mov	r3, r0
+ 352 001e 0C46     		mov	r4, r1
+ 353 0020 1846     		mov	r0, r3
+ 354 0022 2146     		mov	r1, r4
+ 355 0024 FFF7FEFF 		bl	ceil
+ 356 0028 0346     		mov	r3, r0
+ 357 002a 0C46     		mov	r4, r1
+ 358 002c 1846     		mov	r0, r3
+ 359 002e 2146     		mov	r1, r4
+ 360 0030 FFF7FEFF 		bl	__aeabi_d2uiz
+ 361 0034 0346     		mov	r3, r0
+ 362 0036 FB81     		strh	r3, [r7, #14]	@ movhi
+ 116:nut_bolts.c   **** 	while (i-- > 0) {
+ 363              		.loc 1 116 0
+ 364 0038 14E0     		b	.L25
+ 365              	.L30:
+ 117:nut_bolts.c   **** 		if (sys.abort) { return; }
+ 366              		.loc 1 117 0
+ 367 003a 114B     		ldr	r3, .L33+4
+ 368 003c 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 369 003e 002B     		cmp	r3, #0
+ 370 0040 16D1     		bne	.L31
+ 118:nut_bolts.c   **** 		if (mode == DELAY_MODE_DWELL) {
+ 371              		.loc 1 118 0
+ 372 0042 FB78     		ldrb	r3, [r7, #3]	@ zero_extendqisi2
+ 373 0044 002B     		cmp	r3, #0
+ 374 0046 02D1     		bne	.L28
+ 119:nut_bolts.c   **** 			protocol_execute_realtime();
+ 375              		.loc 1 119 0
+ 376 0048 FFF7FEFF 		bl	protocol_execute_realtime
+ 377 004c 07E0     		b	.L29
+ 378              	.L28:
+ 120:nut_bolts.c   **** 		} else { // DELAY_MODE_SYS_SUSPEND
+ 121:nut_bolts.c   **** 		  // Execute rt_system() only to avoid nesting suspend loops.
+ 122:nut_bolts.c   **** 		  protocol_exec_rt_system();
+ 379              		.loc 1 122 0
+ 380 004e FFF7FEFF 		bl	protocol_exec_rt_system
+ 123:nut_bolts.c   **** 		  if (sys.suspend & SUSPEND_RESTART_RETRACT) { return; } // Bail, if safety door reopens.
+ 381              		.loc 1 123 0
+ 382 0052 0B4B     		ldr	r3, .L33+4
+ 383 0054 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 384 0056 03F00203 		and	r3, r3, #2
+ 385 005a 002B     		cmp	r3, #0
+ 386 005c 0AD1     		bne	.L32
+ 387              	.L29:
+ 124:nut_bolts.c   **** 		}
+ 125:nut_bolts.c   **** 		delay_ms(DWELL_TIME_STEP); // Delay DWELL_TIME_STEP increment
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 10
+
+
+ 388              		.loc 1 125 0
+ 389 005e 3220     		movs	r0, #50
+ 390 0060 FFF7FEFF 		bl	CyDelay
+ 391              	.L25:
+ 116:nut_bolts.c   **** 		if (sys.abort) { return; }
+ 392              		.loc 1 116 0
+ 393 0064 FB89     		ldrh	r3, [r7, #14]
+ 394 0066 5A1E     		subs	r2, r3, #1
+ 395 0068 FA81     		strh	r2, [r7, #14]	@ movhi
+ 396 006a 002B     		cmp	r3, #0
+ 397 006c E5D1     		bne	.L30
+ 398 006e 02E0     		b	.L24
+ 399              	.L31:
+ 117:nut_bolts.c   **** 		if (mode == DELAY_MODE_DWELL) {
+ 400              		.loc 1 117 0
+ 401 0070 00BF     		nop
+ 402 0072 00E0     		b	.L24
+ 403              	.L32:
+ 123:nut_bolts.c   **** 		}
+ 404              		.loc 1 123 0
+ 405 0074 00BF     		nop
+ 406              	.L24:
+ 126:nut_bolts.c   **** 	}
+ 127:nut_bolts.c   **** }
+ 407              		.loc 1 127 0
+ 408 0076 1437     		adds	r7, r7, #20
+ 409              		.cfi_def_cfa_offset 12
+ 410 0078 BD46     		mov	sp, r7
+ 411              		.cfi_def_cfa_register 13
+ 412              		@ sp needed
+ 413 007a 90BD     		pop	{r4, r7, pc}
+ 414              	.L34:
+ 415              		.align	2
+ 416              	.L33:
+ 417 007c 0000A041 		.word	1101004800
+ 418 0080 00000000 		.word	sys
+ 419              		.cfi_endproc
+ 420              	.LFE65:
+ 421              		.size	delay_sec, .-delay_sec
+ 422              		.global	__aeabi_fadd
+ 423              		.section	.text.hypot_f,"ax",%progbits
+ 424              		.align	2
+ 425              		.global	hypot_f
+ 426              		.thumb
+ 427              		.thumb_func
+ 428              		.type	hypot_f, %function
+ 429              	hypot_f:
+ 430              	.LFB66:
+ 128:nut_bolts.c   **** 
+ 129:nut_bolts.c   **** 
+ 130:nut_bolts.c   **** 
+ 131:nut_bolts.c   **** 
+ 132:nut_bolts.c   **** 
+ 133:nut_bolts.c   **** // Simple hypotenuse computation function.
+ 134:nut_bolts.c   **** float hypot_f(float x, float y) { return(sqrt(x*x + y*y)); }
+ 431              		.loc 1 134 0
+ 432              		.cfi_startproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 11
+
+
+ 433              		@ args = 0, pretend = 0, frame = 8
+ 434              		@ frame_needed = 1, uses_anonymous_args = 0
+ 435 0000 90B5     		push	{r4, r7, lr}
+ 436              		.cfi_def_cfa_offset 12
+ 437              		.cfi_offset 4, -12
+ 438              		.cfi_offset 7, -8
+ 439              		.cfi_offset 14, -4
+ 440 0002 83B0     		sub	sp, sp, #12
+ 441              		.cfi_def_cfa_offset 24
+ 442 0004 00AF     		add	r7, sp, #0
+ 443              		.cfi_def_cfa_register 7
+ 444 0006 7860     		str	r0, [r7, #4]	@ float
+ 445 0008 3960     		str	r1, [r7]	@ float
+ 446              		.loc 1 134 0
+ 447 000a 7968     		ldr	r1, [r7, #4]	@ float
+ 448 000c 7868     		ldr	r0, [r7, #4]	@ float
+ 449 000e FFF7FEFF 		bl	__aeabi_fmul
+ 450 0012 0346     		mov	r3, r0
+ 451 0014 1C46     		mov	r4, r3
+ 452 0016 3968     		ldr	r1, [r7]	@ float
+ 453 0018 3868     		ldr	r0, [r7]	@ float
+ 454 001a FFF7FEFF 		bl	__aeabi_fmul
+ 455 001e 0346     		mov	r3, r0
+ 456 0020 1946     		mov	r1, r3
+ 457 0022 2046     		mov	r0, r4
+ 458 0024 FFF7FEFF 		bl	__aeabi_fadd
+ 459 0028 0346     		mov	r3, r0
+ 460 002a 1846     		mov	r0, r3
+ 461 002c FFF7FEFF 		bl	__aeabi_f2d
+ 462 0030 0346     		mov	r3, r0
+ 463 0032 0C46     		mov	r4, r1
+ 464 0034 1846     		mov	r0, r3
+ 465 0036 2146     		mov	r1, r4
+ 466 0038 FFF7FEFF 		bl	sqrt
+ 467 003c 0346     		mov	r3, r0
+ 468 003e 0C46     		mov	r4, r1
+ 469 0040 1846     		mov	r0, r3
+ 470 0042 2146     		mov	r1, r4
+ 471 0044 FFF7FEFF 		bl	__aeabi_d2f
+ 472 0048 0346     		mov	r3, r0
+ 473 004a 1846     		mov	r0, r3
+ 474 004c 0C37     		adds	r7, r7, #12
+ 475              		.cfi_def_cfa_offset 12
+ 476 004e BD46     		mov	sp, r7
+ 477              		.cfi_def_cfa_register 13
+ 478              		@ sp needed
+ 479 0050 90BD     		pop	{r4, r7, pc}
+ 480              		.cfi_endproc
+ 481              	.LFE66:
+ 482              		.size	hypot_f, .-hypot_f
+ 483              		.global	__aeabi_fdiv
+ 484 0052 00BF     		.section	.text.convert_delta_vector_to_unit_vector,"ax",%progbits
+ 485              		.align	2
+ 486              		.global	convert_delta_vector_to_unit_vector
+ 487              		.thumb
+ 488              		.thumb_func
+ 489              		.type	convert_delta_vector_to_unit_vector, %function
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 12
+
+
+ 490              	convert_delta_vector_to_unit_vector:
+ 491              	.LFB67:
+ 135:nut_bolts.c   **** 
+ 136:nut_bolts.c   **** 
+ 137:nut_bolts.c   **** float convert_delta_vector_to_unit_vector(float *vector)
+ 138:nut_bolts.c   **** {
+ 492              		.loc 1 138 0
+ 493              		.cfi_startproc
+ 494              		@ args = 0, pretend = 0, frame = 24
+ 495              		@ frame_needed = 1, uses_anonymous_args = 0
+ 496 0000 90B5     		push	{r4, r7, lr}
+ 497              		.cfi_def_cfa_offset 12
+ 498              		.cfi_offset 4, -12
+ 499              		.cfi_offset 7, -8
+ 500              		.cfi_offset 14, -4
+ 501 0002 87B0     		sub	sp, sp, #28
+ 502              		.cfi_def_cfa_offset 40
+ 503 0004 00AF     		add	r7, sp, #0
+ 504              		.cfi_def_cfa_register 7
+ 505 0006 7860     		str	r0, [r7, #4]
+ 139:nut_bolts.c   ****   uint8_t idx;
+ 140:nut_bolts.c   ****   float magnitude = 0.0;
+ 506              		.loc 1 140 0
+ 507 0008 4FF00003 		mov	r3, #0
+ 508 000c 3B61     		str	r3, [r7, #16]	@ float
+ 141:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 509              		.loc 1 141 0
+ 510 000e 0023     		movs	r3, #0
+ 511 0010 FB75     		strb	r3, [r7, #23]
+ 512 0012 23E0     		b	.L38
+ 513              	.L41:
+ 142:nut_bolts.c   ****     if (vector[idx] != 0.0) {
+ 514              		.loc 1 142 0
+ 515 0014 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 516 0016 9B00     		lsls	r3, r3, #2
+ 517 0018 7A68     		ldr	r2, [r7, #4]
+ 518 001a 1344     		add	r3, r3, r2
+ 519 001c 1B68     		ldr	r3, [r3]	@ float
+ 520 001e 4FF00001 		mov	r1, #0
+ 521 0022 1846     		mov	r0, r3
+ 522 0024 FFF7FEFF 		bl	__aeabi_fcmpeq
+ 523 0028 0346     		mov	r3, r0
+ 524 002a 002B     		cmp	r3, #0
+ 525 002c 13D1     		bne	.L39
+ 143:nut_bolts.c   ****       magnitude += vector[idx]*vector[idx];
+ 526              		.loc 1 143 0
+ 527 002e FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 528 0030 9B00     		lsls	r3, r3, #2
+ 529 0032 7A68     		ldr	r2, [r7, #4]
+ 530 0034 1344     		add	r3, r3, r2
+ 531 0036 1868     		ldr	r0, [r3]	@ float
+ 532 0038 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 533 003a 9B00     		lsls	r3, r3, #2
+ 534 003c 7A68     		ldr	r2, [r7, #4]
+ 535 003e 1344     		add	r3, r3, r2
+ 536 0040 1B68     		ldr	r3, [r3]	@ float
+ 537 0042 1946     		mov	r1, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 13
+
+
+ 538 0044 FFF7FEFF 		bl	__aeabi_fmul
+ 539 0048 0346     		mov	r3, r0
+ 540 004a 1946     		mov	r1, r3
+ 541 004c 3869     		ldr	r0, [r7, #16]	@ float
+ 542 004e FFF7FEFF 		bl	__aeabi_fadd
+ 543 0052 0346     		mov	r3, r0
+ 544 0054 3B61     		str	r3, [r7, #16]	@ float
+ 545              	.L39:
+ 141:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 546              		.loc 1 141 0 discriminator 2
+ 547 0056 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 548 0058 0133     		adds	r3, r3, #1
+ 549 005a FB75     		strb	r3, [r7, #23]
+ 550              	.L38:
+ 141:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 551              		.loc 1 141 0 is_stmt 0 discriminator 1
+ 552 005c FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 553 005e 022B     		cmp	r3, #2
+ 554 0060 D8D9     		bls	.L41
+ 144:nut_bolts.c   ****     }
+ 145:nut_bolts.c   ****   }
+ 146:nut_bolts.c   ****   magnitude = sqrt(magnitude);
+ 555              		.loc 1 146 0 is_stmt 1
+ 556 0062 3869     		ldr	r0, [r7, #16]	@ float
+ 557 0064 FFF7FEFF 		bl	__aeabi_f2d
+ 558 0068 0346     		mov	r3, r0
+ 559 006a 0C46     		mov	r4, r1
+ 560 006c 1846     		mov	r0, r3
+ 561 006e 2146     		mov	r1, r4
+ 562 0070 FFF7FEFF 		bl	sqrt
+ 563 0074 0346     		mov	r3, r0
+ 564 0076 0C46     		mov	r4, r1
+ 565 0078 1846     		mov	r0, r3
+ 566 007a 2146     		mov	r1, r4
+ 567 007c FFF7FEFF 		bl	__aeabi_d2f
+ 568 0080 0346     		mov	r3, r0
+ 569 0082 3B61     		str	r3, [r7, #16]	@ float
+ 147:nut_bolts.c   ****   float inv_magnitude = 1.0/magnitude;
+ 570              		.loc 1 147 0
+ 571 0084 3969     		ldr	r1, [r7, #16]	@ float
+ 572 0086 4FF07E50 		mov	r0, #1065353216
+ 573 008a FFF7FEFF 		bl	__aeabi_fdiv
+ 574 008e 0346     		mov	r3, r0
+ 575 0090 FB60     		str	r3, [r7, #12]	@ float
+ 148:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) { vector[idx] *= inv_magnitude; }
+ 576              		.loc 1 148 0
+ 577 0092 0023     		movs	r3, #0
+ 578 0094 FB75     		strb	r3, [r7, #23]
+ 579 0096 11E0     		b	.L42
+ 580              	.L43:
+ 581              		.loc 1 148 0 is_stmt 0 discriminator 3
+ 582 0098 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 583 009a 9B00     		lsls	r3, r3, #2
+ 584 009c 7A68     		ldr	r2, [r7, #4]
+ 585 009e D418     		adds	r4, r2, r3
+ 586 00a0 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 587 00a2 9B00     		lsls	r3, r3, #2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 14
+
+
+ 588 00a4 7A68     		ldr	r2, [r7, #4]
+ 589 00a6 1344     		add	r3, r3, r2
+ 590 00a8 1B68     		ldr	r3, [r3]	@ float
+ 591 00aa F968     		ldr	r1, [r7, #12]	@ float
+ 592 00ac 1846     		mov	r0, r3
+ 593 00ae FFF7FEFF 		bl	__aeabi_fmul
+ 594 00b2 0346     		mov	r3, r0
+ 595 00b4 2360     		str	r3, [r4]	@ float
+ 596 00b6 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 597 00b8 0133     		adds	r3, r3, #1
+ 598 00ba FB75     		strb	r3, [r7, #23]
+ 599              	.L42:
+ 600              		.loc 1 148 0 discriminator 1
+ 601 00bc FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 602 00be 022B     		cmp	r3, #2
+ 603 00c0 EAD9     		bls	.L43
+ 149:nut_bolts.c   ****   return(magnitude);
+ 604              		.loc 1 149 0 is_stmt 1
+ 605 00c2 3B69     		ldr	r3, [r7, #16]	@ float
+ 150:nut_bolts.c   **** }
+ 606              		.loc 1 150 0
+ 607 00c4 1846     		mov	r0, r3
+ 608 00c6 1C37     		adds	r7, r7, #28
+ 609              		.cfi_def_cfa_offset 12
+ 610 00c8 BD46     		mov	sp, r7
+ 611              		.cfi_def_cfa_register 13
+ 612              		@ sp needed
+ 613 00ca 90BD     		pop	{r4, r7, pc}
+ 614              		.cfi_endproc
+ 615              	.LFE67:
+ 616              		.size	convert_delta_vector_to_unit_vector, .-convert_delta_vector_to_unit_vector
+ 617              		.global	__aeabi_fcmpgt
+ 618              		.section	.text.limit_value_by_axis_maximum,"ax",%progbits
+ 619              		.align	2
+ 620              		.global	limit_value_by_axis_maximum
+ 621              		.thumb
+ 622              		.thumb_func
+ 623              		.type	limit_value_by_axis_maximum, %function
+ 624              	limit_value_by_axis_maximum:
+ 625              	.LFB68:
+ 151:nut_bolts.c   **** 
+ 152:nut_bolts.c   **** 
+ 153:nut_bolts.c   **** float limit_value_by_axis_maximum(float *max_value, float *unit_vec)
+ 154:nut_bolts.c   **** {
+ 626              		.loc 1 154 0
+ 627              		.cfi_startproc
+ 628              		@ args = 0, pretend = 0, frame = 16
+ 629              		@ frame_needed = 1, uses_anonymous_args = 0
+ 630 0000 80B5     		push	{r7, lr}
+ 631              		.cfi_def_cfa_offset 8
+ 632              		.cfi_offset 7, -8
+ 633              		.cfi_offset 14, -4
+ 634 0002 84B0     		sub	sp, sp, #16
+ 635              		.cfi_def_cfa_offset 24
+ 636 0004 00AF     		add	r7, sp, #0
+ 637              		.cfi_def_cfa_register 7
+ 638 0006 7860     		str	r0, [r7, #4]
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 15
+
+
+ 639 0008 3960     		str	r1, [r7]
+ 155:nut_bolts.c   ****   uint8_t idx;
+ 156:nut_bolts.c   ****   float limit_value = SOME_LARGE_VALUE;
+ 640              		.loc 1 156 0
+ 641 000a 234B     		ldr	r3, .L58
+ 642 000c BB60     		str	r3, [r7, #8]	@ float
+ 157:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 643              		.loc 1 157 0
+ 644 000e 0023     		movs	r3, #0
+ 645 0010 FB73     		strb	r3, [r7, #15]
+ 646 0012 39E0     		b	.L47
+ 647              	.L53:
+ 158:nut_bolts.c   ****     if (unit_vec[idx] != 0) {  // Avoid divide by zero.
+ 648              		.loc 1 158 0
+ 649 0014 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 650 0016 9B00     		lsls	r3, r3, #2
+ 651 0018 3A68     		ldr	r2, [r7]
+ 652 001a 1344     		add	r3, r3, r2
+ 653 001c 1B68     		ldr	r3, [r3]	@ float
+ 654 001e 4FF00001 		mov	r1, #0
+ 655 0022 1846     		mov	r0, r3
+ 656 0024 FFF7FEFF 		bl	__aeabi_fcmpeq
+ 657 0028 0346     		mov	r3, r0
+ 658 002a 002B     		cmp	r3, #0
+ 659 002c 29D1     		bne	.L48
+ 159:nut_bolts.c   ****       limit_value = min(limit_value,fabs(max_value[idx]/unit_vec[idx]));
+ 660              		.loc 1 159 0
+ 661 002e FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 662 0030 9B00     		lsls	r3, r3, #2
+ 663 0032 7A68     		ldr	r2, [r7, #4]
+ 664 0034 1344     		add	r3, r3, r2
+ 665 0036 1868     		ldr	r0, [r3]	@ float
+ 666 0038 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 667 003a 9B00     		lsls	r3, r3, #2
+ 668 003c 3A68     		ldr	r2, [r7]
+ 669 003e 1344     		add	r3, r3, r2
+ 670 0040 1B68     		ldr	r3, [r3]	@ float
+ 671 0042 1946     		mov	r1, r3
+ 672 0044 FFF7FEFF 		bl	__aeabi_fdiv
+ 673 0048 0346     		mov	r3, r0
+ 674 004a 23F00043 		bic	r3, r3, #-2147483648
+ 675 004e B968     		ldr	r1, [r7, #8]	@ float
+ 676 0050 1846     		mov	r0, r3
+ 677 0052 FFF7FEFF 		bl	__aeabi_fcmpgt
+ 678 0056 0346     		mov	r3, r0
+ 679 0058 002B     		cmp	r3, #0
+ 680 005a 01D0     		beq	.L57
+ 681              		.loc 1 159 0 is_stmt 0 discriminator 1
+ 682 005c BB68     		ldr	r3, [r7, #8]	@ float
+ 683 005e 0FE0     		b	.L52
+ 684              	.L57:
+ 685              		.loc 1 159 0 discriminator 2
+ 686 0060 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 687 0062 9B00     		lsls	r3, r3, #2
+ 688 0064 7A68     		ldr	r2, [r7, #4]
+ 689 0066 1344     		add	r3, r3, r2
+ 690 0068 1868     		ldr	r0, [r3]	@ float
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 16
+
+
+ 691 006a FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 692 006c 9B00     		lsls	r3, r3, #2
+ 693 006e 3A68     		ldr	r2, [r7]
+ 694 0070 1344     		add	r3, r3, r2
+ 695 0072 1B68     		ldr	r3, [r3]	@ float
+ 696 0074 1946     		mov	r1, r3
+ 697 0076 FFF7FEFF 		bl	__aeabi_fdiv
+ 698 007a 0346     		mov	r3, r0
+ 699 007c 23F00043 		bic	r3, r3, #-2147483648
+ 700              	.L52:
+ 701              		.loc 1 159 0 discriminator 4
+ 702 0080 BB60     		str	r3, [r7, #8]	@ float
+ 703              	.L48:
+ 157:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 704              		.loc 1 157 0 is_stmt 1 discriminator 2
+ 705 0082 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 706 0084 0133     		adds	r3, r3, #1
+ 707 0086 FB73     		strb	r3, [r7, #15]
+ 708              	.L47:
+ 157:nut_bolts.c   ****   for (idx=0; idx<N_AXIS; idx++) {
+ 709              		.loc 1 157 0 is_stmt 0 discriminator 1
+ 710 0088 FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 711 008a 022B     		cmp	r3, #2
+ 712 008c C2D9     		bls	.L53
+ 160:nut_bolts.c   ****     }
+ 161:nut_bolts.c   ****   }
+ 162:nut_bolts.c   ****   return(limit_value);
+ 713              		.loc 1 162 0 is_stmt 1
+ 714 008e BB68     		ldr	r3, [r7, #8]	@ float
+ 163:nut_bolts.c   **** }
+ 715              		.loc 1 163 0
+ 716 0090 1846     		mov	r0, r3
+ 717 0092 1037     		adds	r7, r7, #16
+ 718              		.cfi_def_cfa_offset 8
+ 719 0094 BD46     		mov	sp, r7
+ 720              		.cfi_def_cfa_register 13
+ 721              		@ sp needed
+ 722 0096 80BD     		pop	{r7, pc}
+ 723              	.L59:
+ 724              		.align	2
+ 725              	.L58:
+ 726 0098 9976967E 		.word	2123789977
+ 727              		.cfi_endproc
+ 728              	.LFE68:
+ 729              		.size	limit_value_by_axis_maximum, .-limit_value_by_axis_maximum
+ 730              		.section	.text.constrain,"ax",%progbits
+ 731              		.align	2
+ 732              		.global	constrain
+ 733              		.thumb
+ 734              		.thumb_func
+ 735              		.type	constrain, %function
+ 736              	constrain:
+ 737              	.LFB69:
+ 164:nut_bolts.c   **** 
+ 165:nut_bolts.c   **** int constrain(int val, int min, int max) {
+ 738              		.loc 1 165 0
+ 739              		.cfi_startproc
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 17
+
+
+ 740              		@ args = 0, pretend = 0, frame = 16
+ 741              		@ frame_needed = 1, uses_anonymous_args = 0
+ 742              		@ link register save eliminated.
+ 743 0000 80B4     		push	{r7}
+ 744              		.cfi_def_cfa_offset 4
+ 745              		.cfi_offset 7, -4
+ 746 0002 85B0     		sub	sp, sp, #20
+ 747              		.cfi_def_cfa_offset 24
+ 748 0004 00AF     		add	r7, sp, #0
+ 749              		.cfi_def_cfa_register 7
+ 750 0006 F860     		str	r0, [r7, #12]
+ 751 0008 B960     		str	r1, [r7, #8]
+ 752 000a 7A60     		str	r2, [r7, #4]
+ 166:nut_bolts.c   ****     return (val < min)? min : (val > max)? max : val;    
+ 753              		.loc 1 166 0
+ 754 000c FA68     		ldr	r2, [r7, #12]
+ 755 000e BB68     		ldr	r3, [r7, #8]
+ 756 0010 9A42     		cmp	r2, r3
+ 757 0012 05DB     		blt	.L61
+ 758              		.loc 1 166 0 is_stmt 0 discriminator 1
+ 759 0014 FA68     		ldr	r2, [r7, #12]
+ 760 0016 7B68     		ldr	r3, [r7, #4]
+ 761 0018 9342     		cmp	r3, r2
+ 762 001a A8BF     		it	ge
+ 763 001c 1346     		movge	r3, r2
+ 764 001e 00E0     		b	.L63
+ 765              	.L61:
+ 766              		.loc 1 166 0 discriminator 2
+ 767 0020 BB68     		ldr	r3, [r7, #8]
+ 768              	.L63:
+ 167:nut_bolts.c   **** }
+ 769              		.loc 1 167 0 is_stmt 1 discriminator 5
+ 770 0022 1846     		mov	r0, r3
+ 771 0024 1437     		adds	r7, r7, #20
+ 772              		.cfi_def_cfa_offset 4
+ 773 0026 BD46     		mov	sp, r7
+ 774              		.cfi_def_cfa_register 13
+ 775              		@ sp needed
+ 776 0028 80BC     		pop	{r7}
+ 777              		.cfi_restore 7
+ 778              		.cfi_def_cfa_offset 0
+ 779 002a 7047     		bx	lr
+ 780              		.cfi_endproc
+ 781              	.LFE69:
+ 782              		.size	constrain, .-constrain
+ 783              		.section	.text.map,"ax",%progbits
+ 784              		.align	2
+ 785              		.global	map
+ 786              		.thumb
+ 787              		.thumb_func
+ 788              		.type	map, %function
+ 789              	map:
+ 790              	.LFB70:
+ 168:nut_bolts.c   **** 
+ 169:nut_bolts.c   **** long map(long x, long in_min, long in_max, long out_min, long out_max)
+ 170:nut_bolts.c   **** {
+ 791              		.loc 1 170 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 18
+
+
+ 792              		.cfi_startproc
+ 793              		@ args = 4, pretend = 0, frame = 16
+ 794              		@ frame_needed = 1, uses_anonymous_args = 0
+ 795              		@ link register save eliminated.
+ 796 0000 80B4     		push	{r7}
+ 797              		.cfi_def_cfa_offset 4
+ 798              		.cfi_offset 7, -4
+ 799 0002 85B0     		sub	sp, sp, #20
+ 800              		.cfi_def_cfa_offset 24
+ 801 0004 00AF     		add	r7, sp, #0
+ 802              		.cfi_def_cfa_register 7
+ 803 0006 F860     		str	r0, [r7, #12]
+ 804 0008 B960     		str	r1, [r7, #8]
+ 805 000a 7A60     		str	r2, [r7, #4]
+ 806 000c 3B60     		str	r3, [r7]
+ 171:nut_bolts.c   ****   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+ 807              		.loc 1 171 0
+ 808 000e FA68     		ldr	r2, [r7, #12]
+ 809 0010 BB68     		ldr	r3, [r7, #8]
+ 810 0012 D31A     		subs	r3, r2, r3
+ 811 0014 B969     		ldr	r1, [r7, #24]
+ 812 0016 3A68     		ldr	r2, [r7]
+ 813 0018 8A1A     		subs	r2, r1, r2
+ 814 001a 02FB03F2 		mul	r2, r2, r3
+ 815 001e 7968     		ldr	r1, [r7, #4]
+ 816 0020 BB68     		ldr	r3, [r7, #8]
+ 817 0022 CB1A     		subs	r3, r1, r3
+ 818 0024 92FBF3F2 		sdiv	r2, r2, r3
+ 819 0028 3B68     		ldr	r3, [r7]
+ 820 002a 1344     		add	r3, r3, r2
+ 172:nut_bolts.c   **** }
+ 821              		.loc 1 172 0
+ 822 002c 1846     		mov	r0, r3
+ 823 002e 1437     		adds	r7, r7, #20
+ 824              		.cfi_def_cfa_offset 4
+ 825 0030 BD46     		mov	sp, r7
+ 826              		.cfi_def_cfa_register 13
+ 827              		@ sp needed
+ 828 0032 80BC     		pop	{r7}
+ 829              		.cfi_restore 7
+ 830              		.cfi_def_cfa_offset 0
+ 831 0034 7047     		bx	lr
+ 832              		.cfi_endproc
+ 833              	.LFE70:
+ 834              		.size	map, .-map
+ 835 0036 00BF     		.section	.text.mapConstrain,"ax",%progbits
+ 836              		.align	2
+ 837              		.global	mapConstrain
+ 838              		.thumb
+ 839              		.thumb_func
+ 840              		.type	mapConstrain, %function
+ 841              	mapConstrain:
+ 842              	.LFB71:
+ 173:nut_bolts.c   **** 
+ 174:nut_bolts.c   **** long mapConstrain(long x, long in_min, long in_max, long out_min, long out_max)
+ 175:nut_bolts.c   **** {
+ 843              		.loc 1 175 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 19
+
+
+ 844              		.cfi_startproc
+ 845              		@ args = 4, pretend = 0, frame = 16
+ 846              		@ frame_needed = 1, uses_anonymous_args = 0
+ 847 0000 80B5     		push	{r7, lr}
+ 848              		.cfi_def_cfa_offset 8
+ 849              		.cfi_offset 7, -8
+ 850              		.cfi_offset 14, -4
+ 851 0002 86B0     		sub	sp, sp, #24
+ 852              		.cfi_def_cfa_offset 32
+ 853 0004 02AF     		add	r7, sp, #8
+ 854              		.cfi_def_cfa 7, 24
+ 855 0006 F860     		str	r0, [r7, #12]
+ 856 0008 B960     		str	r1, [r7, #8]
+ 857 000a 7A60     		str	r2, [r7, #4]
+ 858 000c 3B60     		str	r3, [r7]
+ 176:nut_bolts.c   ****     x = constrain(x, out_min, out_max);
+ 859              		.loc 1 176 0
+ 860 000e BA69     		ldr	r2, [r7, #24]
+ 861 0010 3968     		ldr	r1, [r7]
+ 862 0012 F868     		ldr	r0, [r7, #12]
+ 863 0014 FFF7FEFF 		bl	constrain
+ 864 0018 F860     		str	r0, [r7, #12]
+ 177:nut_bolts.c   ****     return map(x, in_min, in_max, out_min, out_max);
+ 865              		.loc 1 177 0
+ 866 001a BB69     		ldr	r3, [r7, #24]
+ 867 001c 0093     		str	r3, [sp]
+ 868 001e 3B68     		ldr	r3, [r7]
+ 869 0020 7A68     		ldr	r2, [r7, #4]
+ 870 0022 B968     		ldr	r1, [r7, #8]
+ 871 0024 F868     		ldr	r0, [r7, #12]
+ 872 0026 FFF7FEFF 		bl	map
+ 873 002a 0346     		mov	r3, r0
+ 178:nut_bolts.c   **** }
+ 874              		.loc 1 178 0
+ 875 002c 1846     		mov	r0, r3
+ 876 002e 1037     		adds	r7, r7, #16
+ 877              		.cfi_def_cfa_offset 8
+ 878 0030 BD46     		mov	sp, r7
+ 879              		.cfi_def_cfa_register 13
+ 880              		@ sp needed
+ 881 0032 80BD     		pop	{r7, pc}
+ 882              		.cfi_endproc
+ 883              	.LFE71:
+ 884              		.size	mapConstrain, .-mapConstrain
+ 885              		.text
+ 886              	.Letext0:
+ 887              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 888              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 889              		.file 4 "system.h"
+ 890              		.file 5 "Generated_Source\\PSoC5/core_cm3.h"
+ 891              		.section	.debug_info,"",%progbits
+ 892              	.Ldebug_info0:
+ 893 0000 3C050000 		.4byte	0x53c
+ 894 0004 0400     		.2byte	0x4
+ 895 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 896 000a 04       		.byte	0x4
+ 897 000b 01       		.uleb128 0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 20
+
+
+ 898 000c 93000000 		.4byte	.LASF74
+ 899 0010 0C       		.byte	0xc
+ 900 0011 1F000000 		.4byte	.LASF75
+ 901 0015 D8030000 		.4byte	.LASF76
+ 902 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 903 001d 00000000 		.4byte	0
+ 904 0021 00000000 		.4byte	.Ldebug_line0
+ 905 0025 02       		.uleb128 0x2
+ 906 0026 FD020000 		.4byte	.LASF0
+ 907 002a 02       		.byte	0x2
+ 908 002b 1B       		.byte	0x1b
+ 909 002c 30000000 		.4byte	0x30
+ 910 0030 03       		.uleb128 0x3
+ 911 0031 01       		.byte	0x1
+ 912 0032 06       		.byte	0x6
+ 913 0033 43020000 		.4byte	.LASF2
+ 914 0037 02       		.uleb128 0x2
+ 915 0038 DD010000 		.4byte	.LASF1
+ 916 003c 02       		.byte	0x2
+ 917 003d 1D       		.byte	0x1d
+ 918 003e 42000000 		.4byte	0x42
+ 919 0042 03       		.uleb128 0x3
+ 920 0043 01       		.byte	0x1
+ 921 0044 08       		.byte	0x8
+ 922 0045 27020000 		.4byte	.LASF3
+ 923 0049 03       		.uleb128 0x3
+ 924 004a 02       		.byte	0x2
+ 925 004b 05       		.byte	0x5
+ 926 004c 6D000000 		.4byte	.LASF4
+ 927 0050 02       		.uleb128 0x2
+ 928 0051 38010000 		.4byte	.LASF5
+ 929 0055 02       		.byte	0x2
+ 930 0056 2B       		.byte	0x2b
+ 931 0057 5B000000 		.4byte	0x5b
+ 932 005b 03       		.uleb128 0x3
+ 933 005c 02       		.byte	0x2
+ 934 005d 07       		.byte	0x7
+ 935 005e EA020000 		.4byte	.LASF6
+ 936 0062 02       		.uleb128 0x2
+ 937 0063 BA030000 		.4byte	.LASF7
+ 938 0067 02       		.byte	0x2
+ 939 0068 3F       		.byte	0x3f
+ 940 0069 6D000000 		.4byte	0x6d
+ 941 006d 03       		.uleb128 0x3
+ 942 006e 04       		.byte	0x4
+ 943 006f 05       		.byte	0x5
+ 944 0070 B0010000 		.4byte	.LASF8
+ 945 0074 02       		.uleb128 0x2
+ 946 0075 28010000 		.4byte	.LASF9
+ 947 0079 02       		.byte	0x2
+ 948 007a 41       		.byte	0x41
+ 949 007b 7F000000 		.4byte	0x7f
+ 950 007f 03       		.uleb128 0x3
+ 951 0080 04       		.byte	0x4
+ 952 0081 07       		.byte	0x7
+ 953 0082 87030000 		.4byte	.LASF10
+ 954 0086 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 21
+
+
+ 955 0087 08       		.byte	0x8
+ 956 0088 05       		.byte	0x5
+ 957 0089 73010000 		.4byte	.LASF11
+ 958 008d 03       		.uleb128 0x3
+ 959 008e 08       		.byte	0x8
+ 960 008f 07       		.byte	0x7
+ 961 0090 4F020000 		.4byte	.LASF12
+ 962 0094 04       		.uleb128 0x4
+ 963 0095 04       		.byte	0x4
+ 964 0096 05       		.byte	0x5
+ 965 0097 696E7400 		.ascii	"int\000"
+ 966 009b 03       		.uleb128 0x3
+ 967 009c 04       		.byte	0x4
+ 968 009d 07       		.byte	0x7
+ 969 009e 6F020000 		.4byte	.LASF13
+ 970 00a2 02       		.uleb128 0x2
+ 971 00a3 58000000 		.4byte	.LASF14
+ 972 00a7 03       		.byte	0x3
+ 973 00a8 14       		.byte	0x14
+ 974 00a9 25000000 		.4byte	0x25
+ 975 00ad 02       		.uleb128 0x2
+ 976 00ae 4D010000 		.4byte	.LASF15
+ 977 00b2 03       		.byte	0x3
+ 978 00b3 18       		.byte	0x18
+ 979 00b4 37000000 		.4byte	0x37
+ 980 00b8 02       		.uleb128 0x2
+ 981 00b9 13030000 		.4byte	.LASF16
+ 982 00bd 03       		.byte	0x3
+ 983 00be 24       		.byte	0x24
+ 984 00bf 50000000 		.4byte	0x50
+ 985 00c3 02       		.uleb128 0x2
+ 986 00c4 1C030000 		.4byte	.LASF17
+ 987 00c8 03       		.byte	0x3
+ 988 00c9 2C       		.byte	0x2c
+ 989 00ca 62000000 		.4byte	0x62
+ 990 00ce 02       		.uleb128 0x2
+ 991 00cf 66020000 		.4byte	.LASF18
+ 992 00d3 03       		.byte	0x3
+ 993 00d4 30       		.byte	0x30
+ 994 00d5 74000000 		.4byte	0x74
+ 995 00d9 03       		.uleb128 0x3
+ 996 00da 04       		.byte	0x4
+ 997 00db 04       		.byte	0x4
+ 998 00dc 61010000 		.4byte	.LASF19
+ 999 00e0 03       		.uleb128 0x3
+ 1000 00e1 08       		.byte	0x8
+ 1001 00e2 04       		.byte	0x4
+ 1002 00e3 A4030000 		.4byte	.LASF20
+ 1003 00e7 03       		.uleb128 0x3
+ 1004 00e8 01       		.byte	0x1
+ 1005 00e9 08       		.byte	0x8
+ 1006 00ea 0E030000 		.4byte	.LASF21
+ 1007 00ee 03       		.uleb128 0x3
+ 1008 00ef 08       		.byte	0x8
+ 1009 00f0 04       		.byte	0x4
+ 1010 00f1 11020000 		.4byte	.LASF22
+ 1011 00f5 03       		.uleb128 0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 22
+
+
+ 1012 00f6 04       		.byte	0x4
+ 1013 00f7 07       		.byte	0x7
+ 1014 00f8 77000000 		.4byte	.LASF23
+ 1015 00fc 05       		.uleb128 0x5
+ 1016 00fd 04       		.byte	0x4
+ 1017 00fe E7000000 		.4byte	0xe7
+ 1018 0102 06       		.uleb128 0x6
+ 1019 0103 AD000000 		.4byte	0xad
+ 1020 0107 07       		.uleb128 0x7
+ 1021 0108 14       		.byte	0x14
+ 1022 0109 04       		.byte	0x4
+ 1023 010a 81       		.byte	0x81
+ 1024 010b B8010000 		.4byte	0x1b8
+ 1025 010f 08       		.uleb128 0x8
+ 1026 0110 5F000000 		.4byte	.LASF24
+ 1027 0114 04       		.byte	0x4
+ 1028 0115 82       		.byte	0x82
+ 1029 0116 AD000000 		.4byte	0xad
+ 1030 011a 00       		.byte	0
+ 1031 011b 08       		.uleb128 0x8
+ 1032 011c 3D020000 		.4byte	.LASF25
+ 1033 0120 04       		.byte	0x4
+ 1034 0121 83       		.byte	0x83
+ 1035 0122 AD000000 		.4byte	0xad
+ 1036 0126 01       		.byte	0x1
+ 1037 0127 08       		.uleb128 0x8
+ 1038 0128 53030000 		.4byte	.LASF26
+ 1039 012c 04       		.byte	0x4
+ 1040 012d 84       		.byte	0x84
+ 1041 012e AD000000 		.4byte	0xad
+ 1042 0132 02       		.byte	0x2
+ 1043 0133 08       		.uleb128 0x8
+ 1044 0134 5B030000 		.4byte	.LASF27
+ 1045 0138 04       		.byte	0x4
+ 1046 0139 85       		.byte	0x85
+ 1047 013a AD000000 		.4byte	0xad
+ 1048 013e 03       		.byte	0x3
+ 1049 013f 08       		.uleb128 0x8
+ 1050 0140 46030000 		.4byte	.LASF28
+ 1051 0144 04       		.byte	0x4
+ 1052 0145 86       		.byte	0x86
+ 1053 0146 AD000000 		.4byte	0xad
+ 1054 014a 04       		.byte	0x4
+ 1055 014b 08       		.uleb128 0x8
+ 1056 014c A0010000 		.4byte	.LASF29
+ 1057 0150 04       		.byte	0x4
+ 1058 0151 87       		.byte	0x87
+ 1059 0152 AD000000 		.4byte	0xad
+ 1060 0156 05       		.byte	0x5
+ 1061 0157 08       		.uleb128 0x8
+ 1062 0158 D9020000 		.4byte	.LASF30
+ 1063 015c 04       		.byte	0x4
+ 1064 015d 88       		.byte	0x88
+ 1065 015e AD000000 		.4byte	0xad
+ 1066 0162 06       		.byte	0x6
+ 1067 0163 08       		.uleb128 0x8
+ 1068 0164 7C020000 		.4byte	.LASF31
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 23
+
+
+ 1069 0168 04       		.byte	0x4
+ 1070 0169 89       		.byte	0x89
+ 1071 016a AD000000 		.4byte	0xad
+ 1072 016e 07       		.byte	0x7
+ 1073 016f 08       		.uleb128 0x8
+ 1074 0170 1A040000 		.4byte	.LASF32
+ 1075 0174 04       		.byte	0x4
+ 1076 0175 8A       		.byte	0x8a
+ 1077 0176 AD000000 		.4byte	0xad
+ 1078 017a 08       		.byte	0x8
+ 1079 017b 08       		.uleb128 0x8
+ 1080 017c 81010000 		.4byte	.LASF33
+ 1081 0180 04       		.byte	0x4
+ 1082 0181 8B       		.byte	0x8b
+ 1083 0182 AD000000 		.4byte	0xad
+ 1084 0186 09       		.byte	0x9
+ 1085 0187 08       		.uleb128 0x8
+ 1086 0188 76030000 		.4byte	.LASF34
+ 1087 018c 04       		.byte	0x4
+ 1088 018d 8C       		.byte	0x8c
+ 1089 018e AD000000 		.4byte	0xad
+ 1090 0192 0A       		.byte	0xa
+ 1091 0193 08       		.uleb128 0x8
+ 1092 0194 E7010000 		.4byte	.LASF35
+ 1093 0198 04       		.byte	0x4
+ 1094 0199 8D       		.byte	0x8d
+ 1095 019a AD000000 		.4byte	0xad
+ 1096 019e 0B       		.byte	0xb
+ 1097 019f 08       		.uleb128 0x8
+ 1098 01a0 25040000 		.4byte	.LASF36
+ 1099 01a4 04       		.byte	0x4
+ 1100 01a5 8E       		.byte	0x8e
+ 1101 01a6 AD000000 		.4byte	0xad
+ 1102 01aa 0C       		.byte	0xc
+ 1103 01ab 08       		.uleb128 0x8
+ 1104 01ac 87020000 		.4byte	.LASF37
+ 1105 01b0 04       		.byte	0x4
+ 1106 01b1 90       		.byte	0x90
+ 1107 01b2 D9000000 		.4byte	0xd9
+ 1108 01b6 10       		.byte	0x10
+ 1109 01b7 00       		.byte	0
+ 1110 01b8 02       		.uleb128 0x2
+ 1111 01b9 8A000000 		.4byte	.LASF38
+ 1112 01bd 04       		.byte	0x4
+ 1113 01be 92       		.byte	0x92
+ 1114 01bf 07010000 		.4byte	0x107
+ 1115 01c3 09       		.uleb128 0x9
+ 1116 01c4 CD030000 		.4byte	.LASF50
+ 1117 01c8 01       		.byte	0x1
+ 1118 01c9 24       		.byte	0x24
+ 1119 01ca AD000000 		.4byte	0xad
+ 1120 01ce 00000000 		.4byte	.LFB64
+ 1121 01d2 DC010000 		.4byte	.LFE64-.LFB64
+ 1122 01d6 01       		.uleb128 0x1
+ 1123 01d7 9C       		.byte	0x9c
+ 1124 01d8 75020000 		.4byte	0x275
+ 1125 01dc 0A       		.uleb128 0xa
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 24
+
+
+ 1126 01dd 5C010000 		.4byte	.LASF39
+ 1127 01e1 01       		.byte	0x1
+ 1128 01e2 24       		.byte	0x24
+ 1129 01e3 FC000000 		.4byte	0xfc
+ 1130 01e7 02       		.uleb128 0x2
+ 1131 01e8 91       		.byte	0x91
+ 1132 01e9 54       		.sleb128 -44
+ 1133 01ea 0A       		.uleb128 0xa
+ 1134 01eb FA010000 		.4byte	.LASF40
+ 1135 01ef 01       		.byte	0x1
+ 1136 01f0 24       		.byte	0x24
+ 1137 01f1 75020000 		.4byte	0x275
+ 1138 01f5 02       		.uleb128 0x2
+ 1139 01f6 91       		.byte	0x91
+ 1140 01f7 50       		.sleb128 -48
+ 1141 01f8 0A       		.uleb128 0xa
+ 1142 01f9 43010000 		.4byte	.LASF41
+ 1143 01fd 01       		.byte	0x1
+ 1144 01fe 24       		.byte	0x24
+ 1145 01ff 7B020000 		.4byte	0x27b
+ 1146 0203 02       		.uleb128 0x2
+ 1147 0204 91       		.byte	0x91
+ 1148 0205 4C       		.sleb128 -52
+ 1149 0206 0B       		.uleb128 0xb
+ 1150 0207 70747200 		.ascii	"ptr\000"
+ 1151 020b 01       		.byte	0x1
+ 1152 020c 26       		.byte	0x26
+ 1153 020d FC000000 		.4byte	0xfc
+ 1154 0211 02       		.uleb128 0x2
+ 1155 0212 91       		.byte	0x91
+ 1156 0213 6C       		.sleb128 -20
+ 1157 0214 0B       		.uleb128 0xb
+ 1158 0215 6300     		.ascii	"c\000"
+ 1159 0217 01       		.byte	0x1
+ 1160 0218 27       		.byte	0x27
+ 1161 0219 42000000 		.4byte	0x42
+ 1162 021d 02       		.uleb128 0x2
+ 1163 021e 91       		.byte	0x91
+ 1164 021f 6B       		.sleb128 -21
+ 1165 0220 0C       		.uleb128 0xc
+ 1166 0221 99030000 		.4byte	.LASF42
+ 1167 0225 01       		.byte	0x1
+ 1168 0226 2D       		.byte	0x2d
+ 1169 0227 81020000 		.4byte	0x281
+ 1170 022b 02       		.uleb128 0x2
+ 1171 022c 91       		.byte	0x91
+ 1172 022d 6A       		.sleb128 -22
+ 1173 022e 0C       		.uleb128 0xc
+ 1174 022f 51000000 		.4byte	.LASF43
+ 1175 0233 01       		.byte	0x1
+ 1176 0234 36       		.byte	0x36
+ 1177 0235 CE000000 		.4byte	0xce
+ 1178 0239 02       		.uleb128 0x2
+ 1179 023a 91       		.byte	0x91
+ 1180 023b 64       		.sleb128 -28
+ 1181 023c 0B       		.uleb128 0xb
+ 1182 023d 65787000 		.ascii	"exp\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 25
+
+
+ 1183 0241 01       		.byte	0x1
+ 1184 0242 37       		.byte	0x37
+ 1185 0243 A2000000 		.4byte	0xa2
+ 1186 0247 02       		.uleb128 0x2
+ 1187 0248 91       		.byte	0x91
+ 1188 0249 63       		.sleb128 -29
+ 1189 024a 0C       		.uleb128 0xc
+ 1190 024b D2020000 		.4byte	.LASF44
+ 1191 024f 01       		.byte	0x1
+ 1192 0250 38       		.byte	0x38
+ 1193 0251 AD000000 		.4byte	0xad
+ 1194 0255 02       		.uleb128 0x2
+ 1195 0256 91       		.byte	0x91
+ 1196 0257 62       		.sleb128 -30
+ 1197 0258 0C       		.uleb128 0xc
+ 1198 0259 80000000 		.4byte	.LASF45
+ 1199 025d 01       		.byte	0x1
+ 1200 025e 39       		.byte	0x39
+ 1201 025f 81020000 		.4byte	0x281
+ 1202 0263 02       		.uleb128 0x2
+ 1203 0264 91       		.byte	0x91
+ 1204 0265 61       		.sleb128 -31
+ 1205 0266 0C       		.uleb128 0xc
+ 1206 0267 AB030000 		.4byte	.LASF46
+ 1207 026b 01       		.byte	0x1
+ 1208 026c 50       		.byte	0x50
+ 1209 026d D9000000 		.4byte	0xd9
+ 1210 0271 02       		.uleb128 0x2
+ 1211 0272 91       		.byte	0x91
+ 1212 0273 5C       		.sleb128 -36
+ 1213 0274 00       		.byte	0
+ 1214 0275 05       		.uleb128 0x5
+ 1215 0276 04       		.byte	0x4
+ 1216 0277 AD000000 		.4byte	0xad
+ 1217 027b 05       		.uleb128 0x5
+ 1218 027c 04       		.byte	0x4
+ 1219 027d D9000000 		.4byte	0xd9
+ 1220 0281 03       		.uleb128 0x3
+ 1221 0282 01       		.byte	0x1
+ 1222 0283 02       		.byte	0x2
+ 1223 0284 24030000 		.4byte	.LASF47
+ 1224 0288 0D       		.uleb128 0xd
+ 1225 0289 57040000 		.4byte	.LASF77
+ 1226 028d 01       		.byte	0x1
+ 1227 028e 71       		.byte	0x71
+ 1228 028f 00000000 		.4byte	.LFB65
+ 1229 0293 84000000 		.4byte	.LFE65-.LFB65
+ 1230 0297 01       		.uleb128 0x1
+ 1231 0298 9C       		.byte	0x9c
+ 1232 0299 C6020000 		.4byte	0x2c6
+ 1233 029d 0A       		.uleb128 0xa
+ 1234 029e 06030000 		.4byte	.LASF48
+ 1235 02a2 01       		.byte	0x1
+ 1236 02a3 71       		.byte	0x71
+ 1237 02a4 D9000000 		.4byte	0xd9
+ 1238 02a8 02       		.uleb128 0x2
+ 1239 02a9 91       		.byte	0x91
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 26
+
+
+ 1240 02aa 64       		.sleb128 -28
+ 1241 02ab 0A       		.uleb128 0xa
+ 1242 02ac 33010000 		.4byte	.LASF49
+ 1243 02b0 01       		.byte	0x1
+ 1244 02b1 71       		.byte	0x71
+ 1245 02b2 AD000000 		.4byte	0xad
+ 1246 02b6 02       		.uleb128 0x2
+ 1247 02b7 91       		.byte	0x91
+ 1248 02b8 63       		.sleb128 -29
+ 1249 02b9 0B       		.uleb128 0xb
+ 1250 02ba 6900     		.ascii	"i\000"
+ 1251 02bc 01       		.byte	0x1
+ 1252 02bd 73       		.byte	0x73
+ 1253 02be B8000000 		.4byte	0xb8
+ 1254 02c2 02       		.uleb128 0x2
+ 1255 02c3 91       		.byte	0x91
+ 1256 02c4 6E       		.sleb128 -18
+ 1257 02c5 00       		.byte	0
+ 1258 02c6 09       		.uleb128 0x9
+ 1259 02c7 35020000 		.4byte	.LASF51
+ 1260 02cb 01       		.byte	0x1
+ 1261 02cc 86       		.byte	0x86
+ 1262 02cd D9000000 		.4byte	0xd9
+ 1263 02d1 00000000 		.4byte	.LFB66
+ 1264 02d5 52000000 		.4byte	.LFE66-.LFB66
+ 1265 02d9 01       		.uleb128 0x1
+ 1266 02da 9C       		.byte	0x9c
+ 1267 02db F8020000 		.4byte	0x2f8
+ 1268 02df 0E       		.uleb128 0xe
+ 1269 02e0 7800     		.ascii	"x\000"
+ 1270 02e2 01       		.byte	0x1
+ 1271 02e3 86       		.byte	0x86
+ 1272 02e4 D9000000 		.4byte	0xd9
+ 1273 02e8 02       		.uleb128 0x2
+ 1274 02e9 91       		.byte	0x91
+ 1275 02ea 6C       		.sleb128 -20
+ 1276 02eb 0E       		.uleb128 0xe
+ 1277 02ec 7900     		.ascii	"y\000"
+ 1278 02ee 01       		.byte	0x1
+ 1279 02ef 86       		.byte	0x86
+ 1280 02f0 D9000000 		.4byte	0xd9
+ 1281 02f4 02       		.uleb128 0x2
+ 1282 02f5 91       		.byte	0x91
+ 1283 02f6 68       		.sleb128 -24
+ 1284 02f7 00       		.byte	0
+ 1285 02f8 09       		.uleb128 0x9
+ 1286 02f9 B9010000 		.4byte	.LASF52
+ 1287 02fd 01       		.byte	0x1
+ 1288 02fe 89       		.byte	0x89
+ 1289 02ff D9000000 		.4byte	0xd9
+ 1290 0303 00000000 		.4byte	.LFB67
+ 1291 0307 CC000000 		.4byte	.LFE67-.LFB67
+ 1292 030b 01       		.uleb128 0x1
+ 1293 030c 9C       		.byte	0x9c
+ 1294 030d 4A030000 		.4byte	0x34a
+ 1295 0311 0A       		.uleb128 0xa
+ 1296 0312 55010000 		.4byte	.LASF53
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 27
+
+
+ 1297 0316 01       		.byte	0x1
+ 1298 0317 89       		.byte	0x89
+ 1299 0318 7B020000 		.4byte	0x27b
+ 1300 031c 02       		.uleb128 0x2
+ 1301 031d 91       		.byte	0x91
+ 1302 031e 5C       		.sleb128 -36
+ 1303 031f 0B       		.uleb128 0xb
+ 1304 0320 69647800 		.ascii	"idx\000"
+ 1305 0324 01       		.byte	0x1
+ 1306 0325 8B       		.byte	0x8b
+ 1307 0326 AD000000 		.4byte	0xad
+ 1308 032a 02       		.uleb128 0x2
+ 1309 032b 91       		.byte	0x91
+ 1310 032c 6F       		.sleb128 -17
+ 1311 032d 0C       		.uleb128 0xc
+ 1312 032e 07020000 		.4byte	.LASF54
+ 1313 0332 01       		.byte	0x1
+ 1314 0333 8C       		.byte	0x8c
+ 1315 0334 D9000000 		.4byte	0xd9
+ 1316 0338 02       		.uleb128 0x2
+ 1317 0339 91       		.byte	0x91
+ 1318 033a 68       		.sleb128 -24
+ 1319 033b 0C       		.uleb128 0xc
+ 1320 033c 95020000 		.4byte	.LASF55
+ 1321 0340 01       		.byte	0x1
+ 1322 0341 93       		.byte	0x93
+ 1323 0342 D9000000 		.4byte	0xd9
+ 1324 0346 02       		.uleb128 0x2
+ 1325 0347 91       		.byte	0x91
+ 1326 0348 64       		.sleb128 -28
+ 1327 0349 00       		.byte	0
+ 1328 034a 09       		.uleb128 0x9
+ 1329 034b 2A030000 		.4byte	.LASF56
+ 1330 034f 01       		.byte	0x1
+ 1331 0350 99       		.byte	0x99
+ 1332 0351 D9000000 		.4byte	0xd9
+ 1333 0355 00000000 		.4byte	.LFB68
+ 1334 0359 9C000000 		.4byte	.LFE68-.LFB68
+ 1335 035d 01       		.uleb128 0x1
+ 1336 035e 9C       		.byte	0x9c
+ 1337 035f 9C030000 		.4byte	0x39c
+ 1338 0363 0A       		.uleb128 0xa
+ 1339 0364 1D020000 		.4byte	.LASF57
+ 1340 0368 01       		.byte	0x1
+ 1341 0369 99       		.byte	0x99
+ 1342 036a 7B020000 		.4byte	0x27b
+ 1343 036e 02       		.uleb128 0x2
+ 1344 036f 91       		.byte	0x91
+ 1345 0370 6C       		.sleb128 -20
+ 1346 0371 0A       		.uleb128 0xa
+ 1347 0372 C4030000 		.4byte	.LASF58
+ 1348 0376 01       		.byte	0x1
+ 1349 0377 99       		.byte	0x99
+ 1350 0378 7B020000 		.4byte	0x27b
+ 1351 037c 02       		.uleb128 0x2
+ 1352 037d 91       		.byte	0x91
+ 1353 037e 68       		.sleb128 -24
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 28
+
+
+ 1354 037f 0B       		.uleb128 0xb
+ 1355 0380 69647800 		.ascii	"idx\000"
+ 1356 0384 01       		.byte	0x1
+ 1357 0385 9B       		.byte	0x9b
+ 1358 0386 AD000000 		.4byte	0xad
+ 1359 038a 02       		.uleb128 0x2
+ 1360 038b 91       		.byte	0x91
+ 1361 038c 77       		.sleb128 -9
+ 1362 038d 0C       		.uleb128 0xc
+ 1363 038e 67010000 		.4byte	.LASF59
+ 1364 0392 01       		.byte	0x1
+ 1365 0393 9C       		.byte	0x9c
+ 1366 0394 D9000000 		.4byte	0xd9
+ 1367 0398 02       		.uleb128 0x2
+ 1368 0399 91       		.byte	0x91
+ 1369 039a 70       		.sleb128 -16
+ 1370 039b 00       		.byte	0
+ 1371 039c 0F       		.uleb128 0xf
+ 1372 039d B0030000 		.4byte	.LASF60
+ 1373 03a1 01       		.byte	0x1
+ 1374 03a2 A5       		.byte	0xa5
+ 1375 03a3 94000000 		.4byte	0x94
+ 1376 03a7 00000000 		.4byte	.LFB69
+ 1377 03ab 2C000000 		.4byte	.LFE69-.LFB69
+ 1378 03af 01       		.uleb128 0x1
+ 1379 03b0 9C       		.byte	0x9c
+ 1380 03b1 E0030000 		.4byte	0x3e0
+ 1381 03b5 0E       		.uleb128 0xe
+ 1382 03b6 76616C00 		.ascii	"val\000"
+ 1383 03ba 01       		.byte	0x1
+ 1384 03bb A5       		.byte	0xa5
+ 1385 03bc 94000000 		.4byte	0x94
+ 1386 03c0 02       		.uleb128 0x2
+ 1387 03c1 91       		.byte	0x91
+ 1388 03c2 74       		.sleb128 -12
+ 1389 03c3 0E       		.uleb128 0xe
+ 1390 03c4 6D696E00 		.ascii	"min\000"
+ 1391 03c8 01       		.byte	0x1
+ 1392 03c9 A5       		.byte	0xa5
+ 1393 03ca 94000000 		.4byte	0x94
+ 1394 03ce 02       		.uleb128 0x2
+ 1395 03cf 91       		.byte	0x91
+ 1396 03d0 70       		.sleb128 -16
+ 1397 03d1 0E       		.uleb128 0xe
+ 1398 03d2 6D617800 		.ascii	"max\000"
+ 1399 03d6 01       		.byte	0x1
+ 1400 03d7 A5       		.byte	0xa5
+ 1401 03d8 94000000 		.4byte	0x94
+ 1402 03dc 02       		.uleb128 0x2
+ 1403 03dd 91       		.byte	0x91
+ 1404 03de 6C       		.sleb128 -20
+ 1405 03df 00       		.byte	0
+ 1406 03e0 10       		.uleb128 0x10
+ 1407 03e1 6D617000 		.ascii	"map\000"
+ 1408 03e5 01       		.byte	0x1
+ 1409 03e6 A9       		.byte	0xa9
+ 1410 03e7 6D000000 		.4byte	0x6d
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 29
+
+
+ 1411 03eb 00000000 		.4byte	.LFB70
+ 1412 03ef 36000000 		.4byte	.LFE70-.LFB70
+ 1413 03f3 01       		.uleb128 0x1
+ 1414 03f4 9C       		.byte	0x9c
+ 1415 03f5 3E040000 		.4byte	0x43e
+ 1416 03f9 0E       		.uleb128 0xe
+ 1417 03fa 7800     		.ascii	"x\000"
+ 1418 03fc 01       		.byte	0x1
+ 1419 03fd A9       		.byte	0xa9
+ 1420 03fe 6D000000 		.4byte	0x6d
+ 1421 0402 02       		.uleb128 0x2
+ 1422 0403 91       		.byte	0x91
+ 1423 0404 74       		.sleb128 -12
+ 1424 0405 0A       		.uleb128 0xa
+ 1425 0406 21010000 		.4byte	.LASF61
+ 1426 040a 01       		.byte	0x1
+ 1427 040b A9       		.byte	0xa9
+ 1428 040c 6D000000 		.4byte	0x6d
+ 1429 0410 02       		.uleb128 0x2
+ 1430 0411 91       		.byte	0x91
+ 1431 0412 70       		.sleb128 -16
+ 1432 0413 0A       		.uleb128 0xa
+ 1433 0414 4A000000 		.4byte	.LASF62
+ 1434 0418 01       		.byte	0x1
+ 1435 0419 A9       		.byte	0xa9
+ 1436 041a 6D000000 		.4byte	0x6d
+ 1437 041e 02       		.uleb128 0x2
+ 1438 041f 91       		.byte	0x91
+ 1439 0420 6C       		.sleb128 -20
+ 1440 0421 0A       		.uleb128 0xa
+ 1441 0422 65000000 		.4byte	.LASF63
+ 1442 0426 01       		.byte	0x1
+ 1443 0427 A9       		.byte	0xa9
+ 1444 0428 6D000000 		.4byte	0x6d
+ 1445 042c 02       		.uleb128 0x2
+ 1446 042d 91       		.byte	0x91
+ 1447 042e 68       		.sleb128 -24
+ 1448 042f 0A       		.uleb128 0xa
+ 1449 0430 61040000 		.4byte	.LASF64
+ 1450 0434 01       		.byte	0x1
+ 1451 0435 A9       		.byte	0xa9
+ 1452 0436 6D000000 		.4byte	0x6d
+ 1453 043a 02       		.uleb128 0x2
+ 1454 043b 91       		.byte	0x91
+ 1455 043c 00       		.sleb128 0
+ 1456 043d 00       		.byte	0
+ 1457 043e 09       		.uleb128 0x9
+ 1458 043f 12000000 		.4byte	.LASF65
+ 1459 0443 01       		.byte	0x1
+ 1460 0444 AE       		.byte	0xae
+ 1461 0445 6D000000 		.4byte	0x6d
+ 1462 0449 00000000 		.4byte	.LFB71
+ 1463 044d 34000000 		.4byte	.LFE71-.LFB71
+ 1464 0451 01       		.uleb128 0x1
+ 1465 0452 9C       		.byte	0x9c
+ 1466 0453 9C040000 		.4byte	0x49c
+ 1467 0457 0E       		.uleb128 0xe
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 30
+
+
+ 1468 0458 7800     		.ascii	"x\000"
+ 1469 045a 01       		.byte	0x1
+ 1470 045b AE       		.byte	0xae
+ 1471 045c 6D000000 		.4byte	0x6d
+ 1472 0460 02       		.uleb128 0x2
+ 1473 0461 91       		.byte	0x91
+ 1474 0462 74       		.sleb128 -12
+ 1475 0463 0A       		.uleb128 0xa
+ 1476 0464 21010000 		.4byte	.LASF61
+ 1477 0468 01       		.byte	0x1
+ 1478 0469 AE       		.byte	0xae
+ 1479 046a 6D000000 		.4byte	0x6d
+ 1480 046e 02       		.uleb128 0x2
+ 1481 046f 91       		.byte	0x91
+ 1482 0470 70       		.sleb128 -16
+ 1483 0471 0A       		.uleb128 0xa
+ 1484 0472 4A000000 		.4byte	.LASF62
+ 1485 0476 01       		.byte	0x1
+ 1486 0477 AE       		.byte	0xae
+ 1487 0478 6D000000 		.4byte	0x6d
+ 1488 047c 02       		.uleb128 0x2
+ 1489 047d 91       		.byte	0x91
+ 1490 047e 6C       		.sleb128 -20
+ 1491 047f 0A       		.uleb128 0xa
+ 1492 0480 65000000 		.4byte	.LASF63
+ 1493 0484 01       		.byte	0x1
+ 1494 0485 AE       		.byte	0xae
+ 1495 0486 6D000000 		.4byte	0x6d
+ 1496 048a 02       		.uleb128 0x2
+ 1497 048b 91       		.byte	0x91
+ 1498 048c 68       		.sleb128 -24
+ 1499 048d 0A       		.uleb128 0xa
+ 1500 048e 61040000 		.4byte	.LASF64
+ 1501 0492 01       		.byte	0x1
+ 1502 0493 AE       		.byte	0xae
+ 1503 0494 6D000000 		.4byte	0x6d
+ 1504 0498 02       		.uleb128 0x2
+ 1505 0499 91       		.byte	0x91
+ 1506 049a 00       		.sleb128 0
+ 1507 049b 00       		.byte	0
+ 1508 049c 11       		.uleb128 0x11
+ 1509 049d 38040000 		.4byte	.LASF66
+ 1510 04a1 05       		.byte	0x5
+ 1511 04a2 1207     		.2byte	0x712
+ 1512 04a4 A8040000 		.4byte	0x4a8
+ 1513 04a8 06       		.uleb128 0x6
+ 1514 04a9 C3000000 		.4byte	0xc3
+ 1515 04ad 12       		.uleb128 0x12
+ 1516 04ae 73797300 		.ascii	"sys\000"
+ 1517 04b2 04       		.byte	0x4
+ 1518 04b3 93       		.byte	0x93
+ 1519 04b4 B8010000 		.4byte	0x1b8
+ 1520 04b8 13       		.uleb128 0x13
+ 1521 04b9 C3000000 		.4byte	0xc3
+ 1522 04bd C8040000 		.4byte	0x4c8
+ 1523 04c1 14       		.uleb128 0x14
+ 1524 04c2 F5000000 		.4byte	0xf5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 31
+
+
+ 1525 04c6 02       		.byte	0x2
+ 1526 04c7 00       		.byte	0
+ 1527 04c8 15       		.uleb128 0x15
+ 1528 04c9 93010000 		.4byte	.LASF67
+ 1529 04cd 04       		.byte	0x4
+ 1530 04ce 96       		.byte	0x96
+ 1531 04cf B8040000 		.4byte	0x4b8
+ 1532 04d3 05       		.uleb128 0x5
+ 1533 04d4 03       		.byte	0x3
+ 1534 04d5 00000000 		.4byte	sys_position
+ 1535 04d9 15       		.uleb128 0x15
+ 1536 04da A3020000 		.4byte	.LASF68
+ 1537 04de 04       		.byte	0x4
+ 1538 04df 97       		.byte	0x97
+ 1539 04e0 B8040000 		.4byte	0x4b8
+ 1540 04e4 05       		.uleb128 0x5
+ 1541 04e5 03       		.byte	0x3
+ 1542 04e6 00000000 		.4byte	sys_probe_position
+ 1543 04ea 15       		.uleb128 0x15
+ 1544 04eb 66030000 		.4byte	.LASF69
+ 1545 04ef 04       		.byte	0x4
+ 1546 04f0 99       		.byte	0x99
+ 1547 04f1 02010000 		.4byte	0x102
+ 1548 04f5 05       		.uleb128 0x5
+ 1549 04f6 03       		.byte	0x3
+ 1550 04f7 00000000 		.4byte	sys_probe_state
+ 1551 04fb 15       		.uleb128 0x15
+ 1552 04fc 45040000 		.4byte	.LASF70
+ 1553 0500 04       		.byte	0x4
+ 1554 0501 9A       		.byte	0x9a
+ 1555 0502 02010000 		.4byte	0x102
+ 1556 0506 05       		.uleb128 0x5
+ 1557 0507 03       		.byte	0x3
+ 1558 0508 00000000 		.4byte	sys_rt_exec_state
+ 1559 050c 15       		.uleb128 0x15
+ 1560 050d 00000000 		.4byte	.LASF71
+ 1561 0511 04       		.byte	0x4
+ 1562 0512 9B       		.byte	0x9b
+ 1563 0513 02010000 		.4byte	0x102
+ 1564 0517 05       		.uleb128 0x5
+ 1565 0518 03       		.byte	0x3
+ 1566 0519 00000000 		.4byte	sys_rt_exec_alarm
+ 1567 051d 15       		.uleb128 0x15
+ 1568 051e B6020000 		.4byte	.LASF72
+ 1569 0522 04       		.byte	0x4
+ 1570 0523 9C       		.byte	0x9c
+ 1571 0524 02010000 		.4byte	0x102
+ 1572 0528 05       		.uleb128 0x5
+ 1573 0529 03       		.byte	0x3
+ 1574 052a 00000000 		.4byte	sys_rt_exec_motion_override
+ 1575 052e 15       		.uleb128 0x15
+ 1576 052f 2B000000 		.4byte	.LASF73
+ 1577 0533 04       		.byte	0x4
+ 1578 0534 9D       		.byte	0x9d
+ 1579 0535 02010000 		.4byte	0x102
+ 1580 0539 05       		.uleb128 0x5
+ 1581 053a 03       		.byte	0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 32
+
+
+ 1582 053b 00000000 		.4byte	sys_rt_exec_accessory_override
+ 1583 053f 00       		.byte	0
+ 1584              		.section	.debug_abbrev,"",%progbits
+ 1585              	.Ldebug_abbrev0:
+ 1586 0000 01       		.uleb128 0x1
+ 1587 0001 11       		.uleb128 0x11
+ 1588 0002 01       		.byte	0x1
+ 1589 0003 25       		.uleb128 0x25
+ 1590 0004 0E       		.uleb128 0xe
+ 1591 0005 13       		.uleb128 0x13
+ 1592 0006 0B       		.uleb128 0xb
+ 1593 0007 03       		.uleb128 0x3
+ 1594 0008 0E       		.uleb128 0xe
+ 1595 0009 1B       		.uleb128 0x1b
+ 1596 000a 0E       		.uleb128 0xe
+ 1597 000b 55       		.uleb128 0x55
+ 1598 000c 17       		.uleb128 0x17
+ 1599 000d 11       		.uleb128 0x11
+ 1600 000e 01       		.uleb128 0x1
+ 1601 000f 10       		.uleb128 0x10
+ 1602 0010 17       		.uleb128 0x17
+ 1603 0011 00       		.byte	0
+ 1604 0012 00       		.byte	0
+ 1605 0013 02       		.uleb128 0x2
+ 1606 0014 16       		.uleb128 0x16
+ 1607 0015 00       		.byte	0
+ 1608 0016 03       		.uleb128 0x3
+ 1609 0017 0E       		.uleb128 0xe
+ 1610 0018 3A       		.uleb128 0x3a
+ 1611 0019 0B       		.uleb128 0xb
+ 1612 001a 3B       		.uleb128 0x3b
+ 1613 001b 0B       		.uleb128 0xb
+ 1614 001c 49       		.uleb128 0x49
+ 1615 001d 13       		.uleb128 0x13
+ 1616 001e 00       		.byte	0
+ 1617 001f 00       		.byte	0
+ 1618 0020 03       		.uleb128 0x3
+ 1619 0021 24       		.uleb128 0x24
+ 1620 0022 00       		.byte	0
+ 1621 0023 0B       		.uleb128 0xb
+ 1622 0024 0B       		.uleb128 0xb
+ 1623 0025 3E       		.uleb128 0x3e
+ 1624 0026 0B       		.uleb128 0xb
+ 1625 0027 03       		.uleb128 0x3
+ 1626 0028 0E       		.uleb128 0xe
+ 1627 0029 00       		.byte	0
+ 1628 002a 00       		.byte	0
+ 1629 002b 04       		.uleb128 0x4
+ 1630 002c 24       		.uleb128 0x24
+ 1631 002d 00       		.byte	0
+ 1632 002e 0B       		.uleb128 0xb
+ 1633 002f 0B       		.uleb128 0xb
+ 1634 0030 3E       		.uleb128 0x3e
+ 1635 0031 0B       		.uleb128 0xb
+ 1636 0032 03       		.uleb128 0x3
+ 1637 0033 08       		.uleb128 0x8
+ 1638 0034 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 33
+
+
+ 1639 0035 00       		.byte	0
+ 1640 0036 05       		.uleb128 0x5
+ 1641 0037 0F       		.uleb128 0xf
+ 1642 0038 00       		.byte	0
+ 1643 0039 0B       		.uleb128 0xb
+ 1644 003a 0B       		.uleb128 0xb
+ 1645 003b 49       		.uleb128 0x49
+ 1646 003c 13       		.uleb128 0x13
+ 1647 003d 00       		.byte	0
+ 1648 003e 00       		.byte	0
+ 1649 003f 06       		.uleb128 0x6
+ 1650 0040 35       		.uleb128 0x35
+ 1651 0041 00       		.byte	0
+ 1652 0042 49       		.uleb128 0x49
+ 1653 0043 13       		.uleb128 0x13
+ 1654 0044 00       		.byte	0
+ 1655 0045 00       		.byte	0
+ 1656 0046 07       		.uleb128 0x7
+ 1657 0047 13       		.uleb128 0x13
+ 1658 0048 01       		.byte	0x1
+ 1659 0049 0B       		.uleb128 0xb
+ 1660 004a 0B       		.uleb128 0xb
+ 1661 004b 3A       		.uleb128 0x3a
+ 1662 004c 0B       		.uleb128 0xb
+ 1663 004d 3B       		.uleb128 0x3b
+ 1664 004e 0B       		.uleb128 0xb
+ 1665 004f 01       		.uleb128 0x1
+ 1666 0050 13       		.uleb128 0x13
+ 1667 0051 00       		.byte	0
+ 1668 0052 00       		.byte	0
+ 1669 0053 08       		.uleb128 0x8
+ 1670 0054 0D       		.uleb128 0xd
+ 1671 0055 00       		.byte	0
+ 1672 0056 03       		.uleb128 0x3
+ 1673 0057 0E       		.uleb128 0xe
+ 1674 0058 3A       		.uleb128 0x3a
+ 1675 0059 0B       		.uleb128 0xb
+ 1676 005a 3B       		.uleb128 0x3b
+ 1677 005b 0B       		.uleb128 0xb
+ 1678 005c 49       		.uleb128 0x49
+ 1679 005d 13       		.uleb128 0x13
+ 1680 005e 38       		.uleb128 0x38
+ 1681 005f 0B       		.uleb128 0xb
+ 1682 0060 00       		.byte	0
+ 1683 0061 00       		.byte	0
+ 1684 0062 09       		.uleb128 0x9
+ 1685 0063 2E       		.uleb128 0x2e
+ 1686 0064 01       		.byte	0x1
+ 1687 0065 3F       		.uleb128 0x3f
+ 1688 0066 19       		.uleb128 0x19
+ 1689 0067 03       		.uleb128 0x3
+ 1690 0068 0E       		.uleb128 0xe
+ 1691 0069 3A       		.uleb128 0x3a
+ 1692 006a 0B       		.uleb128 0xb
+ 1693 006b 3B       		.uleb128 0x3b
+ 1694 006c 0B       		.uleb128 0xb
+ 1695 006d 27       		.uleb128 0x27
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 34
+
+
+ 1696 006e 19       		.uleb128 0x19
+ 1697 006f 49       		.uleb128 0x49
+ 1698 0070 13       		.uleb128 0x13
+ 1699 0071 11       		.uleb128 0x11
+ 1700 0072 01       		.uleb128 0x1
+ 1701 0073 12       		.uleb128 0x12
+ 1702 0074 06       		.uleb128 0x6
+ 1703 0075 40       		.uleb128 0x40
+ 1704 0076 18       		.uleb128 0x18
+ 1705 0077 9642     		.uleb128 0x2116
+ 1706 0079 19       		.uleb128 0x19
+ 1707 007a 01       		.uleb128 0x1
+ 1708 007b 13       		.uleb128 0x13
+ 1709 007c 00       		.byte	0
+ 1710 007d 00       		.byte	0
+ 1711 007e 0A       		.uleb128 0xa
+ 1712 007f 05       		.uleb128 0x5
+ 1713 0080 00       		.byte	0
+ 1714 0081 03       		.uleb128 0x3
+ 1715 0082 0E       		.uleb128 0xe
+ 1716 0083 3A       		.uleb128 0x3a
+ 1717 0084 0B       		.uleb128 0xb
+ 1718 0085 3B       		.uleb128 0x3b
+ 1719 0086 0B       		.uleb128 0xb
+ 1720 0087 49       		.uleb128 0x49
+ 1721 0088 13       		.uleb128 0x13
+ 1722 0089 02       		.uleb128 0x2
+ 1723 008a 18       		.uleb128 0x18
+ 1724 008b 00       		.byte	0
+ 1725 008c 00       		.byte	0
+ 1726 008d 0B       		.uleb128 0xb
+ 1727 008e 34       		.uleb128 0x34
+ 1728 008f 00       		.byte	0
+ 1729 0090 03       		.uleb128 0x3
+ 1730 0091 08       		.uleb128 0x8
+ 1731 0092 3A       		.uleb128 0x3a
+ 1732 0093 0B       		.uleb128 0xb
+ 1733 0094 3B       		.uleb128 0x3b
+ 1734 0095 0B       		.uleb128 0xb
+ 1735 0096 49       		.uleb128 0x49
+ 1736 0097 13       		.uleb128 0x13
+ 1737 0098 02       		.uleb128 0x2
+ 1738 0099 18       		.uleb128 0x18
+ 1739 009a 00       		.byte	0
+ 1740 009b 00       		.byte	0
+ 1741 009c 0C       		.uleb128 0xc
+ 1742 009d 34       		.uleb128 0x34
+ 1743 009e 00       		.byte	0
+ 1744 009f 03       		.uleb128 0x3
+ 1745 00a0 0E       		.uleb128 0xe
+ 1746 00a1 3A       		.uleb128 0x3a
+ 1747 00a2 0B       		.uleb128 0xb
+ 1748 00a3 3B       		.uleb128 0x3b
+ 1749 00a4 0B       		.uleb128 0xb
+ 1750 00a5 49       		.uleb128 0x49
+ 1751 00a6 13       		.uleb128 0x13
+ 1752 00a7 02       		.uleb128 0x2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 35
+
+
+ 1753 00a8 18       		.uleb128 0x18
+ 1754 00a9 00       		.byte	0
+ 1755 00aa 00       		.byte	0
+ 1756 00ab 0D       		.uleb128 0xd
+ 1757 00ac 2E       		.uleb128 0x2e
+ 1758 00ad 01       		.byte	0x1
+ 1759 00ae 3F       		.uleb128 0x3f
+ 1760 00af 19       		.uleb128 0x19
+ 1761 00b0 03       		.uleb128 0x3
+ 1762 00b1 0E       		.uleb128 0xe
+ 1763 00b2 3A       		.uleb128 0x3a
+ 1764 00b3 0B       		.uleb128 0xb
+ 1765 00b4 3B       		.uleb128 0x3b
+ 1766 00b5 0B       		.uleb128 0xb
+ 1767 00b6 27       		.uleb128 0x27
+ 1768 00b7 19       		.uleb128 0x19
+ 1769 00b8 11       		.uleb128 0x11
+ 1770 00b9 01       		.uleb128 0x1
+ 1771 00ba 12       		.uleb128 0x12
+ 1772 00bb 06       		.uleb128 0x6
+ 1773 00bc 40       		.uleb128 0x40
+ 1774 00bd 18       		.uleb128 0x18
+ 1775 00be 9642     		.uleb128 0x2116
+ 1776 00c0 19       		.uleb128 0x19
+ 1777 00c1 01       		.uleb128 0x1
+ 1778 00c2 13       		.uleb128 0x13
+ 1779 00c3 00       		.byte	0
+ 1780 00c4 00       		.byte	0
+ 1781 00c5 0E       		.uleb128 0xe
+ 1782 00c6 05       		.uleb128 0x5
+ 1783 00c7 00       		.byte	0
+ 1784 00c8 03       		.uleb128 0x3
+ 1785 00c9 08       		.uleb128 0x8
+ 1786 00ca 3A       		.uleb128 0x3a
+ 1787 00cb 0B       		.uleb128 0xb
+ 1788 00cc 3B       		.uleb128 0x3b
+ 1789 00cd 0B       		.uleb128 0xb
+ 1790 00ce 49       		.uleb128 0x49
+ 1791 00cf 13       		.uleb128 0x13
+ 1792 00d0 02       		.uleb128 0x2
+ 1793 00d1 18       		.uleb128 0x18
+ 1794 00d2 00       		.byte	0
+ 1795 00d3 00       		.byte	0
+ 1796 00d4 0F       		.uleb128 0xf
+ 1797 00d5 2E       		.uleb128 0x2e
+ 1798 00d6 01       		.byte	0x1
+ 1799 00d7 3F       		.uleb128 0x3f
+ 1800 00d8 19       		.uleb128 0x19
+ 1801 00d9 03       		.uleb128 0x3
+ 1802 00da 0E       		.uleb128 0xe
+ 1803 00db 3A       		.uleb128 0x3a
+ 1804 00dc 0B       		.uleb128 0xb
+ 1805 00dd 3B       		.uleb128 0x3b
+ 1806 00de 0B       		.uleb128 0xb
+ 1807 00df 27       		.uleb128 0x27
+ 1808 00e0 19       		.uleb128 0x19
+ 1809 00e1 49       		.uleb128 0x49
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 36
+
+
+ 1810 00e2 13       		.uleb128 0x13
+ 1811 00e3 11       		.uleb128 0x11
+ 1812 00e4 01       		.uleb128 0x1
+ 1813 00e5 12       		.uleb128 0x12
+ 1814 00e6 06       		.uleb128 0x6
+ 1815 00e7 40       		.uleb128 0x40
+ 1816 00e8 18       		.uleb128 0x18
+ 1817 00e9 9742     		.uleb128 0x2117
+ 1818 00eb 19       		.uleb128 0x19
+ 1819 00ec 01       		.uleb128 0x1
+ 1820 00ed 13       		.uleb128 0x13
+ 1821 00ee 00       		.byte	0
+ 1822 00ef 00       		.byte	0
+ 1823 00f0 10       		.uleb128 0x10
+ 1824 00f1 2E       		.uleb128 0x2e
+ 1825 00f2 01       		.byte	0x1
+ 1826 00f3 3F       		.uleb128 0x3f
+ 1827 00f4 19       		.uleb128 0x19
+ 1828 00f5 03       		.uleb128 0x3
+ 1829 00f6 08       		.uleb128 0x8
+ 1830 00f7 3A       		.uleb128 0x3a
+ 1831 00f8 0B       		.uleb128 0xb
+ 1832 00f9 3B       		.uleb128 0x3b
+ 1833 00fa 0B       		.uleb128 0xb
+ 1834 00fb 27       		.uleb128 0x27
+ 1835 00fc 19       		.uleb128 0x19
+ 1836 00fd 49       		.uleb128 0x49
+ 1837 00fe 13       		.uleb128 0x13
+ 1838 00ff 11       		.uleb128 0x11
+ 1839 0100 01       		.uleb128 0x1
+ 1840 0101 12       		.uleb128 0x12
+ 1841 0102 06       		.uleb128 0x6
+ 1842 0103 40       		.uleb128 0x40
+ 1843 0104 18       		.uleb128 0x18
+ 1844 0105 9742     		.uleb128 0x2117
+ 1845 0107 19       		.uleb128 0x19
+ 1846 0108 01       		.uleb128 0x1
+ 1847 0109 13       		.uleb128 0x13
+ 1848 010a 00       		.byte	0
+ 1849 010b 00       		.byte	0
+ 1850 010c 11       		.uleb128 0x11
+ 1851 010d 34       		.uleb128 0x34
+ 1852 010e 00       		.byte	0
+ 1853 010f 03       		.uleb128 0x3
+ 1854 0110 0E       		.uleb128 0xe
+ 1855 0111 3A       		.uleb128 0x3a
+ 1856 0112 0B       		.uleb128 0xb
+ 1857 0113 3B       		.uleb128 0x3b
+ 1858 0114 05       		.uleb128 0x5
+ 1859 0115 49       		.uleb128 0x49
+ 1860 0116 13       		.uleb128 0x13
+ 1861 0117 3F       		.uleb128 0x3f
+ 1862 0118 19       		.uleb128 0x19
+ 1863 0119 3C       		.uleb128 0x3c
+ 1864 011a 19       		.uleb128 0x19
+ 1865 011b 00       		.byte	0
+ 1866 011c 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 37
+
+
+ 1867 011d 12       		.uleb128 0x12
+ 1868 011e 34       		.uleb128 0x34
+ 1869 011f 00       		.byte	0
+ 1870 0120 03       		.uleb128 0x3
+ 1871 0121 08       		.uleb128 0x8
+ 1872 0122 3A       		.uleb128 0x3a
+ 1873 0123 0B       		.uleb128 0xb
+ 1874 0124 3B       		.uleb128 0x3b
+ 1875 0125 0B       		.uleb128 0xb
+ 1876 0126 49       		.uleb128 0x49
+ 1877 0127 13       		.uleb128 0x13
+ 1878 0128 3F       		.uleb128 0x3f
+ 1879 0129 19       		.uleb128 0x19
+ 1880 012a 3C       		.uleb128 0x3c
+ 1881 012b 19       		.uleb128 0x19
+ 1882 012c 00       		.byte	0
+ 1883 012d 00       		.byte	0
+ 1884 012e 13       		.uleb128 0x13
+ 1885 012f 01       		.uleb128 0x1
+ 1886 0130 01       		.byte	0x1
+ 1887 0131 49       		.uleb128 0x49
+ 1888 0132 13       		.uleb128 0x13
+ 1889 0133 01       		.uleb128 0x1
+ 1890 0134 13       		.uleb128 0x13
+ 1891 0135 00       		.byte	0
+ 1892 0136 00       		.byte	0
+ 1893 0137 14       		.uleb128 0x14
+ 1894 0138 21       		.uleb128 0x21
+ 1895 0139 00       		.byte	0
+ 1896 013a 49       		.uleb128 0x49
+ 1897 013b 13       		.uleb128 0x13
+ 1898 013c 2F       		.uleb128 0x2f
+ 1899 013d 0B       		.uleb128 0xb
+ 1900 013e 00       		.byte	0
+ 1901 013f 00       		.byte	0
+ 1902 0140 15       		.uleb128 0x15
+ 1903 0141 34       		.uleb128 0x34
+ 1904 0142 00       		.byte	0
+ 1905 0143 03       		.uleb128 0x3
+ 1906 0144 0E       		.uleb128 0xe
+ 1907 0145 3A       		.uleb128 0x3a
+ 1908 0146 0B       		.uleb128 0xb
+ 1909 0147 3B       		.uleb128 0x3b
+ 1910 0148 0B       		.uleb128 0xb
+ 1911 0149 49       		.uleb128 0x49
+ 1912 014a 13       		.uleb128 0x13
+ 1913 014b 3F       		.uleb128 0x3f
+ 1914 014c 19       		.uleb128 0x19
+ 1915 014d 02       		.uleb128 0x2
+ 1916 014e 18       		.uleb128 0x18
+ 1917 014f 00       		.byte	0
+ 1918 0150 00       		.byte	0
+ 1919 0151 00       		.byte	0
+ 1920              		.section	.debug_aranges,"",%progbits
+ 1921 0000 54000000 		.4byte	0x54
+ 1922 0004 0200     		.2byte	0x2
+ 1923 0006 00000000 		.4byte	.Ldebug_info0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 38
+
+
+ 1924 000a 04       		.byte	0x4
+ 1925 000b 00       		.byte	0
+ 1926 000c 0000     		.2byte	0
+ 1927 000e 0000     		.2byte	0
+ 1928 0010 00000000 		.4byte	.LFB64
+ 1929 0014 DC010000 		.4byte	.LFE64-.LFB64
+ 1930 0018 00000000 		.4byte	.LFB65
+ 1931 001c 84000000 		.4byte	.LFE65-.LFB65
+ 1932 0020 00000000 		.4byte	.LFB66
+ 1933 0024 52000000 		.4byte	.LFE66-.LFB66
+ 1934 0028 00000000 		.4byte	.LFB67
+ 1935 002c CC000000 		.4byte	.LFE67-.LFB67
+ 1936 0030 00000000 		.4byte	.LFB68
+ 1937 0034 9C000000 		.4byte	.LFE68-.LFB68
+ 1938 0038 00000000 		.4byte	.LFB69
+ 1939 003c 2C000000 		.4byte	.LFE69-.LFB69
+ 1940 0040 00000000 		.4byte	.LFB70
+ 1941 0044 36000000 		.4byte	.LFE70-.LFB70
+ 1942 0048 00000000 		.4byte	.LFB71
+ 1943 004c 34000000 		.4byte	.LFE71-.LFB71
+ 1944 0050 00000000 		.4byte	0
+ 1945 0054 00000000 		.4byte	0
+ 1946              		.section	.debug_ranges,"",%progbits
+ 1947              	.Ldebug_ranges0:
+ 1948 0000 00000000 		.4byte	.LFB64
+ 1949 0004 DC010000 		.4byte	.LFE64
+ 1950 0008 00000000 		.4byte	.LFB65
+ 1951 000c 84000000 		.4byte	.LFE65
+ 1952 0010 00000000 		.4byte	.LFB66
+ 1953 0014 52000000 		.4byte	.LFE66
+ 1954 0018 00000000 		.4byte	.LFB67
+ 1955 001c CC000000 		.4byte	.LFE67
+ 1956 0020 00000000 		.4byte	.LFB68
+ 1957 0024 9C000000 		.4byte	.LFE68
+ 1958 0028 00000000 		.4byte	.LFB69
+ 1959 002c 2C000000 		.4byte	.LFE69
+ 1960 0030 00000000 		.4byte	.LFB70
+ 1961 0034 36000000 		.4byte	.LFE70
+ 1962 0038 00000000 		.4byte	.LFB71
+ 1963 003c 34000000 		.4byte	.LFE71
+ 1964 0040 00000000 		.4byte	0
+ 1965 0044 00000000 		.4byte	0
+ 1966              		.section	.debug_line,"",%progbits
+ 1967              	.Ldebug_line0:
+ 1968 0000 92020000 		.section	.debug_str,"MS",%progbits,1
+ 1968      02005001 
+ 1968      00000201 
+ 1968      FB0E0D00 
+ 1968      01010101 
+ 1969              	.LASF71:
+ 1970 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 1970      72745F65 
+ 1970      7865635F 
+ 1970      616C6172 
+ 1970      6D00
+ 1971              	.LASF65:
+ 1972 0012 6D617043 		.ascii	"mapConstrain\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 39
+
+
+ 1972      6F6E7374 
+ 1972      7261696E 
+ 1972      00
+ 1973              	.LASF75:
+ 1974 001f 6E75745F 		.ascii	"nut_bolts.c\000"
+ 1974      626F6C74 
+ 1974      732E6300 
+ 1975              	.LASF73:
+ 1976 002b 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 1976      72745F65 
+ 1976      7865635F 
+ 1976      61636365 
+ 1976      73736F72 
+ 1977              	.LASF62:
+ 1978 004a 696E5F6D 		.ascii	"in_max\000"
+ 1978      617800
+ 1979              	.LASF43:
+ 1980 0051 696E7476 		.ascii	"intval\000"
+ 1980      616C00
+ 1981              	.LASF14:
+ 1982 0058 696E7438 		.ascii	"int8_t\000"
+ 1982      5F7400
+ 1983              	.LASF24:
+ 1984 005f 73746174 		.ascii	"state\000"
+ 1984      6500
+ 1985              	.LASF63:
+ 1986 0065 6F75745F 		.ascii	"out_min\000"
+ 1986      6D696E00 
+ 1987              	.LASF4:
+ 1988 006d 73686F72 		.ascii	"short int\000"
+ 1988      7420696E 
+ 1988      7400
+ 1989              	.LASF23:
+ 1990 0077 73697A65 		.ascii	"sizetype\000"
+ 1990      74797065 
+ 1990      00
+ 1991              	.LASF45:
+ 1992 0080 69736465 		.ascii	"isdecimal\000"
+ 1992      63696D61 
+ 1992      6C00
+ 1993              	.LASF38:
+ 1994 008a 73797374 		.ascii	"system_t\000"
+ 1994      656D5F74 
+ 1994      00
+ 1995              	.LASF74:
+ 1996 0093 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1996      43313120 
+ 1996      352E342E 
+ 1996      31203230 
+ 1996      31363036 
+ 1997 00c6 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 1997      20726576 
+ 1997      6973696F 
+ 1997      6E203233 
+ 1997      37373135 
+ 1998 00f9 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 1998      66756E63 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 40
+
+
+ 1998      74696F6E 
+ 1998      2D736563 
+ 1998      74696F6E 
+ 1999              	.LASF61:
+ 2000 0121 696E5F6D 		.ascii	"in_min\000"
+ 2000      696E00
+ 2001              	.LASF9:
+ 2002 0128 5F5F7569 		.ascii	"__uint32_t\000"
+ 2002      6E743332 
+ 2002      5F7400
+ 2003              	.LASF49:
+ 2004 0133 6D6F6465 		.ascii	"mode\000"
+ 2004      00
+ 2005              	.LASF5:
+ 2006 0138 5F5F7569 		.ascii	"__uint16_t\000"
+ 2006      6E743136 
+ 2006      5F7400
+ 2007              	.LASF41:
+ 2008 0143 666C6F61 		.ascii	"float_ptr\000"
+ 2008      745F7074 
+ 2008      7200
+ 2009              	.LASF15:
+ 2010 014d 75696E74 		.ascii	"uint8_t\000"
+ 2010      385F7400 
+ 2011              	.LASF53:
+ 2012 0155 76656374 		.ascii	"vector\000"
+ 2012      6F7200
+ 2013              	.LASF39:
+ 2014 015c 6C696E65 		.ascii	"line\000"
+ 2014      00
+ 2015              	.LASF19:
+ 2016 0161 666C6F61 		.ascii	"float\000"
+ 2016      7400
+ 2017              	.LASF59:
+ 2018 0167 6C696D69 		.ascii	"limit_value\000"
+ 2018      745F7661 
+ 2018      6C756500 
+ 2019              	.LASF11:
+ 2020 0173 6C6F6E67 		.ascii	"long long int\000"
+ 2020      206C6F6E 
+ 2020      6720696E 
+ 2020      7400
+ 2021              	.LASF33:
+ 2022 0181 7370696E 		.ascii	"spindle_speed_ovr\000"
+ 2022      646C655F 
+ 2022      73706565 
+ 2022      645F6F76 
+ 2022      7200
+ 2023              	.LASF67:
+ 2024 0193 7379735F 		.ascii	"sys_position\000"
+ 2024      706F7369 
+ 2024      74696F6E 
+ 2024      00
+ 2025              	.LASF29:
+ 2026 01a0 70726F62 		.ascii	"probe_succeeded\000"
+ 2026      655F7375 
+ 2026      63636565 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 41
+
+
+ 2026      64656400 
+ 2027              	.LASF8:
+ 2028 01b0 6C6F6E67 		.ascii	"long int\000"
+ 2028      20696E74 
+ 2028      00
+ 2029              	.LASF52:
+ 2030 01b9 636F6E76 		.ascii	"convert_delta_vector_to_unit_vector\000"
+ 2030      6572745F 
+ 2030      64656C74 
+ 2030      615F7665 
+ 2030      63746F72 
+ 2031              	.LASF1:
+ 2032 01dd 5F5F7569 		.ascii	"__uint8_t\000"
+ 2032      6E74385F 
+ 2032      7400
+ 2033              	.LASF35:
+ 2034 01e7 7265706F 		.ascii	"report_ovr_counter\000"
+ 2034      72745F6F 
+ 2034      76725F63 
+ 2034      6F756E74 
+ 2034      657200
+ 2035              	.LASF40:
+ 2036 01fa 63686172 		.ascii	"char_counter\000"
+ 2036      5F636F75 
+ 2036      6E746572 
+ 2036      00
+ 2037              	.LASF54:
+ 2038 0207 6D61676E 		.ascii	"magnitude\000"
+ 2038      69747564 
+ 2038      6500
+ 2039              	.LASF22:
+ 2040 0211 6C6F6E67 		.ascii	"long double\000"
+ 2040      20646F75 
+ 2040      626C6500 
+ 2041              	.LASF57:
+ 2042 021d 6D61785F 		.ascii	"max_value\000"
+ 2042      76616C75 
+ 2042      6500
+ 2043              	.LASF3:
+ 2044 0227 756E7369 		.ascii	"unsigned char\000"
+ 2044      676E6564 
+ 2044      20636861 
+ 2044      7200
+ 2045              	.LASF51:
+ 2046 0235 6879706F 		.ascii	"hypot_f\000"
+ 2046      745F6600 
+ 2047              	.LASF25:
+ 2048 023d 61626F72 		.ascii	"abort\000"
+ 2048      7400
+ 2049              	.LASF2:
+ 2050 0243 7369676E 		.ascii	"signed char\000"
+ 2050      65642063 
+ 2050      68617200 
+ 2051              	.LASF12:
+ 2052 024f 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 2052      206C6F6E 
+ 2052      6720756E 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 42
+
+
+ 2052      7369676E 
+ 2052      65642069 
+ 2053              	.LASF18:
+ 2054 0266 75696E74 		.ascii	"uint32_t\000"
+ 2054      33325F74 
+ 2054      00
+ 2055              	.LASF13:
+ 2056 026f 756E7369 		.ascii	"unsigned int\000"
+ 2056      676E6564 
+ 2056      20696E74 
+ 2056      00
+ 2057              	.LASF31:
+ 2058 027c 665F6F76 		.ascii	"f_override\000"
+ 2058      65727269 
+ 2058      646500
+ 2059              	.LASF37:
+ 2060 0287 7370696E 		.ascii	"spindle_speed\000"
+ 2060      646C655F 
+ 2060      73706565 
+ 2060      6400
+ 2061              	.LASF55:
+ 2062 0295 696E765F 		.ascii	"inv_magnitude\000"
+ 2062      6D61676E 
+ 2062      69747564 
+ 2062      6500
+ 2063              	.LASF68:
+ 2064 02a3 7379735F 		.ascii	"sys_probe_position\000"
+ 2064      70726F62 
+ 2064      655F706F 
+ 2064      73697469 
+ 2064      6F6E00
+ 2065              	.LASF72:
+ 2066 02b6 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 2066      72745F65 
+ 2066      7865635F 
+ 2066      6D6F7469 
+ 2066      6F6E5F6F 
+ 2067              	.LASF44:
+ 2068 02d2 6E646967 		.ascii	"ndigit\000"
+ 2068      697400
+ 2069              	.LASF30:
+ 2070 02d9 686F6D69 		.ascii	"homing_axis_lock\000"
+ 2070      6E675F61 
+ 2070      7869735F 
+ 2070      6C6F636B 
+ 2070      00
+ 2071              	.LASF6:
+ 2072 02ea 73686F72 		.ascii	"short unsigned int\000"
+ 2072      7420756E 
+ 2072      7369676E 
+ 2072      65642069 
+ 2072      6E7400
+ 2073              	.LASF0:
+ 2074 02fd 5F5F696E 		.ascii	"__int8_t\000"
+ 2074      74385F74 
+ 2074      00
+ 2075              	.LASF48:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 43
+
+
+ 2076 0306 7365636F 		.ascii	"seconds\000"
+ 2076      6E647300 
+ 2077              	.LASF21:
+ 2078 030e 63686172 		.ascii	"char\000"
+ 2078      00
+ 2079              	.LASF16:
+ 2080 0313 75696E74 		.ascii	"uint16_t\000"
+ 2080      31365F74 
+ 2080      00
+ 2081              	.LASF17:
+ 2082 031c 696E7433 		.ascii	"int32_t\000"
+ 2082      325F7400 
+ 2083              	.LASF47:
+ 2084 0324 5F426F6F 		.ascii	"_Bool\000"
+ 2084      6C00
+ 2085              	.LASF56:
+ 2086 032a 6C696D69 		.ascii	"limit_value_by_axis_maximum\000"
+ 2086      745F7661 
+ 2086      6C75655F 
+ 2086      62795F61 
+ 2086      7869735F 
+ 2087              	.LASF28:
+ 2088 0346 73746570 		.ascii	"step_control\000"
+ 2088      5F636F6E 
+ 2088      74726F6C 
+ 2088      00
+ 2089              	.LASF26:
+ 2090 0353 73757370 		.ascii	"suspend\000"
+ 2090      656E6400 
+ 2091              	.LASF27:
+ 2092 035b 736F6674 		.ascii	"soft_limit\000"
+ 2092      5F6C696D 
+ 2092      697400
+ 2093              	.LASF69:
+ 2094 0366 7379735F 		.ascii	"sys_probe_state\000"
+ 2094      70726F62 
+ 2094      655F7374 
+ 2094      61746500 
+ 2095              	.LASF34:
+ 2096 0376 7370696E 		.ascii	"spindle_stop_ovr\000"
+ 2096      646C655F 
+ 2096      73746F70 
+ 2096      5F6F7672 
+ 2096      00
+ 2097              	.LASF10:
+ 2098 0387 6C6F6E67 		.ascii	"long unsigned int\000"
+ 2098      20756E73 
+ 2098      69676E65 
+ 2098      6420696E 
+ 2098      7400
+ 2099              	.LASF42:
+ 2100 0399 69736E65 		.ascii	"isnegative\000"
+ 2100      67617469 
+ 2100      766500
+ 2101              	.LASF20:
+ 2102 03a4 646F7562 		.ascii	"double\000"
+ 2102      6C6500
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 44
+
+
+ 2103              	.LASF46:
+ 2104 03ab 6676616C 		.ascii	"fval\000"
+ 2104      00
+ 2105              	.LASF60:
+ 2106 03b0 636F6E73 		.ascii	"constrain\000"
+ 2106      74726169 
+ 2106      6E00
+ 2107              	.LASF7:
+ 2108 03ba 5F5F696E 		.ascii	"__int32_t\000"
+ 2108      7433325F 
+ 2108      7400
+ 2109              	.LASF58:
+ 2110 03c4 756E6974 		.ascii	"unit_vec\000"
+ 2110      5F766563 
+ 2110      00
+ 2111              	.LASF50:
+ 2112 03cd 72656164 		.ascii	"read_float\000"
+ 2112      5F666C6F 
+ 2112      617400
+ 2113              	.LASF76:
+ 2114 03d8 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 2114      73657273 
+ 2114      5C626172 
+ 2114      746F5C44 
+ 2114      726F7062 
+ 2115 0405 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 2115      5553425F 
+ 2115      4E617469 
+ 2115      76652E63 
+ 2115      7964736E 
+ 2116              	.LASF32:
+ 2117 041a 725F6F76 		.ascii	"r_override\000"
+ 2117      65727269 
+ 2117      646500
+ 2118              	.LASF36:
+ 2119 0425 7265706F 		.ascii	"report_wco_counter\000"
+ 2119      72745F77 
+ 2119      636F5F63 
+ 2119      6F756E74 
+ 2119      657200
+ 2120              	.LASF66:
+ 2121 0438 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 2121      52784275 
+ 2121      66666572 
+ 2121      00
+ 2122              	.LASF70:
+ 2123 0445 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 2123      72745F65 
+ 2123      7865635F 
+ 2123      73746174 
+ 2123      6500
+ 2124              	.LASF77:
+ 2125 0457 64656C61 		.ascii	"delay_sec\000"
+ 2125      795F7365 
+ 2125      6300
+ 2126              	.LASF64:
+ 2127 0461 6F75745F 		.ascii	"out_max\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccVtrjqg.s 			page 45
+
+
+ 2127      6D617800 
+ 2128              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

@@ -1,0 +1,3580 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"motion_control.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.section	.text.mc_line,"ax",%progbits
+  27              		.align	2
+  28              		.global	mc_line
+  29              		.thumb
+  30              		.thumb_func
+  31              		.type	mc_line, %function
+  32              	mc_line:
+  33              	.LFB64:
+  34              		.file 1 "motion_control.c"
+   1:motion_control.c **** /*
+   2:motion_control.c ****   motion_control.c - high level interface for issuing motion commands
+   3:motion_control.c ****   Part of Grbl
+   4:motion_control.c **** 
+   5:motion_control.c ****   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
+   6:motion_control.c ****   Copyright (c) 2009-2011 Simen Svale Skogsrud
+   7:motion_control.c ****       Updated For PSOC BJD 2017
+   8:motion_control.c **** 
+   9:motion_control.c ****   Grbl is free software: you can redistribute it and/or modify
+  10:motion_control.c ****   it under the terms of the GNU General Public License as published by
+  11:motion_control.c ****   the Free Software Foundation, either version 3 of the License, or
+  12:motion_control.c ****   (at your option) any later version.
+  13:motion_control.c **** 
+  14:motion_control.c ****   Grbl is distributed in the hope that it will be useful,
+  15:motion_control.c ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:motion_control.c ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:motion_control.c ****   GNU General Public License for more details.
+  18:motion_control.c **** 
+  19:motion_control.c ****   You should have received a copy of the GNU General Public License
+  20:motion_control.c ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  21:motion_control.c **** */
+  22:motion_control.c **** 
+  23:motion_control.c **** #include "grbl.h"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 2
+
+
+  24:motion_control.c **** 
+  25:motion_control.c **** 
+  26:motion_control.c **** // Execute linear motion in absolute millimeter coordinates. Feed rate given in millimeters/second
+  27:motion_control.c **** // unless invert_feed_rate is true. Then the feed_rate means that the motion should be completed in
+  28:motion_control.c **** // (1 minute)/feed_rate time.
+  29:motion_control.c **** // NOTE: This is the primary gateway to the grbl planner. All line motions, including arc line
+  30:motion_control.c **** // segments, must pass through this routine before being passed to the planner. The seperation of
+  31:motion_control.c **** // mc_line and plan_buffer_line is done primarily to place non-planner-type functions from being
+  32:motion_control.c **** // in the planner and to let backlash compensation or canned cycle integration simple and direct.
+  33:motion_control.c **** void mc_line(float *target, plan_line_data_t *pl_data)
+  34:motion_control.c **** {
+  35              		.loc 1 34 0
+  36              		.cfi_startproc
+  37              		@ args = 0, pretend = 0, frame = 8
+  38              		@ frame_needed = 1, uses_anonymous_args = 0
+  39 0000 80B5     		push	{r7, lr}
+  40              		.cfi_def_cfa_offset 8
+  41              		.cfi_offset 7, -8
+  42              		.cfi_offset 14, -4
+  43 0002 82B0     		sub	sp, sp, #8
+  44              		.cfi_def_cfa_offset 16
+  45 0004 00AF     		add	r7, sp, #0
+  46              		.cfi_def_cfa_register 7
+  47 0006 7860     		str	r0, [r7, #4]
+  48 0008 3960     		str	r1, [r7]
+  35:motion_control.c ****   // If enabled, check for soft limit violations. Placed here all line motions are picked up
+  36:motion_control.c ****   // from everywhere in Grbl.
+  37:motion_control.c ****   if (bit_istrue(settings.flags,BITFLAG_SOFT_LIMIT_ENABLE)) {
+  49              		.loc 1 37 0
+  50 000a 164B     		ldr	r3, .L12
+  51 000c 93F84830 		ldrb	r3, [r3, #72]	@ zero_extendqisi2
+  52 0010 03F02003 		and	r3, r3, #32
+  53 0014 002B     		cmp	r3, #0
+  54 0016 06D0     		beq	.L2
+  38:motion_control.c ****     // NOTE: Block jog state. Jogging is a special case and soft limits are handled independently.
+  39:motion_control.c ****     if (sys.state != STATE_JOG) { limits_soft_check(target); }
+  55              		.loc 1 39 0
+  56 0018 134B     		ldr	r3, .L12+4
+  57 001a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  58 001c 202B     		cmp	r3, #32
+  59 001e 02D0     		beq	.L2
+  60              		.loc 1 39 0 is_stmt 0 discriminator 1
+  61 0020 7868     		ldr	r0, [r7, #4]
+  62 0022 FFF7FEFF 		bl	limits_soft_check
+  63              	.L2:
+  40:motion_control.c ****   }
+  41:motion_control.c **** 
+  42:motion_control.c ****   // If in check gcode mode, prevent motion by blocking planner. Soft limits still work.
+  43:motion_control.c ****   if (sys.state == STATE_CHECK_MODE) { return; }
+  64              		.loc 1 43 0 is_stmt 1
+  65 0026 104B     		ldr	r3, .L12+4
+  66 0028 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  67 002a 022B     		cmp	r3, #2
+  68 002c 13D0     		beq	.L9
+  69              	.L3:
+  44:motion_control.c **** 
+  45:motion_control.c ****   // NOTE: Backlash compensation may be installed here. It will need direction info to track when
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 3
+
+
+  46:motion_control.c ****   // to insert a backlash line motion(s) before the intended line motion and will require its own
+  47:motion_control.c ****   // plan_check_full_buffer() and check for system abort loop. Also for position reporting
+  48:motion_control.c ****   // backlash steps will need to be also tracked, which will need to be kept at a system level.
+  49:motion_control.c ****   // There are likely some other things that will need to be tracked as well. However, we feel
+  50:motion_control.c ****   // that backlash compensation should NOT be handled by Grbl itself, because there are a myriad
+  51:motion_control.c ****   // of ways to implement it and can be effective or ineffective for different CNC machines. This
+  52:motion_control.c ****   // would be better handled by the interface as a post-processor task, where the original g-code
+  53:motion_control.c ****   // is translated and inserts backlash motions that best suits the machine.
+  54:motion_control.c ****   // NOTE: Perhaps as a middle-ground, all that needs to be sent is a flag or special command that
+  55:motion_control.c ****   // indicates to Grbl what is a backlash compensation motion, so that Grbl executes the move but
+  56:motion_control.c ****   // doesn't update the machine position values. Since the position values used by the g-code
+  57:motion_control.c ****   // parser and planner are separate from the system machine positions, this is doable.
+  58:motion_control.c **** 
+  59:motion_control.c ****   // If the buffer is full: good! That means we are well ahead of the robot.
+  60:motion_control.c ****   // Remain in this loop until there is room in the buffer.
+  61:motion_control.c ****   do {
+  62:motion_control.c ****     protocol_execute_realtime(); // Check for any run-time commands
+  70              		.loc 1 62 0
+  71 002e FFF7FEFF 		bl	protocol_execute_realtime
+  63:motion_control.c ****     if (sys.abort) { return; } // Bail, if system abort.
+  72              		.loc 1 63 0
+  73 0032 0D4B     		ldr	r3, .L12+4
+  74 0034 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+  75 0036 002B     		cmp	r3, #0
+  76 0038 0FD1     		bne	.L10
+  64:motion_control.c ****     if ( plan_check_full_buffer() ) { protocol_auto_cycle_start(); } // Auto-cycle start when buffe
+  77              		.loc 1 64 0
+  78 003a FFF7FEFF 		bl	plan_check_full_buffer
+  79 003e 0346     		mov	r3, r0
+  80 0040 002B     		cmp	r3, #0
+  81 0042 02D0     		beq	.L11
+  82              		.loc 1 64 0 is_stmt 0 discriminator 1
+  83 0044 FFF7FEFF 		bl	protocol_auto_cycle_start
+  65:motion_control.c ****     else { break; }
+  66:motion_control.c ****   } while (1);
+  84              		.loc 1 66 0 is_stmt 1 discriminator 1
+  85 0048 F1E7     		b	.L3
+  86              	.L11:
+  65:motion_control.c ****     else { break; }
+  87              		.loc 1 65 0
+  88 004a 00BF     		nop
+  67:motion_control.c **** 
+  68:motion_control.c ****   // Plan and queue motion into planner buffer
+  69:motion_control.c ****   // uint8_t plan_status; // Not used in normal operation.
+  70:motion_control.c ****   plan_buffer_line(target, pl_data);
+  89              		.loc 1 70 0
+  90 004c 3968     		ldr	r1, [r7]
+  91 004e 7868     		ldr	r0, [r7, #4]
+  92 0050 FFF7FEFF 		bl	plan_buffer_line
+  93 0054 02E0     		b	.L1
+  94              	.L9:
+  43:motion_control.c **** 
+  95              		.loc 1 43 0
+  96 0056 00BF     		nop
+  97 0058 00E0     		b	.L1
+  98              	.L10:
+  63:motion_control.c ****     if ( plan_check_full_buffer() ) { protocol_auto_cycle_start(); } // Auto-cycle start when buffe
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 4
+
+
+  99              		.loc 1 63 0
+ 100 005a 00BF     		nop
+ 101              	.L1:
+  71:motion_control.c **** }
+ 102              		.loc 1 71 0
+ 103 005c 0837     		adds	r7, r7, #8
+ 104              		.cfi_def_cfa_offset 8
+ 105 005e BD46     		mov	sp, r7
+ 106              		.cfi_def_cfa_register 13
+ 107              		@ sp needed
+ 108 0060 80BD     		pop	{r7, pc}
+ 109              	.L13:
+ 110 0062 00BF     		.align	2
+ 111              	.L12:
+ 112 0064 00000000 		.word	settings
+ 113 0068 00000000 		.word	sys
+ 114              		.cfi_endproc
+ 115              	.LFE64:
+ 116              		.size	mc_line, .-mc_line
+ 117              		.global	__aeabi_fadd
+ 118              		.global	__aeabi_fsub
+ 119              		.global	__aeabi_fmul
+ 120              		.global	__aeabi_f2d
+ 121              		.global	__aeabi_d2f
+ 122              		.global	__aeabi_dcmpge
+ 123              		.global	__aeabi_dsub
+ 124              		.global	__aeabi_dcmple
+ 125              		.global	__aeabi_dadd
+ 126              		.global	__aeabi_dmul
+ 127              		.global	__aeabi_ddiv
+ 128              		.global	__aeabi_d2uiz
+ 129              		.global	__aeabi_i2f
+ 130              		.global	__aeabi_fdiv
+ 131              		.section	.text.mc_arc,"ax",%progbits
+ 132              		.align	2
+ 133              		.global	mc_arc
+ 134              		.thumb
+ 135              		.thumb_func
+ 136              		.type	mc_arc, %function
+ 137              	mc_arc:
+ 138              	.LFB65:
+  72:motion_control.c **** 
+  73:motion_control.c **** 
+  74:motion_control.c **** // Execute an arc in offset mode format. position == current xyz, target == target xyz,
+  75:motion_control.c **** // offset == offset from current xyz, axis_X defines circle plane in tool space, axis_linear is
+  76:motion_control.c **** // the direction of helical travel, radius == circle radius, isclockwise boolean. Used
+  77:motion_control.c **** // for vector transformation direction.
+  78:motion_control.c **** // The arc is approximated by generating a huge number of tiny, linear segments. The chordal tolera
+  79:motion_control.c **** // of each segment is configured in settings.arc_tolerance, which is defined to be the maximum norm
+  80:motion_control.c **** // distance from segment to the circle when the end points both lie on the circle.
+  81:motion_control.c **** void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *offset, float radius,
+  82:motion_control.c ****   uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear, uint8_t is_clockwise_arc)
+  83:motion_control.c **** {
+ 139              		.loc 1 83 0
+ 140              		.cfi_startproc
+ 141              		@ args = 20, pretend = 0, frame = 80
+ 142              		@ frame_needed = 1, uses_anonymous_args = 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 5
+
+
+ 143 0000 2DE9F043 		push	{r4, r5, r6, r7, r8, r9, lr}
+ 144              		.cfi_def_cfa_offset 28
+ 145              		.cfi_offset 4, -28
+ 146              		.cfi_offset 5, -24
+ 147              		.cfi_offset 6, -20
+ 148              		.cfi_offset 7, -16
+ 149              		.cfi_offset 8, -12
+ 150              		.cfi_offset 9, -8
+ 151              		.cfi_offset 14, -4
+ 152 0004 95B0     		sub	sp, sp, #84
+ 153              		.cfi_def_cfa_offset 112
+ 154 0006 00AF     		add	r7, sp, #0
+ 155              		.cfi_def_cfa_register 7
+ 156 0008 F860     		str	r0, [r7, #12]
+ 157 000a B960     		str	r1, [r7, #8]
+ 158 000c 7A60     		str	r2, [r7, #4]
+ 159 000e 3B60     		str	r3, [r7]
+  84:motion_control.c ****   float center_axis0 = position[axis_0] + offset[axis_0];
+ 160              		.loc 1 84 0
+ 161 0010 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 162 0014 9B00     		lsls	r3, r3, #2
+ 163 0016 7A68     		ldr	r2, [r7, #4]
+ 164 0018 1344     		add	r3, r3, r2
+ 165 001a 1868     		ldr	r0, [r3]	@ float
+ 166 001c 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 167 0020 9B00     		lsls	r3, r3, #2
+ 168 0022 3A68     		ldr	r2, [r7]
+ 169 0024 1344     		add	r3, r3, r2
+ 170 0026 1B68     		ldr	r3, [r3]	@ float
+ 171 0028 1946     		mov	r1, r3
+ 172 002a FFF7FEFF 		bl	__aeabi_fadd
+ 173 002e 0346     		mov	r3, r0
+ 174 0030 FB63     		str	r3, [r7, #60]	@ float
+  85:motion_control.c ****   float center_axis1 = position[axis_1] + offset[axis_1];
+ 175              		.loc 1 85 0
+ 176 0032 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 177 0036 9B00     		lsls	r3, r3, #2
+ 178 0038 7A68     		ldr	r2, [r7, #4]
+ 179 003a 1344     		add	r3, r3, r2
+ 180 003c 1868     		ldr	r0, [r3]	@ float
+ 181 003e 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 182 0042 9B00     		lsls	r3, r3, #2
+ 183 0044 3A68     		ldr	r2, [r7]
+ 184 0046 1344     		add	r3, r3, r2
+ 185 0048 1B68     		ldr	r3, [r3]	@ float
+ 186 004a 1946     		mov	r1, r3
+ 187 004c FFF7FEFF 		bl	__aeabi_fadd
+ 188 0050 0346     		mov	r3, r0
+ 189 0052 BB63     		str	r3, [r7, #56]	@ float
+  86:motion_control.c ****   float r_axis0 = -offset[axis_0];  // Radius vector from center to current location
+ 190              		.loc 1 86 0
+ 191 0054 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 192 0058 9B00     		lsls	r3, r3, #2
+ 193 005a 3A68     		ldr	r2, [r7]
+ 194 005c 1344     		add	r3, r3, r2
+ 195 005e 1B68     		ldr	r3, [r3]	@ float
+ 196 0060 83F00043 		eor	r3, r3, #-2147483648
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 6
+
+
+ 197 0064 FB64     		str	r3, [r7, #76]	@ float
+  87:motion_control.c ****   float r_axis1 = -offset[axis_1];
+ 198              		.loc 1 87 0
+ 199 0066 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 200 006a 9B00     		lsls	r3, r3, #2
+ 201 006c 3A68     		ldr	r2, [r7]
+ 202 006e 1344     		add	r3, r3, r2
+ 203 0070 1B68     		ldr	r3, [r3]	@ float
+ 204 0072 83F00043 		eor	r3, r3, #-2147483648
+ 205 0076 BB64     		str	r3, [r7, #72]	@ float
+  88:motion_control.c ****   float rt_axis0 = target[axis_0] - center_axis0;
+ 206              		.loc 1 88 0
+ 207 0078 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 208 007c 9B00     		lsls	r3, r3, #2
+ 209 007e FA68     		ldr	r2, [r7, #12]
+ 210 0080 1344     		add	r3, r3, r2
+ 211 0082 1B68     		ldr	r3, [r3]	@ float
+ 212 0084 F96B     		ldr	r1, [r7, #60]	@ float
+ 213 0086 1846     		mov	r0, r3
+ 214 0088 FFF7FEFF 		bl	__aeabi_fsub
+ 215 008c 0346     		mov	r3, r0
+ 216 008e 7B63     		str	r3, [r7, #52]	@ float
+  89:motion_control.c ****   float rt_axis1 = target[axis_1] - center_axis1;
+ 217              		.loc 1 89 0
+ 218 0090 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 219 0094 9B00     		lsls	r3, r3, #2
+ 220 0096 FA68     		ldr	r2, [r7, #12]
+ 221 0098 1344     		add	r3, r3, r2
+ 222 009a 1B68     		ldr	r3, [r3]	@ float
+ 223 009c B96B     		ldr	r1, [r7, #56]	@ float
+ 224 009e 1846     		mov	r0, r3
+ 225 00a0 FFF7FEFF 		bl	__aeabi_fsub
+ 226 00a4 0346     		mov	r3, r0
+ 227 00a6 3B63     		str	r3, [r7, #48]	@ float
+  90:motion_control.c **** 
+  91:motion_control.c ****   // CCW angle between position and target from circle center. Only one atan2() trig computation re
+  92:motion_control.c ****   float angular_travel = atan2(r_axis0*rt_axis1-r_axis1*rt_axis0, r_axis0*rt_axis0+r_axis1*rt_axis1
+ 228              		.loc 1 92 0
+ 229 00a8 396B     		ldr	r1, [r7, #48]	@ float
+ 230 00aa F86C     		ldr	r0, [r7, #76]	@ float
+ 231 00ac FFF7FEFF 		bl	__aeabi_fmul
+ 232 00b0 0346     		mov	r3, r0
+ 233 00b2 1E46     		mov	r6, r3
+ 234 00b4 796B     		ldr	r1, [r7, #52]	@ float
+ 235 00b6 B86C     		ldr	r0, [r7, #72]	@ float
+ 236 00b8 FFF7FEFF 		bl	__aeabi_fmul
+ 237 00bc 0346     		mov	r3, r0
+ 238 00be 1946     		mov	r1, r3
+ 239 00c0 3046     		mov	r0, r6
+ 240 00c2 FFF7FEFF 		bl	__aeabi_fsub
+ 241 00c6 0346     		mov	r3, r0
+ 242 00c8 1846     		mov	r0, r3
+ 243 00ca FFF7FEFF 		bl	__aeabi_f2d
+ 244 00ce 8046     		mov	r8, r0
+ 245 00d0 8946     		mov	r9, r1
+ 246 00d2 796B     		ldr	r1, [r7, #52]	@ float
+ 247 00d4 F86C     		ldr	r0, [r7, #76]	@ float
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 7
+
+
+ 248 00d6 FFF7FEFF 		bl	__aeabi_fmul
+ 249 00da 0346     		mov	r3, r0
+ 250 00dc 1E46     		mov	r6, r3
+ 251 00de 396B     		ldr	r1, [r7, #48]	@ float
+ 252 00e0 B86C     		ldr	r0, [r7, #72]	@ float
+ 253 00e2 FFF7FEFF 		bl	__aeabi_fmul
+ 254 00e6 0346     		mov	r3, r0
+ 255 00e8 1946     		mov	r1, r3
+ 256 00ea 3046     		mov	r0, r6
+ 257 00ec FFF7FEFF 		bl	__aeabi_fadd
+ 258 00f0 0346     		mov	r3, r0
+ 259 00f2 1846     		mov	r0, r3
+ 260 00f4 FFF7FEFF 		bl	__aeabi_f2d
+ 261 00f8 0246     		mov	r2, r0
+ 262 00fa 0B46     		mov	r3, r1
+ 263 00fc 4046     		mov	r0, r8
+ 264 00fe 4946     		mov	r1, r9
+ 265 0100 FFF7FEFF 		bl	atan2
+ 266 0104 0246     		mov	r2, r0
+ 267 0106 0B46     		mov	r3, r1
+ 268 0108 1046     		mov	r0, r2
+ 269 010a 1946     		mov	r1, r3
+ 270 010c FFF7FEFF 		bl	__aeabi_d2f
+ 271 0110 0346     		mov	r3, r0
+ 272 0112 7B64     		str	r3, [r7, #68]	@ float
+  93:motion_control.c ****   if (is_clockwise_arc) { // Correct atan2 output per direction
+ 273              		.loc 1 93 0
+ 274 0114 97F88030 		ldrb	r3, [r7, #128]	@ zero_extendqisi2
+ 275 0118 002B     		cmp	r3, #0
+ 276 011a 1BD0     		beq	.L15
+  94:motion_control.c ****     if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) { angular_travel -= 2*M_PI; }
+ 277              		.loc 1 94 0
+ 278 011c 786C     		ldr	r0, [r7, #68]	@ float
+ 279 011e FFF7FEFF 		bl	__aeabi_f2d
+ 280 0122 99A3     		adr	r3, .L31
+ 281 0124 D3E90023 		ldrd	r2, [r3]
+ 282 0128 FFF7FEFF 		bl	__aeabi_dcmpge
+ 283 012c 0346     		mov	r3, r0
+ 284 012e 002B     		cmp	r3, #0
+ 285 0130 2BD0     		beq	.L18
+ 286              		.loc 1 94 0 is_stmt 0 discriminator 1
+ 287 0132 786C     		ldr	r0, [r7, #68]	@ float
+ 288 0134 FFF7FEFF 		bl	__aeabi_f2d
+ 289 0138 95A3     		adr	r3, .L31+8
+ 290 013a D3E90023 		ldrd	r2, [r3]
+ 291 013e FFF7FEFF 		bl	__aeabi_dsub
+ 292 0142 0246     		mov	r2, r0
+ 293 0144 0B46     		mov	r3, r1
+ 294 0146 1046     		mov	r0, r2
+ 295 0148 1946     		mov	r1, r3
+ 296 014a FFF7FEFF 		bl	__aeabi_d2f
+ 297 014e 0346     		mov	r3, r0
+ 298 0150 7B64     		str	r3, [r7, #68]	@ float
+ 299 0152 1AE0     		b	.L18
+ 300              	.L15:
+  95:motion_control.c ****   } else {
+  96:motion_control.c ****     if (angular_travel <= ARC_ANGULAR_TRAVEL_EPSILON) { angular_travel += 2*M_PI; }
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 8
+
+
+ 301              		.loc 1 96 0 is_stmt 1
+ 302 0154 786C     		ldr	r0, [r7, #68]	@ float
+ 303 0156 FFF7FEFF 		bl	__aeabi_f2d
+ 304 015a 8FA3     		adr	r3, .L31+16
+ 305 015c D3E90023 		ldrd	r2, [r3]
+ 306 0160 FFF7FEFF 		bl	__aeabi_dcmple
+ 307 0164 0346     		mov	r3, r0
+ 308 0166 002B     		cmp	r3, #0
+ 309 0168 0FD0     		beq	.L18
+ 310              		.loc 1 96 0 is_stmt 0 discriminator 1
+ 311 016a 786C     		ldr	r0, [r7, #68]	@ float
+ 312 016c FFF7FEFF 		bl	__aeabi_f2d
+ 313 0170 87A3     		adr	r3, .L31+8
+ 314 0172 D3E90023 		ldrd	r2, [r3]
+ 315 0176 FFF7FEFF 		bl	__aeabi_dadd
+ 316 017a 0246     		mov	r2, r0
+ 317 017c 0B46     		mov	r3, r1
+ 318 017e 1046     		mov	r0, r2
+ 319 0180 1946     		mov	r1, r3
+ 320 0182 FFF7FEFF 		bl	__aeabi_d2f
+ 321 0186 0346     		mov	r3, r0
+ 322 0188 7B64     		str	r3, [r7, #68]	@ float
+ 323              	.L18:
+  97:motion_control.c ****   }
+  98:motion_control.c **** 
+  99:motion_control.c ****   // NOTE: Segment end points are on the arc, which can lead to the arc diameter being smaller by u
+ 100:motion_control.c ****   // (2x) settings.arc_tolerance. For 99% of users, this is just fine. If a different arc segment f
+ 101:motion_control.c ****   // is desired, i.e. least-squares, midpoint on arc, just change the mm_per_arc_segment calculatio
+ 102:motion_control.c ****   // For the intended uses of Grbl, this value shouldn't exceed 2000 for the strictest of cases.
+ 103:motion_control.c ****   uint16_t segments = floor(fabs(0.5*angular_travel*radius)/
+ 324              		.loc 1 103 0 is_stmt 1
+ 325 018a 786C     		ldr	r0, [r7, #68]	@ float
+ 326 018c FFF7FEFF 		bl	__aeabi_f2d
+ 327 0190 4FF00002 		mov	r2, #0
+ 328 0194 844B     		ldr	r3, .L31+32
+ 329 0196 FFF7FEFF 		bl	__aeabi_dmul
+ 330 019a 0246     		mov	r2, r0
+ 331 019c 0B46     		mov	r3, r1
+ 332 019e 9046     		mov	r8, r2
+ 333 01a0 9946     		mov	r9, r3
+ 334 01a2 386F     		ldr	r0, [r7, #112]	@ float
+ 335 01a4 FFF7FEFF 		bl	__aeabi_f2d
+ 336 01a8 0246     		mov	r2, r0
+ 337 01aa 0B46     		mov	r3, r1
+ 338 01ac 4046     		mov	r0, r8
+ 339 01ae 4946     		mov	r1, r9
+ 340 01b0 FFF7FEFF 		bl	__aeabi_dmul
+ 341 01b4 0246     		mov	r2, r0
+ 342 01b6 0B46     		mov	r3, r1
+ 343 01b8 1446     		mov	r4, r2
+ 344 01ba 23F00045 		bic	r5, r3, #-2147483648
+ 104:motion_control.c ****                           sqrt(settings.arc_tolerance*(2*radius - settings.arc_tolerance)) );
+ 345              		.loc 1 104 0
+ 346 01be 7B4B     		ldr	r3, .L31+36
+ 347 01c0 DE6B     		ldr	r6, [r3, #60]	@ float
+ 348 01c2 3B6F     		ldr	r3, [r7, #112]	@ float
+ 349 01c4 1946     		mov	r1, r3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 9
+
+
+ 350 01c6 1846     		mov	r0, r3
+ 351 01c8 FFF7FEFF 		bl	__aeabi_fadd
+ 352 01cc 0346     		mov	r3, r0
+ 353 01ce 1A46     		mov	r2, r3
+ 354 01d0 764B     		ldr	r3, .L31+36
+ 355 01d2 DB6B     		ldr	r3, [r3, #60]	@ float
+ 356 01d4 1946     		mov	r1, r3
+ 357 01d6 1046     		mov	r0, r2
+ 358 01d8 FFF7FEFF 		bl	__aeabi_fsub
+ 359 01dc 0346     		mov	r3, r0
+ 360 01de 1946     		mov	r1, r3
+ 361 01e0 3046     		mov	r0, r6
+ 362 01e2 FFF7FEFF 		bl	__aeabi_fmul
+ 363 01e6 0346     		mov	r3, r0
+ 364 01e8 1846     		mov	r0, r3
+ 365 01ea FFF7FEFF 		bl	__aeabi_f2d
+ 366 01ee 0246     		mov	r2, r0
+ 367 01f0 0B46     		mov	r3, r1
+ 368 01f2 1046     		mov	r0, r2
+ 369 01f4 1946     		mov	r1, r3
+ 370 01f6 FFF7FEFF 		bl	sqrt
+ 371 01fa 0246     		mov	r2, r0
+ 372 01fc 0B46     		mov	r3, r1
+ 103:motion_control.c ****                           sqrt(settings.arc_tolerance*(2*radius - settings.arc_tolerance)) );
+ 373              		.loc 1 103 0
+ 374 01fe 2046     		mov	r0, r4
+ 375 0200 2946     		mov	r1, r5
+ 376 0202 FFF7FEFF 		bl	__aeabi_ddiv
+ 377 0206 0346     		mov	r3, r0
+ 378 0208 0C46     		mov	r4, r1
+ 379 020a 1846     		mov	r0, r3
+ 380 020c 2146     		mov	r1, r4
+ 381 020e FFF7FEFF 		bl	floor
+ 382 0212 0346     		mov	r3, r0
+ 383 0214 0C46     		mov	r4, r1
+ 384 0216 1846     		mov	r0, r3
+ 385 0218 2146     		mov	r1, r4
+ 386 021a FFF7FEFF 		bl	__aeabi_d2uiz
+ 387 021e 0346     		mov	r3, r0
+ 388 0220 FB85     		strh	r3, [r7, #46]	@ movhi
+ 105:motion_control.c **** 
+ 106:motion_control.c ****   if (segments) {
+ 389              		.loc 1 106 0
+ 390 0222 FB8D     		ldrh	r3, [r7, #46]
+ 391 0224 002B     		cmp	r3, #0
+ 392 0226 00F07881 		beq	.L20
+ 393              	.LBB2:
+ 107:motion_control.c ****     // Multiply inverse feed_rate to compensate for the fact that this movement is approximated
+ 108:motion_control.c ****     // by a number of discrete segments. The inverse feed_rate should be correct for the sum of
+ 109:motion_control.c ****     // all segments.
+ 110:motion_control.c ****     if (pl_data->condition & PL_COND_FLAG_INVERSE_TIME) { 
+ 394              		.loc 1 110 0
+ 395 022a BB68     		ldr	r3, [r7, #8]
+ 396 022c 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 397 022e 03F00803 		and	r3, r3, #8
+ 398 0232 002B     		cmp	r3, #0
+ 399 0234 15D0     		beq	.L21
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 10
+
+
+ 111:motion_control.c ****       pl_data->feed_rate *= segments; 
+ 400              		.loc 1 111 0
+ 401 0236 BB68     		ldr	r3, [r7, #8]
+ 402 0238 1C68     		ldr	r4, [r3]	@ float
+ 403 023a FB8D     		ldrh	r3, [r7, #46]
+ 404 023c 1846     		mov	r0, r3
+ 405 023e FFF7FEFF 		bl	__aeabi_i2f
+ 406 0242 0346     		mov	r3, r0
+ 407 0244 1946     		mov	r1, r3
+ 408 0246 2046     		mov	r0, r4
+ 409 0248 FFF7FEFF 		bl	__aeabi_fmul
+ 410 024c 0346     		mov	r3, r0
+ 411 024e 1A46     		mov	r2, r3
+ 412 0250 BB68     		ldr	r3, [r7, #8]
+ 413 0252 1A60     		str	r2, [r3]	@ float
+ 112:motion_control.c ****       bit_false(pl_data->condition,PL_COND_FLAG_INVERSE_TIME); // Force as feed absolute mode over 
+ 414              		.loc 1 112 0
+ 415 0254 BB68     		ldr	r3, [r7, #8]
+ 416 0256 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 417 0258 23F00803 		bic	r3, r3, #8
+ 418 025c DAB2     		uxtb	r2, r3
+ 419 025e BB68     		ldr	r3, [r7, #8]
+ 420 0260 1A72     		strb	r2, [r3, #8]
+ 421              	.L21:
+ 113:motion_control.c ****     }
+ 114:motion_control.c ****     
+ 115:motion_control.c ****     float theta_per_segment = angular_travel/segments;
+ 422              		.loc 1 115 0
+ 423 0262 FB8D     		ldrh	r3, [r7, #46]
+ 424 0264 1846     		mov	r0, r3
+ 425 0266 FFF7FEFF 		bl	__aeabi_i2f
+ 426 026a 0346     		mov	r3, r0
+ 427 026c 1946     		mov	r1, r3
+ 428 026e 786C     		ldr	r0, [r7, #68]	@ float
+ 429 0270 FFF7FEFF 		bl	__aeabi_fdiv
+ 430 0274 0346     		mov	r3, r0
+ 431 0276 BB62     		str	r3, [r7, #40]	@ float
+ 116:motion_control.c ****     float linear_per_segment = (target[axis_linear] - position[axis_linear])/segments;
+ 432              		.loc 1 116 0
+ 433 0278 97F87C30 		ldrb	r3, [r7, #124]	@ zero_extendqisi2
+ 434 027c 9B00     		lsls	r3, r3, #2
+ 435 027e FA68     		ldr	r2, [r7, #12]
+ 436 0280 1344     		add	r3, r3, r2
+ 437 0282 1868     		ldr	r0, [r3]	@ float
+ 438 0284 97F87C30 		ldrb	r3, [r7, #124]	@ zero_extendqisi2
+ 439 0288 9B00     		lsls	r3, r3, #2
+ 440 028a 7A68     		ldr	r2, [r7, #4]
+ 441 028c 1344     		add	r3, r3, r2
+ 442 028e 1B68     		ldr	r3, [r3]	@ float
+ 443 0290 1946     		mov	r1, r3
+ 444 0292 FFF7FEFF 		bl	__aeabi_fsub
+ 445 0296 0346     		mov	r3, r0
+ 446 0298 1C46     		mov	r4, r3
+ 447 029a FB8D     		ldrh	r3, [r7, #46]
+ 448 029c 1846     		mov	r0, r3
+ 449 029e FFF7FEFF 		bl	__aeabi_i2f
+ 450 02a2 0346     		mov	r3, r0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 11
+
+
+ 451 02a4 1946     		mov	r1, r3
+ 452 02a6 2046     		mov	r0, r4
+ 453 02a8 FFF7FEFF 		bl	__aeabi_fdiv
+ 454 02ac 0346     		mov	r3, r0
+ 455 02ae 7B62     		str	r3, [r7, #36]	@ float
+ 117:motion_control.c **** 
+ 118:motion_control.c ****     /* Vector rotation by transformation matrix: r is the original vector, r_T is the rotated vecto
+ 119:motion_control.c ****        and phi is the angle of rotation. Solution approach by Jens Geisler.
+ 120:motion_control.c ****            r_T = [cos(phi) -sin(phi);
+ 121:motion_control.c ****                   sin(phi)  cos(phi] * r ;
+ 122:motion_control.c **** 
+ 123:motion_control.c ****        For arc generation, the center of the circle is the axis of rotation and the radius vector i
+ 124:motion_control.c ****        defined from the circle center to the initial position. Each line segment is formed by succe
+ 125:motion_control.c ****        vector rotations. Single precision values can accumulate error greater than tool precision i
+ 126:motion_control.c ****        cases. So, exact arc path correction is implemented. This approach avoids the problem of too
+ 127:motion_control.c ****        expensive trig operations [sin(),cos(),tan()] which can take 100-200 usec each to compute.
+ 128:motion_control.c **** 
+ 129:motion_control.c ****        Small angle approximation may be used to reduce computation overhead further. A third-order 
+ 130:motion_control.c ****        (second order sin() has too much error) holds for most, if not, all CNC applications. Note t
+ 131:motion_control.c ****        approximation will begin to accumulate a numerical drift error when theta_per_segment is gre
+ 132:motion_control.c ****        ~0.25 rad(14 deg) AND the approximation is successively used without correction several doze
+ 133:motion_control.c ****        scenario is extremely unlikely, since segment lengths and theta_per_segment are automaticall
+ 134:motion_control.c ****        and scaled by the arc tolerance setting. Only a very large arc tolerance setting, unrealisti
+ 135:motion_control.c ****        applications, would cause this numerical drift error. However, it is best to set N_ARC_CORRE
+ 136:motion_control.c ****        low of ~4 to a high of ~20 or so to avoid trig operations while keeping arc generation accur
+ 137:motion_control.c **** 
+ 138:motion_control.c ****        This approximation also allows mc_arc to immediately insert a line segment into the planner
+ 139:motion_control.c ****        without the initial overhead of computing cos() or sin(). By the time the arc needs to be ap
+ 140:motion_control.c ****        a correction, the planner should have caught up to the lag caused by the initial mc_arc over
+ 141:motion_control.c ****        This is important when there are successive arc motions.
+ 142:motion_control.c ****     */
+ 143:motion_control.c ****     // Computes: cos_T = 1 - theta_per_segment^2/2, sin_T = theta_per_segment - theta_per_segment^3
+ 144:motion_control.c ****     float cos_T = 2.0 - theta_per_segment*theta_per_segment;
+ 456              		.loc 1 144 0
+ 457 02b0 B96A     		ldr	r1, [r7, #40]	@ float
+ 458 02b2 B86A     		ldr	r0, [r7, #40]	@ float
+ 459 02b4 FFF7FEFF 		bl	__aeabi_fmul
+ 460 02b8 0346     		mov	r3, r0
+ 461 02ba 1946     		mov	r1, r3
+ 462 02bc 4FF08040 		mov	r0, #1073741824
+ 463 02c0 FFF7FEFF 		bl	__aeabi_fsub
+ 464 02c4 0346     		mov	r3, r0
+ 465 02c6 3B62     		str	r3, [r7, #32]	@ float
+ 145:motion_control.c ****     float sin_T = theta_per_segment*0.16666667*(cos_T + 4.0);
+ 466              		.loc 1 145 0
+ 467 02c8 B86A     		ldr	r0, [r7, #40]	@ float
+ 468 02ca FFF7FEFF 		bl	__aeabi_f2d
+ 469 02ce 34A3     		adr	r3, .L31+24
+ 470 02d0 D3E90023 		ldrd	r2, [r3]
+ 471 02d4 FFF7FEFF 		bl	__aeabi_dmul
+ 472 02d8 0346     		mov	r3, r0
+ 473 02da 0C46     		mov	r4, r1
+ 474 02dc 2546     		mov	r5, r4
+ 475 02de 1C46     		mov	r4, r3
+ 476 02e0 386A     		ldr	r0, [r7, #32]	@ float
+ 477 02e2 FFF7FEFF 		bl	__aeabi_f2d
+ 478 02e6 4FF00002 		mov	r2, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 12
+
+
+ 479 02ea 314B     		ldr	r3, .L31+40
+ 480 02ec FFF7FEFF 		bl	__aeabi_dadd
+ 481 02f0 0246     		mov	r2, r0
+ 482 02f2 0B46     		mov	r3, r1
+ 483 02f4 2046     		mov	r0, r4
+ 484 02f6 2946     		mov	r1, r5
+ 485 02f8 FFF7FEFF 		bl	__aeabi_dmul
+ 486 02fc 0346     		mov	r3, r0
+ 487 02fe 0C46     		mov	r4, r1
+ 488 0300 1846     		mov	r0, r3
+ 489 0302 2146     		mov	r1, r4
+ 490 0304 FFF7FEFF 		bl	__aeabi_d2f
+ 491 0308 0346     		mov	r3, r0
+ 492 030a FB61     		str	r3, [r7, #28]	@ float
+ 146:motion_control.c ****     cos_T *= 0.5;
+ 493              		.loc 1 146 0
+ 494 030c 4FF07C51 		mov	r1, #1056964608
+ 495 0310 386A     		ldr	r0, [r7, #32]	@ float
+ 496 0312 FFF7FEFF 		bl	__aeabi_fmul
+ 497 0316 0346     		mov	r3, r0
+ 498 0318 3B62     		str	r3, [r7, #32]	@ float
+ 147:motion_control.c **** 
+ 148:motion_control.c ****     float sin_Ti;
+ 149:motion_control.c ****     float cos_Ti;
+ 150:motion_control.c ****     float r_axisi;
+ 151:motion_control.c ****     uint16_t i;
+ 152:motion_control.c ****     uint8_t count = 0;
+ 499              		.loc 1 152 0
+ 500 031a 0023     		movs	r3, #0
+ 501 031c 87F84130 		strb	r3, [r7, #65]
+ 153:motion_control.c **** 
+ 154:motion_control.c ****     for (i = 1; i<segments; i++) { // Increment (segments-1).
+ 502              		.loc 1 154 0
+ 503 0320 0123     		movs	r3, #1
+ 504 0322 A7F84230 		strh	r3, [r7, #66]	@ movhi
+ 505 0326 F2E0     		b	.L22
+ 506              	.L27:
+ 155:motion_control.c **** 
+ 156:motion_control.c ****       if (count < N_ARC_CORRECTION) {
+ 507              		.loc 1 156 0
+ 508 0328 97F84130 		ldrb	r3, [r7, #65]	@ zero_extendqisi2
+ 509 032c 0B2B     		cmp	r3, #11
+ 510 032e 41D8     		bhi	.L23
+ 157:motion_control.c ****         // Apply vector rotation matrix. ~40 usec
+ 158:motion_control.c ****         r_axisi = r_axis0*sin_T + r_axis1*cos_T;
+ 511              		.loc 1 158 0
+ 512 0330 F969     		ldr	r1, [r7, #28]	@ float
+ 513 0332 F86C     		ldr	r0, [r7, #76]	@ float
+ 514 0334 FFF7FEFF 		bl	__aeabi_fmul
+ 515 0338 0346     		mov	r3, r0
+ 516 033a 1C46     		mov	r4, r3
+ 517 033c 396A     		ldr	r1, [r7, #32]	@ float
+ 518 033e B86C     		ldr	r0, [r7, #72]	@ float
+ 519 0340 FFF7FEFF 		bl	__aeabi_fmul
+ 520 0344 0346     		mov	r3, r0
+ 521 0346 1946     		mov	r1, r3
+ 522 0348 2046     		mov	r0, r4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 13
+
+
+ 523 034a FFF7FEFF 		bl	__aeabi_fadd
+ 524 034e 0346     		mov	r3, r0
+ 525 0350 BB61     		str	r3, [r7, #24]	@ float
+ 159:motion_control.c ****         r_axis0 = r_axis0*cos_T - r_axis1*sin_T;
+ 526              		.loc 1 159 0
+ 527 0352 396A     		ldr	r1, [r7, #32]	@ float
+ 528 0354 F86C     		ldr	r0, [r7, #76]	@ float
+ 529 0356 FFF7FEFF 		bl	__aeabi_fmul
+ 530 035a 0346     		mov	r3, r0
+ 531 035c 1C46     		mov	r4, r3
+ 532 035e F969     		ldr	r1, [r7, #28]	@ float
+ 533 0360 B86C     		ldr	r0, [r7, #72]	@ float
+ 534 0362 FFF7FEFF 		bl	__aeabi_fmul
+ 535 0366 0346     		mov	r3, r0
+ 536 0368 1946     		mov	r1, r3
+ 537 036a 2046     		mov	r0, r4
+ 538 036c FFF7FEFF 		bl	__aeabi_fsub
+ 539 0370 0346     		mov	r3, r0
+ 540 0372 FB64     		str	r3, [r7, #76]	@ float
+ 160:motion_control.c ****         r_axis1 = r_axisi;
+ 541              		.loc 1 160 0
+ 542 0374 BB69     		ldr	r3, [r7, #24]	@ float
+ 543 0376 BB64     		str	r3, [r7, #72]	@ float
+ 161:motion_control.c ****         count++;
+ 544              		.loc 1 161 0
+ 545 0378 97F84130 		ldrb	r3, [r7, #65]	@ zero_extendqisi2
+ 546 037c 0133     		adds	r3, r3, #1
+ 547 037e 87F84130 		strb	r3, [r7, #65]
+ 548 0382 90E0     		b	.L24
+ 549              	.L32:
+ 550 0384 AFF30080 		.align	3
+ 551              	.L31:
+ 552 0388 8DEDB5A0 		.word	-1598689907
+ 553 038c F7C6A0BE 		.word	-1096759561
+ 554 0390 182D4454 		.word	1413754136
+ 555 0394 FB211940 		.word	1075388923
+ 556 0398 8DEDB5A0 		.word	-1598689907
+ 557 039c F7C6A03E 		.word	1050724087
+ 558 03a0 4BDA7D5C 		.word	1551751755
+ 559 03a4 5555C53F 		.word	1069897045
+ 560 03a8 0000E03F 		.word	1071644672
+ 561 03ac 00000000 		.word	settings
+ 562 03b0 00001040 		.word	1074790400
+ 563              	.L23:
+ 162:motion_control.c ****       } else {
+ 163:motion_control.c ****         // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments. ~375 u
+ 164:motion_control.c ****         // Compute exact location by applying transformation matrix from initial radius vector(=-of
+ 165:motion_control.c ****         cos_Ti = cos(i*theta_per_segment);
+ 564              		.loc 1 165 0
+ 565 03b4 B7F84230 		ldrh	r3, [r7, #66]
+ 566 03b8 1846     		mov	r0, r3
+ 567 03ba FFF7FEFF 		bl	__aeabi_i2f
+ 568 03be 0346     		mov	r3, r0
+ 569 03c0 B96A     		ldr	r1, [r7, #40]	@ float
+ 570 03c2 1846     		mov	r0, r3
+ 571 03c4 FFF7FEFF 		bl	__aeabi_fmul
+ 572 03c8 0346     		mov	r3, r0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 14
+
+
+ 573 03ca 1846     		mov	r0, r3
+ 574 03cc FFF7FEFF 		bl	__aeabi_f2d
+ 575 03d0 0346     		mov	r3, r0
+ 576 03d2 0C46     		mov	r4, r1
+ 577 03d4 1846     		mov	r0, r3
+ 578 03d6 2146     		mov	r1, r4
+ 579 03d8 FFF7FEFF 		bl	cos
+ 580 03dc 0346     		mov	r3, r0
+ 581 03de 0C46     		mov	r4, r1
+ 582 03e0 1846     		mov	r0, r3
+ 583 03e2 2146     		mov	r1, r4
+ 584 03e4 FFF7FEFF 		bl	__aeabi_d2f
+ 585 03e8 0346     		mov	r3, r0
+ 586 03ea 7B61     		str	r3, [r7, #20]	@ float
+ 166:motion_control.c ****         sin_Ti = sin(i*theta_per_segment);
+ 587              		.loc 1 166 0
+ 588 03ec B7F84230 		ldrh	r3, [r7, #66]
+ 589 03f0 1846     		mov	r0, r3
+ 590 03f2 FFF7FEFF 		bl	__aeabi_i2f
+ 591 03f6 0346     		mov	r3, r0
+ 592 03f8 B96A     		ldr	r1, [r7, #40]	@ float
+ 593 03fa 1846     		mov	r0, r3
+ 594 03fc FFF7FEFF 		bl	__aeabi_fmul
+ 595 0400 0346     		mov	r3, r0
+ 596 0402 1846     		mov	r0, r3
+ 597 0404 FFF7FEFF 		bl	__aeabi_f2d
+ 598 0408 0346     		mov	r3, r0
+ 599 040a 0C46     		mov	r4, r1
+ 600 040c 1846     		mov	r0, r3
+ 601 040e 2146     		mov	r1, r4
+ 602 0410 FFF7FEFF 		bl	sin
+ 603 0414 0346     		mov	r3, r0
+ 604 0416 0C46     		mov	r4, r1
+ 605 0418 1846     		mov	r0, r3
+ 606 041a 2146     		mov	r1, r4
+ 607 041c FFF7FEFF 		bl	__aeabi_d2f
+ 608 0420 0346     		mov	r3, r0
+ 609 0422 3B61     		str	r3, [r7, #16]	@ float
+ 167:motion_control.c ****         r_axis0 = -offset[axis_0]*cos_Ti + offset[axis_1]*sin_Ti;
+ 610              		.loc 1 167 0
+ 611 0424 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 612 0428 9B00     		lsls	r3, r3, #2
+ 613 042a 3A68     		ldr	r2, [r7]
+ 614 042c 1344     		add	r3, r3, r2
+ 615 042e 1B68     		ldr	r3, [r3]	@ float
+ 616 0430 83F00043 		eor	r3, r3, #-2147483648
+ 617 0434 7969     		ldr	r1, [r7, #20]	@ float
+ 618 0436 1846     		mov	r0, r3
+ 619 0438 FFF7FEFF 		bl	__aeabi_fmul
+ 620 043c 0346     		mov	r3, r0
+ 621 043e 1C46     		mov	r4, r3
+ 622 0440 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 623 0444 9B00     		lsls	r3, r3, #2
+ 624 0446 3A68     		ldr	r2, [r7]
+ 625 0448 1344     		add	r3, r3, r2
+ 626 044a 1B68     		ldr	r3, [r3]	@ float
+ 627 044c 3969     		ldr	r1, [r7, #16]	@ float
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 15
+
+
+ 628 044e 1846     		mov	r0, r3
+ 629 0450 FFF7FEFF 		bl	__aeabi_fmul
+ 630 0454 0346     		mov	r3, r0
+ 631 0456 1946     		mov	r1, r3
+ 632 0458 2046     		mov	r0, r4
+ 633 045a FFF7FEFF 		bl	__aeabi_fadd
+ 634 045e 0346     		mov	r3, r0
+ 635 0460 FB64     		str	r3, [r7, #76]	@ float
+ 168:motion_control.c ****         r_axis1 = -offset[axis_0]*sin_Ti - offset[axis_1]*cos_Ti;
+ 636              		.loc 1 168 0
+ 637 0462 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 638 0466 9B00     		lsls	r3, r3, #2
+ 639 0468 3A68     		ldr	r2, [r7]
+ 640 046a 1344     		add	r3, r3, r2
+ 641 046c 1B68     		ldr	r3, [r3]	@ float
+ 642 046e 83F00043 		eor	r3, r3, #-2147483648
+ 643 0472 3969     		ldr	r1, [r7, #16]	@ float
+ 644 0474 1846     		mov	r0, r3
+ 645 0476 FFF7FEFF 		bl	__aeabi_fmul
+ 646 047a 0346     		mov	r3, r0
+ 647 047c 1C46     		mov	r4, r3
+ 648 047e 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ 649 0482 9B00     		lsls	r3, r3, #2
+ 650 0484 3A68     		ldr	r2, [r7]
+ 651 0486 1344     		add	r3, r3, r2
+ 652 0488 1B68     		ldr	r3, [r3]	@ float
+ 653 048a 7969     		ldr	r1, [r7, #20]	@ float
+ 654 048c 1846     		mov	r0, r3
+ 655 048e FFF7FEFF 		bl	__aeabi_fmul
+ 656 0492 0346     		mov	r3, r0
+ 657 0494 1946     		mov	r1, r3
+ 658 0496 2046     		mov	r0, r4
+ 659 0498 FFF7FEFF 		bl	__aeabi_fsub
+ 660 049c 0346     		mov	r3, r0
+ 661 049e BB64     		str	r3, [r7, #72]	@ float
+ 169:motion_control.c ****         count = 0;
+ 662              		.loc 1 169 0
+ 663 04a0 0023     		movs	r3, #0
+ 664 04a2 87F84130 		strb	r3, [r7, #65]
+ 665              	.L24:
+ 170:motion_control.c ****       }
+ 171:motion_control.c **** 
+ 172:motion_control.c ****       // Update arc_target location
+ 173:motion_control.c ****       position[axis_0] = center_axis0 + r_axis0;
+ 666              		.loc 1 173 0
+ 667 04a6 97F87430 		ldrb	r3, [r7, #116]	@ zero_extendqisi2
+ 668 04aa 9B00     		lsls	r3, r3, #2
+ 669 04ac 7A68     		ldr	r2, [r7, #4]
+ 670 04ae D418     		adds	r4, r2, r3
+ 671 04b0 F96C     		ldr	r1, [r7, #76]	@ float
+ 672 04b2 F86B     		ldr	r0, [r7, #60]	@ float
+ 673 04b4 FFF7FEFF 		bl	__aeabi_fadd
+ 674 04b8 0346     		mov	r3, r0
+ 675 04ba 2360     		str	r3, [r4]	@ float
+ 174:motion_control.c ****       position[axis_1] = center_axis1 + r_axis1;
+ 676              		.loc 1 174 0
+ 677 04bc 97F87830 		ldrb	r3, [r7, #120]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 16
+
+
+ 678 04c0 9B00     		lsls	r3, r3, #2
+ 679 04c2 7A68     		ldr	r2, [r7, #4]
+ 680 04c4 D418     		adds	r4, r2, r3
+ 681 04c6 B96C     		ldr	r1, [r7, #72]	@ float
+ 682 04c8 B86B     		ldr	r0, [r7, #56]	@ float
+ 683 04ca FFF7FEFF 		bl	__aeabi_fadd
+ 684 04ce 0346     		mov	r3, r0
+ 685 04d0 2360     		str	r3, [r4]	@ float
+ 175:motion_control.c ****       position[axis_linear] += linear_per_segment;
+ 686              		.loc 1 175 0
+ 687 04d2 97F87C30 		ldrb	r3, [r7, #124]	@ zero_extendqisi2
+ 688 04d6 9B00     		lsls	r3, r3, #2
+ 689 04d8 7A68     		ldr	r2, [r7, #4]
+ 690 04da D418     		adds	r4, r2, r3
+ 691 04dc 97F87C30 		ldrb	r3, [r7, #124]	@ zero_extendqisi2
+ 692 04e0 9B00     		lsls	r3, r3, #2
+ 693 04e2 7A68     		ldr	r2, [r7, #4]
+ 694 04e4 1344     		add	r3, r3, r2
+ 695 04e6 1B68     		ldr	r3, [r3]	@ float
+ 696 04e8 796A     		ldr	r1, [r7, #36]	@ float
+ 697 04ea 1846     		mov	r0, r3
+ 698 04ec FFF7FEFF 		bl	__aeabi_fadd
+ 699 04f0 0346     		mov	r3, r0
+ 700 04f2 2360     		str	r3, [r4]	@ float
+ 176:motion_control.c **** 
+ 177:motion_control.c ****       mc_line(position, pl_data);
+ 701              		.loc 1 177 0
+ 702 04f4 B968     		ldr	r1, [r7, #8]
+ 703 04f6 7868     		ldr	r0, [r7, #4]
+ 704 04f8 FFF7FEFF 		bl	mc_line
+ 178:motion_control.c **** 
+ 179:motion_control.c ****       // Bail mid-circle on system abort. Runtime command check already performed by mc_line.
+ 180:motion_control.c ****       if (sys.abort) { return; }
+ 705              		.loc 1 180 0
+ 706 04fc 0C4B     		ldr	r3, .L33
+ 707 04fe 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 708 0500 002B     		cmp	r3, #0
+ 709 0502 0FD1     		bne	.L30
+ 154:motion_control.c **** 
+ 710              		.loc 1 154 0 discriminator 2
+ 711 0504 B7F84230 		ldrh	r3, [r7, #66]
+ 712 0508 0133     		adds	r3, r3, #1
+ 713 050a A7F84230 		strh	r3, [r7, #66]	@ movhi
+ 714              	.L22:
+ 154:motion_control.c **** 
+ 715              		.loc 1 154 0 is_stmt 0 discriminator 1
+ 716 050e B7F84220 		ldrh	r2, [r7, #66]
+ 717 0512 FB8D     		ldrh	r3, [r7, #46]
+ 718 0514 9A42     		cmp	r2, r3
+ 719 0516 FFF407AF 		bcc	.L27
+ 720              	.L20:
+ 721              	.LBE2:
+ 181:motion_control.c ****     }
+ 182:motion_control.c ****   }
+ 183:motion_control.c ****   // Ensure last segment arrives at target location.
+ 184:motion_control.c ****   mc_line(target, pl_data);
+ 722              		.loc 1 184 0 is_stmt 1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 17
+
+
+ 723 051a B968     		ldr	r1, [r7, #8]
+ 724 051c F868     		ldr	r0, [r7, #12]
+ 725 051e FFF7FEFF 		bl	mc_line
+ 726 0522 00E0     		b	.L14
+ 727              	.L30:
+ 728              	.LBB3:
+ 180:motion_control.c ****     }
+ 729              		.loc 1 180 0
+ 730 0524 00BF     		nop
+ 731              	.L14:
+ 732              	.LBE3:
+ 185:motion_control.c **** }
+ 733              		.loc 1 185 0
+ 734 0526 5437     		adds	r7, r7, #84
+ 735              		.cfi_def_cfa_offset 28
+ 736 0528 BD46     		mov	sp, r7
+ 737              		.cfi_def_cfa_register 13
+ 738              		@ sp needed
+ 739 052a BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 740              	.L34:
+ 741 052e 00BF     		.align	2
+ 742              	.L33:
+ 743 0530 00000000 		.word	sys
+ 744              		.cfi_endproc
+ 745              	.LFE65:
+ 746              		.size	mc_arc, .-mc_arc
+ 747              		.section	.text.mc_dwell,"ax",%progbits
+ 748              		.align	2
+ 749              		.global	mc_dwell
+ 750              		.thumb
+ 751              		.thumb_func
+ 752              		.type	mc_dwell, %function
+ 753              	mc_dwell:
+ 754              	.LFB66:
+ 186:motion_control.c **** 
+ 187:motion_control.c **** 
+ 188:motion_control.c **** // Execute dwell in seconds.
+ 189:motion_control.c **** void mc_dwell(float seconds)
+ 190:motion_control.c **** {
+ 755              		.loc 1 190 0
+ 756              		.cfi_startproc
+ 757              		@ args = 0, pretend = 0, frame = 8
+ 758              		@ frame_needed = 1, uses_anonymous_args = 0
+ 759 0000 80B5     		push	{r7, lr}
+ 760              		.cfi_def_cfa_offset 8
+ 761              		.cfi_offset 7, -8
+ 762              		.cfi_offset 14, -4
+ 763 0002 82B0     		sub	sp, sp, #8
+ 764              		.cfi_def_cfa_offset 16
+ 765 0004 00AF     		add	r7, sp, #0
+ 766              		.cfi_def_cfa_register 7
+ 767 0006 7860     		str	r0, [r7, #4]	@ float
+ 191:motion_control.c ****   if (sys.state == STATE_CHECK_MODE) { return; }
+ 768              		.loc 1 191 0
+ 769 0008 074B     		ldr	r3, .L39
+ 770 000a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 771 000c 022B     		cmp	r3, #2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 18
+
+
+ 772 000e 06D0     		beq	.L38
+ 192:motion_control.c ****   protocol_buffer_synchronize();
+ 773              		.loc 1 192 0
+ 774 0010 FFF7FEFF 		bl	protocol_buffer_synchronize
+ 193:motion_control.c ****   delay_sec(seconds, DELAY_MODE_DWELL);
+ 775              		.loc 1 193 0
+ 776 0014 0021     		movs	r1, #0
+ 777 0016 7868     		ldr	r0, [r7, #4]	@ float
+ 778 0018 FFF7FEFF 		bl	delay_sec
+ 779 001c 00E0     		b	.L35
+ 780              	.L38:
+ 191:motion_control.c ****   if (sys.state == STATE_CHECK_MODE) { return; }
+ 781              		.loc 1 191 0
+ 782 001e 00BF     		nop
+ 783              	.L35:
+ 194:motion_control.c **** }
+ 784              		.loc 1 194 0
+ 785 0020 0837     		adds	r7, r7, #8
+ 786              		.cfi_def_cfa_offset 8
+ 787 0022 BD46     		mov	sp, r7
+ 788              		.cfi_def_cfa_register 13
+ 789              		@ sp needed
+ 790 0024 80BD     		pop	{r7, pc}
+ 791              	.L40:
+ 792 0026 00BF     		.align	2
+ 793              	.L39:
+ 794 0028 00000000 		.word	sys
+ 795              		.cfi_endproc
+ 796              	.LFE66:
+ 797              		.size	mc_dwell, .-mc_dwell
+ 798              		.section	.text.mc_homing_cycle,"ax",%progbits
+ 799              		.align	2
+ 800              		.global	mc_homing_cycle
+ 801              		.thumb
+ 802              		.thumb_func
+ 803              		.type	mc_homing_cycle, %function
+ 804              	mc_homing_cycle:
+ 805              	.LFB67:
+ 195:motion_control.c **** 
+ 196:motion_control.c **** 
+ 197:motion_control.c **** // Perform homing cycle to locate and set machine zero. Only '$H' executes this command.
+ 198:motion_control.c **** // NOTE: There should be no motions in the buffer and Grbl must be in an idle state before
+ 199:motion_control.c **** // executing the homing cycle. This prevents incorrect buffered plans after homing.
+ 200:motion_control.c **** void mc_homing_cycle(uint8_t cycle_mask)
+ 201:motion_control.c **** {
+ 806              		.loc 1 201 0
+ 807              		.cfi_startproc
+ 808              		@ args = 0, pretend = 0, frame = 8
+ 809              		@ frame_needed = 1, uses_anonymous_args = 0
+ 810 0000 80B5     		push	{r7, lr}
+ 811              		.cfi_def_cfa_offset 8
+ 812              		.cfi_offset 7, -8
+ 813              		.cfi_offset 14, -4
+ 814 0002 82B0     		sub	sp, sp, #8
+ 815              		.cfi_def_cfa_offset 16
+ 816 0004 00AF     		add	r7, sp, #0
+ 817              		.cfi_def_cfa_register 7
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 19
+
+
+ 818 0006 0346     		mov	r3, r0
+ 819 0008 FB71     		strb	r3, [r7, #7]
+ 202:motion_control.c ****   // Check and abort homing cycle, if hard limits are already enabled. Helps prevent problems
+ 203:motion_control.c ****   // with machines with limits wired on both ends of travel to one limit pin.
+ 204:motion_control.c ****   // TODO: Move the pin-specific LIMIT_PIN call to limits.c as a function.
+ 205:motion_control.c ****   #ifdef LIMITS_TWO_SWITCHES_ON_AXES
+ 206:motion_control.c ****     if (limits_get_state()) {
+ 207:motion_control.c ****       mc_reset(); // Issue system reset and ensure spindle and coolant are shutdown.
+ 208:motion_control.c ****       system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT);
+ 209:motion_control.c ****       return;
+ 210:motion_control.c ****     }
+ 211:motion_control.c ****   #endif
+ 212:motion_control.c **** 
+ 213:motion_control.c ****   limits_disable(); // Disable hard limits pin change register for cycle duration
+ 820              		.loc 1 213 0
+ 821 000a FFF7FEFF 		bl	limits_disable
+ 214:motion_control.c **** 
+ 215:motion_control.c ****   // -------------------------------------------------------------------------------------
+ 216:motion_control.c ****   // Perform homing routine. NOTE: Special motion case. Only system reset works.
+ 217:motion_control.c ****   
+ 218:motion_control.c ****   #ifdef HOMING_SINGLE_AXIS_COMMANDS
+ 219:motion_control.c ****     if (cycle_mask) { limits_go_home(cycle_mask); } // Perform homing cycle based on mask.
+ 822              		.loc 1 219 0
+ 823 000e FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 824 0010 002B     		cmp	r3, #0
+ 825 0012 04D0     		beq	.L42
+ 826              		.loc 1 219 0 is_stmt 0 discriminator 1
+ 827 0014 FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 828 0016 1846     		mov	r0, r3
+ 829 0018 FFF7FEFF 		bl	limits_go_home
+ 830 001c 05E0     		b	.L43
+ 831              	.L42:
+ 220:motion_control.c ****     else
+ 221:motion_control.c ****   #endif
+ 222:motion_control.c ****   {
+ 223:motion_control.c ****     // Search to engage all axes limit switches at faster homing seek rate.
+ 224:motion_control.c ****     limits_go_home(HOMING_CYCLE_0);  // Homing cycle 0
+ 832              		.loc 1 224 0 is_stmt 1
+ 833 001e 0120     		movs	r0, #1
+ 834 0020 FFF7FEFF 		bl	limits_go_home
+ 225:motion_control.c ****     #ifdef HOMING_CYCLE_1
+ 226:motion_control.c ****       limits_go_home(HOMING_CYCLE_1);  // Homing cycle 1
+ 835              		.loc 1 226 0
+ 836 0024 0220     		movs	r0, #2
+ 837 0026 FFF7FEFF 		bl	limits_go_home
+ 838              	.L43:
+ 227:motion_control.c ****     #endif
+ 228:motion_control.c ****     #ifdef HOMING_CYCLE_2
+ 229:motion_control.c ****       limits_go_home(HOMING_CYCLE_2);  // Homing cycle 2
+ 230:motion_control.c ****     #endif
+ 231:motion_control.c ****     
+ 232:motion_control.c ****     #ifdef HOMING_CYCLE_3
+ 233:motion_control.c ****        limits_go_home(HOMING_CYCLE_3);  // Homing cycle 3
+ 234:motion_control.c ****     #endif
+ 235:motion_control.c ****     #ifdef HOMING_CYCLE_4
+ 236:motion_control.c ****        limits_go_home(HOMING_CYCLE_4);  // Homing cycle 4
+ 237:motion_control.c ****     #endif
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 20
+
+
+ 238:motion_control.c ****     #ifdef HOMING_CYCLE_5
+ 239:motion_control.c ****        limits_go_home(HOMING_CYCLE_5);  // Homing cycle 5
+ 240:motion_control.c ****     #endif
+ 241:motion_control.c ****    
+ 242:motion_control.c ****     
+ 243:motion_control.c ****   }
+ 244:motion_control.c **** 
+ 245:motion_control.c ****   protocol_execute_realtime(); // Check for reset and set system abort.
+ 839              		.loc 1 245 0
+ 840 002a FFF7FEFF 		bl	protocol_execute_realtime
+ 246:motion_control.c ****   if (sys.abort) { return; } // Did not complete. Alarm state set by mc_alarm.
+ 841              		.loc 1 246 0
+ 842 002e 074B     		ldr	r3, .L47
+ 843 0030 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 844 0032 002B     		cmp	r3, #0
+ 845 0034 06D1     		bne	.L46
+ 247:motion_control.c **** 
+ 248:motion_control.c ****   // Homing cycle complete! Setup system for normal operation.
+ 249:motion_control.c ****   // -------------------------------------------------------------------------------------
+ 250:motion_control.c **** 
+ 251:motion_control.c ****   // Sync gcode parser and planner positions to homed position.
+ 252:motion_control.c ****   gc_sync_position();
+ 846              		.loc 1 252 0
+ 847 0036 FFF7FEFF 		bl	gc_sync_position
+ 253:motion_control.c ****   plan_sync_position();
+ 848              		.loc 1 253 0
+ 849 003a FFF7FEFF 		bl	plan_sync_position
+ 254:motion_control.c **** 
+ 255:motion_control.c ****   // If hard limits feature enabled, re-enable hard limits pin change register after homing cycle.
+ 256:motion_control.c ****   limits_init();
+ 850              		.loc 1 256 0
+ 851 003e FFF7FEFF 		bl	limits_init
+ 852 0042 00E0     		b	.L41
+ 853              	.L46:
+ 246:motion_control.c **** 
+ 854              		.loc 1 246 0
+ 855 0044 00BF     		nop
+ 856              	.L41:
+ 257:motion_control.c **** }
+ 857              		.loc 1 257 0
+ 858 0046 0837     		adds	r7, r7, #8
+ 859              		.cfi_def_cfa_offset 8
+ 860 0048 BD46     		mov	sp, r7
+ 861              		.cfi_def_cfa_register 13
+ 862              		@ sp needed
+ 863 004a 80BD     		pop	{r7, pc}
+ 864              	.L48:
+ 865              		.align	2
+ 866              	.L47:
+ 867 004c 00000000 		.word	sys
+ 868              		.cfi_endproc
+ 869              	.LFE67:
+ 870              		.size	mc_homing_cycle, .-mc_homing_cycle
+ 871              		.section	.text.mc_probe_cycle,"ax",%progbits
+ 872              		.align	2
+ 873              		.global	mc_probe_cycle
+ 874              		.thumb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 21
+
+
+ 875              		.thumb_func
+ 876              		.type	mc_probe_cycle, %function
+ 877              	mc_probe_cycle:
+ 878              	.LFB68:
+ 258:motion_control.c **** 
+ 259:motion_control.c **** 
+ 260:motion_control.c **** // Perform tool length probe cycle. Requires probe switch.
+ 261:motion_control.c **** // NOTE: Upon probe failure, the program will be stopped and placed into ALARM state.
+ 262:motion_control.c **** uint8_t mc_probe_cycle(float *target, plan_line_data_t *pl_data, uint8_t parser_flags)
+ 263:motion_control.c **** {
+ 879              		.loc 1 263 0
+ 880              		.cfi_startproc
+ 881              		@ args = 0, pretend = 0, frame = 24
+ 882              		@ frame_needed = 1, uses_anonymous_args = 0
+ 883 0000 80B5     		push	{r7, lr}
+ 884              		.cfi_def_cfa_offset 8
+ 885              		.cfi_offset 7, -8
+ 886              		.cfi_offset 14, -4
+ 887 0002 86B0     		sub	sp, sp, #24
+ 888              		.cfi_def_cfa_offset 32
+ 889 0004 00AF     		add	r7, sp, #0
+ 890              		.cfi_def_cfa_register 7
+ 891 0006 F860     		str	r0, [r7, #12]
+ 892 0008 B960     		str	r1, [r7, #8]
+ 893 000a 1346     		mov	r3, r2
+ 894 000c FB71     		strb	r3, [r7, #7]
+ 264:motion_control.c ****   // TODO: Need to update this cycle so it obeys a non-auto cycle start.
+ 265:motion_control.c ****   if (sys.state == STATE_CHECK_MODE) { return(GC_PROBE_CHECK_MODE); }
+ 895              		.loc 1 265 0
+ 896 000e 3E4B     		ldr	r3, .L61
+ 897 0010 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 898 0012 022B     		cmp	r3, #2
+ 899 0014 01D1     		bne	.L50
+ 900              		.loc 1 265 0 is_stmt 0 discriminator 1
+ 901 0016 0023     		movs	r3, #0
+ 902 0018 71E0     		b	.L51
+ 903              	.L50:
+ 266:motion_control.c **** 
+ 267:motion_control.c ****   // Finish all queued commands and empty planner buffer before starting probe cycle.
+ 268:motion_control.c ****   protocol_buffer_synchronize();
+ 904              		.loc 1 268 0 is_stmt 1
+ 905 001a FFF7FEFF 		bl	protocol_buffer_synchronize
+ 269:motion_control.c ****   if (sys.abort) { return(GC_PROBE_ABORT); } // Return if system reset has been issued.
+ 906              		.loc 1 269 0
+ 907 001e 3A4B     		ldr	r3, .L61
+ 908 0020 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 909 0022 002B     		cmp	r3, #0
+ 910 0024 01D0     		beq	.L52
+ 911              		.loc 1 269 0 is_stmt 0 discriminator 1
+ 912 0026 0223     		movs	r3, #2
+ 913 0028 69E0     		b	.L51
+ 914              	.L52:
+ 270:motion_control.c **** 
+ 271:motion_control.c ****   // Initialize probing control variables
+ 272:motion_control.c ****   uint8_t is_probe_away = bit_istrue(parser_flags,GC_PARSER_PROBE_IS_AWAY);
+ 915              		.loc 1 272 0 is_stmt 1
+ 916 002a FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 22
+
+
+ 917 002c 03F00803 		and	r3, r3, #8
+ 918 0030 002B     		cmp	r3, #0
+ 919 0032 14BF     		ite	ne
+ 920 0034 0123     		movne	r3, #1
+ 921 0036 0023     		moveq	r3, #0
+ 922 0038 DBB2     		uxtb	r3, r3
+ 923 003a FB75     		strb	r3, [r7, #23]
+ 273:motion_control.c ****   uint8_t is_no_error = bit_istrue(parser_flags,GC_PARSER_PROBE_IS_NO_ERROR);
+ 924              		.loc 1 273 0
+ 925 003c FB79     		ldrb	r3, [r7, #7]	@ zero_extendqisi2
+ 926 003e 03F01003 		and	r3, r3, #16
+ 927 0042 002B     		cmp	r3, #0
+ 928 0044 14BF     		ite	ne
+ 929 0046 0123     		movne	r3, #1
+ 930 0048 0023     		moveq	r3, #0
+ 931 004a DBB2     		uxtb	r3, r3
+ 932 004c BB75     		strb	r3, [r7, #22]
+ 274:motion_control.c ****   sys.probe_succeeded = false; // Re-initialize probe history before beginning cycle.
+ 933              		.loc 1 274 0
+ 934 004e 2E4B     		ldr	r3, .L61
+ 935 0050 0022     		movs	r2, #0
+ 936 0052 5A71     		strb	r2, [r3, #5]
+ 275:motion_control.c ****   probe_configure_invert_mask(is_probe_away);
+ 937              		.loc 1 275 0
+ 938 0054 FB7D     		ldrb	r3, [r7, #23]	@ zero_extendqisi2
+ 939 0056 1846     		mov	r0, r3
+ 940 0058 FFF7FEFF 		bl	probe_configure_invert_mask
+ 276:motion_control.c **** 
+ 277:motion_control.c ****   // After syncing, check if probe is already triggered. If so, halt and issue alarm.
+ 278:motion_control.c ****   // NOTE: This probe initialization error applies to all probing cycles.
+ 279:motion_control.c ****   if ( probe_get_state() ) { // Check probe pin state.
+ 941              		.loc 1 279 0
+ 942 005c FFF7FEFF 		bl	probe_get_state
+ 943 0060 0346     		mov	r3, r0
+ 944 0062 002B     		cmp	r3, #0
+ 945 0064 09D0     		beq	.L53
+ 280:motion_control.c ****     system_set_exec_alarm(EXEC_ALARM_PROBE_FAIL_INITIAL);
+ 946              		.loc 1 280 0
+ 947 0066 0420     		movs	r0, #4
+ 948 0068 FFF7FEFF 		bl	system_set_exec_alarm
+ 281:motion_control.c ****     protocol_execute_realtime();
+ 949              		.loc 1 281 0
+ 950 006c FFF7FEFF 		bl	protocol_execute_realtime
+ 282:motion_control.c ****     probe_configure_invert_mask(false); // Re-initialize invert mask before returning.
+ 951              		.loc 1 282 0
+ 952 0070 0020     		movs	r0, #0
+ 953 0072 FFF7FEFF 		bl	probe_configure_invert_mask
+ 283:motion_control.c ****     return(GC_PROBE_FAIL_INIT); // Nothing else to do but bail.
+ 954              		.loc 1 283 0
+ 955 0076 0223     		movs	r3, #2
+ 956 0078 41E0     		b	.L51
+ 957              	.L53:
+ 284:motion_control.c ****   }
+ 285:motion_control.c **** 
+ 286:motion_control.c ****   // Setup and queue probing motion. Auto cycle-start should not start the cycle.
+ 287:motion_control.c ****   mc_line(target, pl_data);
+ 958              		.loc 1 287 0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 23
+
+
+ 959 007a B968     		ldr	r1, [r7, #8]
+ 960 007c F868     		ldr	r0, [r7, #12]
+ 961 007e FFF7FEFF 		bl	mc_line
+ 288:motion_control.c **** 
+ 289:motion_control.c ****   // Activate the probing state monitor in the stepper module.
+ 290:motion_control.c ****   sys_probe_state = PROBE_ACTIVE;
+ 962              		.loc 1 290 0
+ 963 0082 224B     		ldr	r3, .L61+4
+ 964 0084 0122     		movs	r2, #1
+ 965 0086 1A70     		strb	r2, [r3]
+ 291:motion_control.c **** 
+ 292:motion_control.c ****   // Perform probing cycle. Wait here until probe is triggered or motion completes.
+ 293:motion_control.c ****   system_set_exec_state_flag(EXEC_CYCLE_START);
+ 966              		.loc 1 293 0
+ 967 0088 0220     		movs	r0, #2
+ 968 008a FFF7FEFF 		bl	system_set_exec_state_flag
+ 969              	.L55:
+ 294:motion_control.c ****   do {
+ 295:motion_control.c ****     protocol_execute_realtime();
+ 970              		.loc 1 295 0
+ 971 008e FFF7FEFF 		bl	protocol_execute_realtime
+ 296:motion_control.c ****     if (sys.abort) { return(GC_PROBE_ABORT); } // Check for system abort
+ 972              		.loc 1 296 0
+ 973 0092 1D4B     		ldr	r3, .L61
+ 974 0094 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 975 0096 002B     		cmp	r3, #0
+ 976 0098 01D0     		beq	.L54
+ 977              		.loc 1 296 0 is_stmt 0 discriminator 1
+ 978 009a 0223     		movs	r3, #2
+ 979 009c 2FE0     		b	.L51
+ 980              	.L54:
+ 297:motion_control.c ****   } while (sys.state != STATE_IDLE);
+ 981              		.loc 1 297 0 is_stmt 1
+ 982 009e 1A4B     		ldr	r3, .L61
+ 983 00a0 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 984 00a2 002B     		cmp	r3, #0
+ 985 00a4 F3D1     		bne	.L55
+ 298:motion_control.c **** 
+ 299:motion_control.c ****   // Probing cycle complete!
+ 300:motion_control.c **** 
+ 301:motion_control.c ****   // Set state variables and error out, if the probe failed and cycle with error is enabled.
+ 302:motion_control.c ****   if (sys_probe_state == PROBE_ACTIVE) {
+ 986              		.loc 1 302 0
+ 987 00a6 194B     		ldr	r3, .L61+4
+ 988 00a8 1B78     		ldrb	r3, [r3]
+ 989 00aa DBB2     		uxtb	r3, r3
+ 990 00ac 012B     		cmp	r3, #1
+ 991 00ae 0CD1     		bne	.L56
+ 303:motion_control.c ****     if (is_no_error) { memcpy(sys_probe_position, sys_position, sizeof(sys_position)); }
+ 992              		.loc 1 303 0
+ 993 00b0 BB7D     		ldrb	r3, [r7, #22]	@ zero_extendqisi2
+ 994 00b2 002B     		cmp	r3, #0
+ 995 00b4 05D0     		beq	.L57
+ 996              		.loc 1 303 0 is_stmt 0 discriminator 1
+ 997 00b6 164B     		ldr	r3, .L61+8
+ 998 00b8 164A     		ldr	r2, .L61+12
+ 999 00ba 07CA     		ldmia	r2, {r0, r1, r2}
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 24
+
+
+ 1000 00bc 83E80700 		stmia	r3, {r0, r1, r2}
+ 1001 00c0 06E0     		b	.L59
+ 1002              	.L57:
+ 304:motion_control.c ****     else { system_set_exec_alarm(EXEC_ALARM_PROBE_FAIL_CONTACT); }
+ 1003              		.loc 1 304 0 is_stmt 1
+ 1004 00c2 0520     		movs	r0, #5
+ 1005 00c4 FFF7FEFF 		bl	system_set_exec_alarm
+ 1006 00c8 02E0     		b	.L59
+ 1007              	.L56:
+ 305:motion_control.c ****   } else {
+ 306:motion_control.c ****     sys.probe_succeeded = true; // Indicate to system the probing cycle completed successfully.
+ 1008              		.loc 1 306 0
+ 1009 00ca 0F4B     		ldr	r3, .L61
+ 1010 00cc 0122     		movs	r2, #1
+ 1011 00ce 5A71     		strb	r2, [r3, #5]
+ 1012              	.L59:
+ 307:motion_control.c ****   }
+ 308:motion_control.c ****   sys_probe_state = PROBE_OFF; // Ensure probe state monitor is disabled.
+ 1013              		.loc 1 308 0
+ 1014 00d0 0E4B     		ldr	r3, .L61+4
+ 1015 00d2 0022     		movs	r2, #0
+ 1016 00d4 1A70     		strb	r2, [r3]
+ 309:motion_control.c ****   probe_configure_invert_mask(false); // Re-initialize invert mask.
+ 1017              		.loc 1 309 0
+ 1018 00d6 0020     		movs	r0, #0
+ 1019 00d8 FFF7FEFF 		bl	probe_configure_invert_mask
+ 310:motion_control.c ****   protocol_execute_realtime();   // Check and execute run-time commands
+ 1020              		.loc 1 310 0
+ 1021 00dc FFF7FEFF 		bl	protocol_execute_realtime
+ 311:motion_control.c **** 
+ 312:motion_control.c ****   // Reset the stepper and planner buffers to remove the remainder of the probe motion.
+ 313:motion_control.c ****   st_reset(); // Reset step segment buffer.
+ 1022              		.loc 1 313 0
+ 1023 00e0 FFF7FEFF 		bl	st_reset
+ 314:motion_control.c ****   plan_reset(); // Reset planner buffer. Zero planner positions. Ensure probing motion is cleared.
+ 1024              		.loc 1 314 0
+ 1025 00e4 FFF7FEFF 		bl	plan_reset
+ 315:motion_control.c ****   plan_sync_position(); // Sync planner position to current machine position.
+ 1026              		.loc 1 315 0
+ 1027 00e8 FFF7FEFF 		bl	plan_sync_position
+ 316:motion_control.c **** 
+ 317:motion_control.c ****   #ifdef MESSAGE_PROBE_COORDINATES
+ 318:motion_control.c ****     // All done! Output the probe position as message.
+ 319:motion_control.c ****     report_probe_parameters();
+ 1028              		.loc 1 319 0
+ 1029 00ec FFF7FEFF 		bl	report_probe_parameters
+ 320:motion_control.c ****   #endif
+ 321:motion_control.c **** 
+ 322:motion_control.c ****   if (sys.probe_succeeded) { return(GC_PROBE_FOUND); } // Successful probe cycle.
+ 1030              		.loc 1 322 0
+ 1031 00f0 054B     		ldr	r3, .L61
+ 1032 00f2 5B79     		ldrb	r3, [r3, #5]	@ zero_extendqisi2
+ 1033 00f4 002B     		cmp	r3, #0
+ 1034 00f6 01D0     		beq	.L60
+ 1035              		.loc 1 322 0 is_stmt 0 discriminator 1
+ 1036 00f8 0123     		movs	r3, #1
+ 1037 00fa 00E0     		b	.L51
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 25
+
+
+ 1038              	.L60:
+ 323:motion_control.c ****   else { return(GC_PROBE_FAIL_END); } // Failed to trigger probe within travel. With or without err
+ 1039              		.loc 1 323 0 is_stmt 1
+ 1040 00fc 0023     		movs	r3, #0
+ 1041              	.L51:
+ 324:motion_control.c **** }
+ 1042              		.loc 1 324 0
+ 1043 00fe 1846     		mov	r0, r3
+ 1044 0100 1837     		adds	r7, r7, #24
+ 1045              		.cfi_def_cfa_offset 8
+ 1046 0102 BD46     		mov	sp, r7
+ 1047              		.cfi_def_cfa_register 13
+ 1048              		@ sp needed
+ 1049 0104 80BD     		pop	{r7, pc}
+ 1050              	.L62:
+ 1051 0106 00BF     		.align	2
+ 1052              	.L61:
+ 1053 0108 00000000 		.word	sys
+ 1054 010c 00000000 		.word	sys_probe_state
+ 1055 0110 00000000 		.word	sys_probe_position
+ 1056 0114 00000000 		.word	sys_position
+ 1057              		.cfi_endproc
+ 1058              	.LFE68:
+ 1059              		.size	mc_probe_cycle, .-mc_probe_cycle
+ 1060              		.section	.text.mc_parking_motion,"ax",%progbits
+ 1061              		.align	2
+ 1062              		.global	mc_parking_motion
+ 1063              		.thumb
+ 1064              		.thumb_func
+ 1065              		.type	mc_parking_motion, %function
+ 1066              	mc_parking_motion:
+ 1067              	.LFB69:
+ 325:motion_control.c **** 
+ 326:motion_control.c **** 
+ 327:motion_control.c **** // Plans and executes the single special motion case for parking. Independent of main planner buffe
+ 328:motion_control.c **** // NOTE: Uses the always free planner ring buffer head to store motion parameters for execution.
+ 329:motion_control.c **** void mc_parking_motion(float *parking_target, plan_line_data_t *pl_data)
+ 330:motion_control.c **** {
+ 1068              		.loc 1 330 0
+ 1069              		.cfi_startproc
+ 1070              		@ args = 0, pretend = 0, frame = 16
+ 1071              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1072 0000 80B5     		push	{r7, lr}
+ 1073              		.cfi_def_cfa_offset 8
+ 1074              		.cfi_offset 7, -8
+ 1075              		.cfi_offset 14, -4
+ 1076 0002 84B0     		sub	sp, sp, #16
+ 1077              		.cfi_def_cfa_offset 24
+ 1078 0004 00AF     		add	r7, sp, #0
+ 1079              		.cfi_def_cfa_register 7
+ 1080 0006 7860     		str	r0, [r7, #4]
+ 1081 0008 3960     		str	r1, [r7]
+ 331:motion_control.c ****   if (sys.abort) { return; } // Block during abort.
+ 1082              		.loc 1 331 0
+ 1083 000a 204B     		ldr	r3, .L71
+ 1084 000c 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 1085 000e 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 26
+
+
+ 1086 0010 35D1     		bne	.L69
+ 332:motion_control.c **** 
+ 333:motion_control.c ****   uint8_t plan_status = plan_buffer_line(parking_target, pl_data);
+ 1087              		.loc 1 333 0
+ 1088 0012 3968     		ldr	r1, [r7]
+ 1089 0014 7868     		ldr	r0, [r7, #4]
+ 1090 0016 FFF7FEFF 		bl	plan_buffer_line
+ 1091 001a 0346     		mov	r3, r0
+ 1092 001c FB73     		strb	r3, [r7, #15]
+ 334:motion_control.c **** 
+ 335:motion_control.c ****   if (plan_status) {
+ 1093              		.loc 1 335 0
+ 1094 001e FB7B     		ldrb	r3, [r7, #15]	@ zero_extendqisi2
+ 1095 0020 002B     		cmp	r3, #0
+ 1096 0022 22D0     		beq	.L66
+ 336:motion_control.c **** 		bit_true(sys.step_control, STEP_CONTROL_EXECUTE_SYS_MOTION);
+ 1097              		.loc 1 336 0
+ 1098 0024 194B     		ldr	r3, .L71
+ 1099 0026 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1100 0028 43F00403 		orr	r3, r3, #4
+ 1101 002c DAB2     		uxtb	r2, r3
+ 1102 002e 174B     		ldr	r3, .L71
+ 1103 0030 1A71     		strb	r2, [r3, #4]
+ 337:motion_control.c **** 		bit_false(sys.step_control, STEP_CONTROL_END_MOTION); // Allow parking motion to execute, if feed
+ 1104              		.loc 1 337 0
+ 1105 0032 164B     		ldr	r3, .L71
+ 1106 0034 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1107 0036 23F00103 		bic	r3, r3, #1
+ 1108 003a DAB2     		uxtb	r2, r3
+ 1109 003c 134B     		ldr	r3, .L71
+ 1110 003e 1A71     		strb	r2, [r3, #4]
+ 338:motion_control.c ****     st_parking_setup_buffer(); // Setup step segment buffer for special parking motion case
+ 1111              		.loc 1 338 0
+ 1112 0040 FFF7FEFF 		bl	st_parking_setup_buffer
+ 339:motion_control.c **** 		st_prep_buffer();
+ 1113              		.loc 1 339 0
+ 1114 0044 FFF7FEFF 		bl	st_prep_buffer
+ 340:motion_control.c **** 		st_wake_up();
+ 1115              		.loc 1 340 0
+ 1116 0048 FFF7FEFF 		bl	st_wake_up
+ 1117              	.L68:
+ 341:motion_control.c **** 		do {
+ 342:motion_control.c **** 			protocol_exec_rt_system();
+ 1118              		.loc 1 342 0
+ 1119 004c FFF7FEFF 		bl	protocol_exec_rt_system
+ 343:motion_control.c **** 			if (sys.abort) { return; }
+ 1120              		.loc 1 343 0
+ 1121 0050 0E4B     		ldr	r3, .L71
+ 1122 0052 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 1123 0054 002B     		cmp	r3, #0
+ 1124 0056 14D1     		bne	.L70
+ 344:motion_control.c **** 		} while (sys.step_control & STEP_CONTROL_EXECUTE_SYS_MOTION);
+ 1125              		.loc 1 344 0
+ 1126 0058 0C4B     		ldr	r3, .L71
+ 1127 005a 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1128 005c 03F00403 		and	r3, r3, #4
+ 1129 0060 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 27
+
+
+ 1130 0062 F3D1     		bne	.L68
+ 345:motion_control.c **** 		st_parking_restore_buffer(); // Restore step segment buffer to normal run state.
+ 1131              		.loc 1 345 0
+ 1132 0064 FFF7FEFF 		bl	st_parking_restore_buffer
+ 1133 0068 0CE0     		b	.L63
+ 1134              	.L66:
+ 346:motion_control.c **** 	} else {
+ 347:motion_control.c ****     bit_false(sys.step_control, STEP_CONTROL_EXECUTE_SYS_MOTION);
+ 1135              		.loc 1 347 0
+ 1136 006a 084B     		ldr	r3, .L71
+ 1137 006c 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1138 006e 23F00403 		bic	r3, r3, #4
+ 1139 0072 DAB2     		uxtb	r2, r3
+ 1140 0074 054B     		ldr	r3, .L71
+ 1141 0076 1A71     		strb	r2, [r3, #4]
+ 348:motion_control.c **** 		protocol_exec_rt_system();
+ 1142              		.loc 1 348 0
+ 1143 0078 FFF7FEFF 		bl	protocol_exec_rt_system
+ 1144 007c 02E0     		b	.L63
+ 1145              	.L69:
+ 331:motion_control.c **** 
+ 1146              		.loc 1 331 0
+ 1147 007e 00BF     		nop
+ 1148 0080 00E0     		b	.L63
+ 1149              	.L70:
+ 343:motion_control.c **** 		} while (sys.step_control & STEP_CONTROL_EXECUTE_SYS_MOTION);
+ 1150              		.loc 1 343 0
+ 1151 0082 00BF     		nop
+ 1152              	.L63:
+ 349:motion_control.c ****   }
+ 350:motion_control.c **** 
+ 351:motion_control.c **** }
+ 1153              		.loc 1 351 0
+ 1154 0084 1037     		adds	r7, r7, #16
+ 1155              		.cfi_def_cfa_offset 8
+ 1156 0086 BD46     		mov	sp, r7
+ 1157              		.cfi_def_cfa_register 13
+ 1158              		@ sp needed
+ 1159 0088 80BD     		pop	{r7, pc}
+ 1160              	.L72:
+ 1161 008a 00BF     		.align	2
+ 1162              	.L71:
+ 1163 008c 00000000 		.word	sys
+ 1164              		.cfi_endproc
+ 1165              	.LFE69:
+ 1166              		.size	mc_parking_motion, .-mc_parking_motion
+ 1167              		.section	.text.mc_reset,"ax",%progbits
+ 1168              		.align	2
+ 1169              		.global	mc_reset
+ 1170              		.thumb
+ 1171              		.thumb_func
+ 1172              		.type	mc_reset, %function
+ 1173              	mc_reset:
+ 1174              	.LFB70:
+ 352:motion_control.c **** 
+ 353:motion_control.c **** 
+ 354:motion_control.c **** // Method to ready the system to reset by setting the realtime reset command and killing any
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 28
+
+
+ 355:motion_control.c **** // active processes in the system. This also checks if a system reset is issued while Grbl
+ 356:motion_control.c **** // is in a motion state. If so, kills the steppers and sets the system alarm to flag position
+ 357:motion_control.c **** // lost, since there was an abrupt uncontrolled deceleration. Called at an interrupt level by
+ 358:motion_control.c **** // realtime abort command and hard limits. So, keep to a minimum.
+ 359:motion_control.c **** void mc_reset()
+ 360:motion_control.c **** {
+ 1175              		.loc 1 360 0
+ 1176              		.cfi_startproc
+ 1177              		@ args = 0, pretend = 0, frame = 0
+ 1178              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1179 0000 80B5     		push	{r7, lr}
+ 1180              		.cfi_def_cfa_offset 8
+ 1181              		.cfi_offset 7, -8
+ 1182              		.cfi_offset 14, -4
+ 1183 0002 00AF     		add	r7, sp, #0
+ 1184              		.cfi_def_cfa_register 7
+ 361:motion_control.c ****   // Only this function can set the system reset. Helps prevent multiple kill calls.
+ 362:motion_control.c ****   if (bit_isfalse(sys_rt_exec_state, EXEC_RESET)) {
+ 1185              		.loc 1 362 0
+ 1186 0004 164B     		ldr	r3, .L80
+ 1187 0006 1B78     		ldrb	r3, [r3]
+ 1188 0008 DBB2     		uxtb	r3, r3
+ 1189 000a 03F01003 		and	r3, r3, #16
+ 1190 000e 002B     		cmp	r3, #0
+ 1191 0010 24D1     		bne	.L79
+ 363:motion_control.c ****     system_set_exec_state_flag(EXEC_RESET);
+ 1192              		.loc 1 363 0
+ 1193 0012 1020     		movs	r0, #16
+ 1194 0014 FFF7FEFF 		bl	system_set_exec_state_flag
+ 364:motion_control.c **** 
+ 365:motion_control.c ****     // Kill spindle and coolant.
+ 366:motion_control.c ****     spindle_stop();
+ 1195              		.loc 1 366 0
+ 1196 0018 FFF7FEFF 		bl	spindle_stop
+ 367:motion_control.c ****     coolant_stop();
+ 1197              		.loc 1 367 0
+ 1198 001c FFF7FEFF 		bl	coolant_stop
+ 368:motion_control.c **** 
+ 369:motion_control.c ****     // Kill steppers only if in any motion state, i.e. cycle, actively holding, or homing.
+ 370:motion_control.c ****     // NOTE: If steppers are kept enabled via the step idle delay setting, this also keeps
+ 371:motion_control.c ****     // the steppers enabled by avoiding the go_idle call altogether, unless the motion state is
+ 372:motion_control.c ****     // violated, by which, all bets are off.
+ 373:motion_control.c ****     if ((sys.state & (STATE_CYCLE | STATE_HOMING | STATE_JOG)) ||
+ 1199              		.loc 1 373 0
+ 1200 0020 104B     		ldr	r3, .L80+4
+ 1201 0022 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1202 0024 03F02C03 		and	r3, r3, #44
+ 1203 0028 002B     		cmp	r3, #0
+ 1204 002a 05D1     		bne	.L75
+ 374:motion_control.c ****     		(sys.step_control & (STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION))) {
+ 1205              		.loc 1 374 0 discriminator 1
+ 1206 002c 0D4B     		ldr	r3, .L80+4
+ 1207 002e 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 1208 0030 03F00603 		and	r3, r3, #6
+ 373:motion_control.c ****     		(sys.step_control & (STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION))) {
+ 1209              		.loc 1 373 0 discriminator 1
+ 1210 0034 002B     		cmp	r3, #0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 29
+
+
+ 1211 0036 11D0     		beq	.L79
+ 1212              	.L75:
+ 375:motion_control.c ****       if (sys.state == STATE_HOMING) { 
+ 1213              		.loc 1 375 0
+ 1214 0038 0A4B     		ldr	r3, .L80+4
+ 1215 003a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1216 003c 042B     		cmp	r3, #4
+ 1217 003e 08D1     		bne	.L76
+ 376:motion_control.c ****         if (!sys_rt_exec_alarm) {system_set_exec_alarm(EXEC_ALARM_HOMING_FAIL_RESET); }
+ 1218              		.loc 1 376 0
+ 1219 0040 094B     		ldr	r3, .L80+8
+ 1220 0042 1B78     		ldrb	r3, [r3]
+ 1221 0044 DBB2     		uxtb	r3, r3
+ 1222 0046 002B     		cmp	r3, #0
+ 1223 0048 06D1     		bne	.L78
+ 1224              		.loc 1 376 0 is_stmt 0 discriminator 1
+ 1225 004a 0620     		movs	r0, #6
+ 1226 004c FFF7FEFF 		bl	system_set_exec_alarm
+ 1227 0050 02E0     		b	.L78
+ 1228              	.L76:
+ 377:motion_control.c ****       } else { system_set_exec_alarm(EXEC_ALARM_ABORT_CYCLE); }
+ 1229              		.loc 1 377 0 is_stmt 1
+ 1230 0052 0320     		movs	r0, #3
+ 1231 0054 FFF7FEFF 		bl	system_set_exec_alarm
+ 1232              	.L78:
+ 378:motion_control.c ****       st_go_idle(); // Force kill steppers. Position has likely been lost.
+ 1233              		.loc 1 378 0
+ 1234 0058 FFF7FEFF 		bl	st_go_idle
+ 1235              	.L79:
+ 379:motion_control.c ****     }
+ 380:motion_control.c ****   }
+ 381:motion_control.c **** }
+ 1236              		.loc 1 381 0
+ 1237 005c 00BF     		nop
+ 1238 005e 80BD     		pop	{r7, pc}
+ 1239              	.L81:
+ 1240              		.align	2
+ 1241              	.L80:
+ 1242 0060 00000000 		.word	sys_rt_exec_state
+ 1243 0064 00000000 		.word	sys
+ 1244 0068 00000000 		.word	sys_rt_exec_alarm
+ 1245              		.cfi_endproc
+ 1246              	.LFE70:
+ 1247              		.size	mc_reset, .-mc_reset
+ 1248              		.text
+ 1249              	.Letext0:
+ 1250              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1251              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1252              		.file 4 "settings.h"
+ 1253              		.file 5 "system.h"
+ 1254              		.file 6 "planner.h"
+ 1255              		.file 7 "Generated_Source\\PSoC5/core_cm3.h"
+ 1256              		.section	.debug_info,"",%progbits
+ 1257              	.Ldebug_info0:
+ 1258 0000 50060000 		.4byte	0x650
+ 1259 0004 0400     		.2byte	0x4
+ 1260 0006 00000000 		.4byte	.Ldebug_abbrev0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 30
+
+
+ 1261 000a 04       		.byte	0x4
+ 1262 000b 01       		.uleb128 0x1
+ 1263 000c 75000000 		.4byte	.LASF104
+ 1264 0010 0C       		.byte	0xc
+ 1265 0011 2C010000 		.4byte	.LASF105
+ 1266 0015 0A050000 		.4byte	.LASF106
+ 1267 0019 18000000 		.4byte	.Ldebug_ranges0+0x18
+ 1268 001d 00000000 		.4byte	0
+ 1269 0021 00000000 		.4byte	.Ldebug_line0
+ 1270 0025 02       		.uleb128 0x2
+ 1271 0026 01       		.byte	0x1
+ 1272 0027 06       		.byte	0x6
+ 1273 0028 9B020000 		.4byte	.LASF0
+ 1274 002c 03       		.uleb128 0x3
+ 1275 002d 05020000 		.4byte	.LASF3
+ 1276 0031 02       		.byte	0x2
+ 1277 0032 1D       		.byte	0x1d
+ 1278 0033 37000000 		.4byte	0x37
+ 1279 0037 02       		.uleb128 0x2
+ 1280 0038 01       		.byte	0x1
+ 1281 0039 08       		.byte	0x8
+ 1282 003a 55020000 		.4byte	.LASF1
+ 1283 003e 02       		.uleb128 0x2
+ 1284 003f 02       		.byte	0x2
+ 1285 0040 05       		.byte	0x5
+ 1286 0041 59000000 		.4byte	.LASF2
+ 1287 0045 03       		.uleb128 0x3
+ 1288 0046 21010000 		.4byte	.LASF4
+ 1289 004a 02       		.byte	0x2
+ 1290 004b 2B       		.byte	0x2b
+ 1291 004c 50000000 		.4byte	0x50
+ 1292 0050 02       		.uleb128 0x2
+ 1293 0051 02       		.byte	0x2
+ 1294 0052 07       		.byte	0x7
+ 1295 0053 51030000 		.4byte	.LASF5
+ 1296 0057 03       		.uleb128 0x3
+ 1297 0058 D6040000 		.4byte	.LASF6
+ 1298 005c 02       		.byte	0x2
+ 1299 005d 3F       		.byte	0x3f
+ 1300 005e 62000000 		.4byte	0x62
+ 1301 0062 02       		.uleb128 0x2
+ 1302 0063 04       		.byte	0x4
+ 1303 0064 05       		.byte	0x5
+ 1304 0065 DB010000 		.4byte	.LASF7
+ 1305 0069 02       		.uleb128 0x2
+ 1306 006a 04       		.byte	0x4
+ 1307 006b 07       		.byte	0x7
+ 1308 006c 58040000 		.4byte	.LASF8
+ 1309 0070 02       		.uleb128 0x2
+ 1310 0071 08       		.byte	0x8
+ 1311 0072 05       		.byte	0x5
+ 1312 0073 99010000 		.4byte	.LASF9
+ 1313 0077 02       		.uleb128 0x2
+ 1314 0078 08       		.byte	0x8
+ 1315 0079 07       		.byte	0x7
+ 1316 007a A7010000 		.4byte	.LASF10
+ 1317 007e 04       		.uleb128 0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 31
+
+
+ 1318 007f 04       		.byte	0x4
+ 1319 0080 05       		.byte	0x5
+ 1320 0081 696E7400 		.ascii	"int\000"
+ 1321 0085 02       		.uleb128 0x2
+ 1322 0086 04       		.byte	0x4
+ 1323 0087 07       		.byte	0x7
+ 1324 0088 BA020000 		.4byte	.LASF11
+ 1325 008c 03       		.uleb128 0x3
+ 1326 008d 62010000 		.4byte	.LASF12
+ 1327 0091 03       		.byte	0x3
+ 1328 0092 18       		.byte	0x18
+ 1329 0093 2C000000 		.4byte	0x2c
+ 1330 0097 03       		.uleb128 0x3
+ 1331 0098 8C030000 		.4byte	.LASF13
+ 1332 009c 03       		.byte	0x3
+ 1333 009d 24       		.byte	0x24
+ 1334 009e 45000000 		.4byte	0x45
+ 1335 00a2 03       		.uleb128 0x3
+ 1336 00a3 B2030000 		.4byte	.LASF14
+ 1337 00a7 03       		.byte	0x3
+ 1338 00a8 2C       		.byte	0x2c
+ 1339 00a9 57000000 		.4byte	0x57
+ 1340 00ad 02       		.uleb128 0x2
+ 1341 00ae 04       		.byte	0x4
+ 1342 00af 04       		.byte	0x4
+ 1343 00b0 8A010000 		.4byte	.LASF15
+ 1344 00b4 02       		.uleb128 0x2
+ 1345 00b5 08       		.byte	0x8
+ 1346 00b6 04       		.byte	0x4
+ 1347 00b7 7B040000 		.4byte	.LASF16
+ 1348 00bb 02       		.uleb128 0x2
+ 1349 00bc 01       		.byte	0x1
+ 1350 00bd 08       		.byte	0x8
+ 1351 00be 87030000 		.4byte	.LASF17
+ 1352 00c2 02       		.uleb128 0x2
+ 1353 00c3 08       		.byte	0x8
+ 1354 00c4 04       		.byte	0x4
+ 1355 00c5 30020000 		.4byte	.LASF18
+ 1356 00c9 02       		.uleb128 0x2
+ 1357 00ca 04       		.byte	0x4
+ 1358 00cb 07       		.byte	0x7
+ 1359 00cc 63000000 		.4byte	.LASF19
+ 1360 00d0 05       		.uleb128 0x5
+ 1361 00d1 8C000000 		.4byte	0x8c
+ 1362 00d5 06       		.uleb128 0x6
+ 1363 00d6 5C       		.byte	0x5c
+ 1364 00d7 04       		.byte	0x4
+ 1365 00d8 4F       		.byte	0x4f
+ 1366 00d9 C2010000 		.4byte	0x1c2
+ 1367 00dd 07       		.uleb128 0x7
+ 1368 00de F8010000 		.4byte	.LASF20
+ 1369 00e2 04       		.byte	0x4
+ 1370 00e3 51       		.byte	0x51
+ 1371 00e4 C2010000 		.4byte	0x1c2
+ 1372 00e8 00       		.byte	0
+ 1373 00e9 07       		.uleb128 0x7
+ 1374 00ea D8050000 		.4byte	.LASF21
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 32
+
+
+ 1375 00ee 04       		.byte	0x4
+ 1376 00ef 52       		.byte	0x52
+ 1377 00f0 C2010000 		.4byte	0x1c2
+ 1378 00f4 0C       		.byte	0xc
+ 1379 00f5 07       		.uleb128 0x7
+ 1380 00f6 3F000000 		.4byte	.LASF22
+ 1381 00fa 04       		.byte	0x4
+ 1382 00fb 53       		.byte	0x53
+ 1383 00fc C2010000 		.4byte	0x1c2
+ 1384 0100 18       		.byte	0x18
+ 1385 0101 07       		.uleb128 0x7
+ 1386 0102 FF040000 		.4byte	.LASF23
+ 1387 0106 04       		.byte	0x4
+ 1388 0107 54       		.byte	0x54
+ 1389 0108 C2010000 		.4byte	0x1c2
+ 1390 010c 24       		.byte	0x24
+ 1391 010d 07       		.uleb128 0x7
+ 1392 010e 19040000 		.4byte	.LASF24
+ 1393 0112 04       		.byte	0x4
+ 1394 0113 57       		.byte	0x57
+ 1395 0114 8C000000 		.4byte	0x8c
+ 1396 0118 30       		.byte	0x30
+ 1397 0119 07       		.uleb128 0x7
+ 1398 011a F3050000 		.4byte	.LASF25
+ 1399 011e 04       		.byte	0x4
+ 1400 011f 58       		.byte	0x58
+ 1401 0120 8C000000 		.4byte	0x8c
+ 1402 0124 31       		.byte	0x31
+ 1403 0125 07       		.uleb128 0x7
+ 1404 0126 A2030000 		.4byte	.LASF26
+ 1405 012a 04       		.byte	0x4
+ 1406 012b 59       		.byte	0x59
+ 1407 012c 8C000000 		.4byte	0x8c
+ 1408 0130 32       		.byte	0x32
+ 1409 0131 07       		.uleb128 0x7
+ 1410 0132 3D010000 		.4byte	.LASF27
+ 1411 0136 04       		.byte	0x4
+ 1412 0137 5A       		.byte	0x5a
+ 1413 0138 8C000000 		.4byte	0x8c
+ 1414 013c 33       		.byte	0x33
+ 1415 013d 07       		.uleb128 0x7
+ 1416 013e 23030000 		.4byte	.LASF28
+ 1417 0142 04       		.byte	0x4
+ 1418 0143 5B       		.byte	0x5b
+ 1419 0144 8C000000 		.4byte	0x8c
+ 1420 0148 34       		.byte	0x34
+ 1421 0149 07       		.uleb128 0x7
+ 1422 014a E0040000 		.4byte	.LASF29
+ 1423 014e 04       		.byte	0x4
+ 1424 014f 5C       		.byte	0x5c
+ 1425 0150 AD000000 		.4byte	0xad
+ 1426 0154 38       		.byte	0x38
+ 1427 0155 07       		.uleb128 0x7
+ 1428 0156 22020000 		.4byte	.LASF30
+ 1429 015a 04       		.byte	0x4
+ 1430 015b 5D       		.byte	0x5d
+ 1431 015c AD000000 		.4byte	0xad
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 33
+
+
+ 1432 0160 3C       		.byte	0x3c
+ 1433 0161 07       		.uleb128 0x7
+ 1434 0162 D8030000 		.4byte	.LASF31
+ 1435 0166 04       		.byte	0x4
+ 1436 0167 5F       		.byte	0x5f
+ 1437 0168 AD000000 		.4byte	0xad
+ 1438 016c 40       		.byte	0x40
+ 1439 016d 07       		.uleb128 0x7
+ 1440 016e A3040000 		.4byte	.LASF32
+ 1441 0172 04       		.byte	0x4
+ 1442 0173 60       		.byte	0x60
+ 1443 0174 AD000000 		.4byte	0xad
+ 1444 0178 44       		.byte	0x44
+ 1445 0179 07       		.uleb128 0x7
+ 1446 017a A7020000 		.4byte	.LASF33
+ 1447 017e 04       		.byte	0x4
+ 1448 017f 62       		.byte	0x62
+ 1449 0180 8C000000 		.4byte	0x8c
+ 1450 0184 48       		.byte	0x48
+ 1451 0185 07       		.uleb128 0x7
+ 1452 0186 45020000 		.4byte	.LASF34
+ 1453 018a 04       		.byte	0x4
+ 1454 018b 64       		.byte	0x64
+ 1455 018c 8C000000 		.4byte	0x8c
+ 1456 0190 49       		.byte	0x49
+ 1457 0191 07       		.uleb128 0x7
+ 1458 0192 4C050000 		.4byte	.LASF35
+ 1459 0196 04       		.byte	0x4
+ 1460 0197 65       		.byte	0x65
+ 1461 0198 AD000000 		.4byte	0xad
+ 1462 019c 4C       		.byte	0x4c
+ 1463 019d 07       		.uleb128 0x7
+ 1464 019e 92040000 		.4byte	.LASF36
+ 1465 01a2 04       		.byte	0x4
+ 1466 01a3 66       		.byte	0x66
+ 1467 01a4 AD000000 		.4byte	0xad
+ 1468 01a8 50       		.byte	0x50
+ 1469 01a9 07       		.uleb128 0x7
+ 1470 01aa 03040000 		.4byte	.LASF37
+ 1471 01ae 04       		.byte	0x4
+ 1472 01af 67       		.byte	0x67
+ 1473 01b0 97000000 		.4byte	0x97
+ 1474 01b4 54       		.byte	0x54
+ 1475 01b5 07       		.uleb128 0x7
+ 1476 01b6 73010000 		.4byte	.LASF38
+ 1477 01ba 04       		.byte	0x4
+ 1478 01bb 68       		.byte	0x68
+ 1479 01bc AD000000 		.4byte	0xad
+ 1480 01c0 58       		.byte	0x58
+ 1481 01c1 00       		.byte	0
+ 1482 01c2 08       		.uleb128 0x8
+ 1483 01c3 AD000000 		.4byte	0xad
+ 1484 01c7 D2010000 		.4byte	0x1d2
+ 1485 01cb 09       		.uleb128 0x9
+ 1486 01cc C9000000 		.4byte	0xc9
+ 1487 01d0 02       		.byte	0x2
+ 1488 01d1 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 34
+
+
+ 1489 01d2 03       		.uleb128 0x3
+ 1490 01d3 04060000 		.4byte	.LASF39
+ 1491 01d7 04       		.byte	0x4
+ 1492 01d8 69       		.byte	0x69
+ 1493 01d9 D5000000 		.4byte	0xd5
+ 1494 01dd 06       		.uleb128 0x6
+ 1495 01de 14       		.byte	0x14
+ 1496 01df 05       		.byte	0x5
+ 1497 01e0 81       		.byte	0x81
+ 1498 01e1 8E020000 		.4byte	0x28e
+ 1499 01e5 07       		.uleb128 0x7
+ 1500 01e6 4C000000 		.4byte	.LASF40
+ 1501 01ea 05       		.byte	0x5
+ 1502 01eb 82       		.byte	0x82
+ 1503 01ec 8C000000 		.4byte	0x8c
+ 1504 01f0 00       		.byte	0
+ 1505 01f1 07       		.uleb128 0x7
+ 1506 01f2 77020000 		.4byte	.LASF41
+ 1507 01f6 05       		.byte	0x5
+ 1508 01f7 83       		.byte	0x83
+ 1509 01f8 8C000000 		.4byte	0x8c
+ 1510 01fc 01       		.byte	0x1
+ 1511 01fd 07       		.uleb128 0x7
+ 1512 01fe F4030000 		.4byte	.LASF42
+ 1513 0202 05       		.byte	0x5
+ 1514 0203 84       		.byte	0x84
+ 1515 0204 8C000000 		.4byte	0x8c
+ 1516 0208 02       		.byte	0x2
+ 1517 0209 07       		.uleb128 0x7
+ 1518 020a 63020000 		.4byte	.LASF43
+ 1519 020e 05       		.byte	0x5
+ 1520 020f 85       		.byte	0x85
+ 1521 0210 8C000000 		.4byte	0x8c
+ 1522 0214 03       		.byte	0x3
+ 1523 0215 07       		.uleb128 0x7
+ 1524 0216 E0030000 		.4byte	.LASF44
+ 1525 021a 05       		.byte	0x5
+ 1526 021b 86       		.byte	0x86
+ 1527 021c 8C000000 		.4byte	0x8c
+ 1528 0220 04       		.byte	0x4
+ 1529 0221 07       		.uleb128 0x7
+ 1530 0222 CB010000 		.4byte	.LASF45
+ 1531 0226 05       		.byte	0x5
+ 1532 0227 87       		.byte	0x87
+ 1533 0228 8C000000 		.4byte	0x8c
+ 1534 022c 05       		.byte	0x5
+ 1535 022d 07       		.uleb128 0x7
+ 1536 022e 36030000 		.4byte	.LASF46
+ 1537 0232 05       		.byte	0x5
+ 1538 0233 88       		.byte	0x88
+ 1539 0234 8C000000 		.4byte	0x8c
+ 1540 0238 06       		.byte	0x6
+ 1541 0239 07       		.uleb128 0x7
+ 1542 023a D3020000 		.4byte	.LASF47
+ 1543 023e 05       		.byte	0x5
+ 1544 023f 89       		.byte	0x89
+ 1545 0240 8C000000 		.4byte	0x8c
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 35
+
+
+ 1546 0244 07       		.byte	0x7
+ 1547 0245 07       		.uleb128 0x7
+ 1548 0246 5D050000 		.4byte	.LASF48
+ 1549 024a 05       		.byte	0x5
+ 1550 024b 8A       		.byte	0x8a
+ 1551 024c 8C000000 		.4byte	0x8c
+ 1552 0250 08       		.byte	0x8
+ 1553 0251 07       		.uleb128 0x7
+ 1554 0252 C6030000 		.4byte	.LASF49
+ 1555 0256 05       		.byte	0x5
+ 1556 0257 8B       		.byte	0x8b
+ 1557 0258 8C000000 		.4byte	0x8c
+ 1558 025c 09       		.byte	0x9
+ 1559 025d 07       		.uleb128 0x7
+ 1560 025e 47040000 		.4byte	.LASF50
+ 1561 0262 05       		.byte	0x5
+ 1562 0263 8C       		.byte	0x8c
+ 1563 0264 8C000000 		.4byte	0x8c
+ 1564 0268 0A       		.byte	0xa
+ 1565 0269 07       		.uleb128 0x7
+ 1566 026a 0F020000 		.4byte	.LASF51
+ 1567 026e 05       		.byte	0x5
+ 1568 026f 8D       		.byte	0x8d
+ 1569 0270 8C000000 		.4byte	0x8c
+ 1570 0274 0B       		.byte	0xb
+ 1571 0275 07       		.uleb128 0x7
+ 1572 0276 EC020000 		.4byte	.LASF52
+ 1573 027a 05       		.byte	0x5
+ 1574 027b 8E       		.byte	0x8e
+ 1575 027c 8C000000 		.4byte	0x8c
+ 1576 0280 0C       		.byte	0xc
+ 1577 0281 07       		.uleb128 0x7
+ 1578 0282 DE020000 		.4byte	.LASF53
+ 1579 0286 05       		.byte	0x5
+ 1580 0287 90       		.byte	0x90
+ 1581 0288 AD000000 		.4byte	0xad
+ 1582 028c 10       		.byte	0x10
+ 1583 028d 00       		.byte	0
+ 1584 028e 03       		.uleb128 0x3
+ 1585 028f 6C000000 		.4byte	.LASF54
+ 1586 0293 05       		.byte	0x5
+ 1587 0294 92       		.byte	0x92
+ 1588 0295 DD010000 		.4byte	0x1dd
+ 1589 0299 06       		.uleb128 0x6
+ 1590 029a 0C       		.byte	0xc
+ 1591 029b 06       		.byte	0x6
+ 1592 029c 5C       		.byte	0x5c
+ 1593 029d C6020000 		.4byte	0x2c6
+ 1594 02a1 07       		.uleb128 0x7
+ 1595 02a2 47030000 		.4byte	.LASF55
+ 1596 02a6 06       		.byte	0x6
+ 1597 02a7 5D       		.byte	0x5d
+ 1598 02a8 AD000000 		.4byte	0xad
+ 1599 02ac 00       		.byte	0
+ 1600 02ad 07       		.uleb128 0x7
+ 1601 02ae DE020000 		.4byte	.LASF53
+ 1602 02b2 06       		.byte	0x6
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 36
+
+
+ 1603 02b3 5E       		.byte	0x5e
+ 1604 02b4 AD000000 		.4byte	0xad
+ 1605 02b8 04       		.byte	0x4
+ 1606 02b9 07       		.uleb128 0x7
+ 1607 02ba 64030000 		.4byte	.LASF56
+ 1608 02be 06       		.byte	0x6
+ 1609 02bf 5F       		.byte	0x5f
+ 1610 02c0 8C000000 		.4byte	0x8c
+ 1611 02c4 08       		.byte	0x8
+ 1612 02c5 00       		.byte	0
+ 1613 02c6 03       		.uleb128 0x3
+ 1614 02c7 76030000 		.4byte	.LASF57
+ 1615 02cb 06       		.byte	0x6
+ 1616 02cc 63       		.byte	0x63
+ 1617 02cd 99020000 		.4byte	0x299
+ 1618 02d1 0A       		.uleb128 0xa
+ 1619 02d2 80050000 		.4byte	.LASF60
+ 1620 02d6 01       		.byte	0x1
+ 1621 02d7 21       		.byte	0x21
+ 1622 02d8 00000000 		.4byte	.LFB64
+ 1623 02dc 6C000000 		.4byte	.LFE64-.LFB64
+ 1624 02e0 01       		.uleb128 0x1
+ 1625 02e1 9C       		.byte	0x9c
+ 1626 02e2 03030000 		.4byte	0x303
+ 1627 02e6 0B       		.uleb128 0xb
+ 1628 02e7 52000000 		.4byte	.LASF58
+ 1629 02eb 01       		.byte	0x1
+ 1630 02ec 21       		.byte	0x21
+ 1631 02ed 03030000 		.4byte	0x303
+ 1632 02f1 02       		.uleb128 0x2
+ 1633 02f2 91       		.byte	0x91
+ 1634 02f3 74       		.sleb128 -12
+ 1635 02f4 0B       		.uleb128 0xb
+ 1636 02f5 88050000 		.4byte	.LASF59
+ 1637 02f9 01       		.byte	0x1
+ 1638 02fa 21       		.byte	0x21
+ 1639 02fb 09030000 		.4byte	0x309
+ 1640 02ff 02       		.uleb128 0x2
+ 1641 0300 91       		.byte	0x91
+ 1642 0301 70       		.sleb128 -16
+ 1643 0302 00       		.byte	0
+ 1644 0303 0C       		.uleb128 0xc
+ 1645 0304 04       		.byte	0x4
+ 1646 0305 AD000000 		.4byte	0xad
+ 1647 0309 0C       		.uleb128 0xc
+ 1648 030a 04       		.byte	0x4
+ 1649 030b C6020000 		.4byte	0x2c6
+ 1650 030f 0A       		.uleb128 0xa
+ 1651 0310 03010000 		.4byte	.LASF61
+ 1652 0314 01       		.byte	0x1
+ 1653 0315 51       		.byte	0x51
+ 1654 0316 00000000 		.4byte	.LFB65
+ 1655 031a 34050000 		.4byte	.LFE65-.LFB65
+ 1656 031e 01       		.uleb128 0x1
+ 1657 031f 9C       		.byte	0x9c
+ 1658 0320 A1040000 		.4byte	0x4a1
+ 1659 0324 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 37
+
+
+ 1660 0325 52000000 		.4byte	.LASF58
+ 1661 0329 01       		.byte	0x1
+ 1662 032a 51       		.byte	0x51
+ 1663 032b 03030000 		.4byte	0x303
+ 1664 032f 03       		.uleb128 0x3
+ 1665 0330 91       		.byte	0x91
+ 1666 0331 9C7F     		.sleb128 -100
+ 1667 0333 0B       		.uleb128 0xb
+ 1668 0334 88050000 		.4byte	.LASF59
+ 1669 0338 01       		.byte	0x1
+ 1670 0339 51       		.byte	0x51
+ 1671 033a 09030000 		.4byte	0x309
+ 1672 033e 03       		.uleb128 0x3
+ 1673 033f 91       		.byte	0x91
+ 1674 0340 987F     		.sleb128 -104
+ 1675 0342 0B       		.uleb128 0xb
+ 1676 0343 90050000 		.4byte	.LASF62
+ 1677 0347 01       		.byte	0x1
+ 1678 0348 51       		.byte	0x51
+ 1679 0349 03030000 		.4byte	0x303
+ 1680 034d 03       		.uleb128 0x3
+ 1681 034e 91       		.byte	0x91
+ 1682 034f 947F     		.sleb128 -108
+ 1683 0351 0B       		.uleb128 0xb
+ 1684 0352 E4010000 		.4byte	.LASF63
+ 1685 0356 01       		.byte	0x1
+ 1686 0357 51       		.byte	0x51
+ 1687 0358 03030000 		.4byte	0x303
+ 1688 035c 03       		.uleb128 0x3
+ 1689 035d 91       		.byte	0x91
+ 1690 035e 907F     		.sleb128 -112
+ 1691 0360 0B       		.uleb128 0xb
+ 1692 0361 B1050000 		.4byte	.LASF64
+ 1693 0365 01       		.byte	0x1
+ 1694 0366 51       		.byte	0x51
+ 1695 0367 AD000000 		.4byte	0xad
+ 1696 036b 02       		.uleb128 0x2
+ 1697 036c 91       		.byte	0x91
+ 1698 036d 00       		.sleb128 0
+ 1699 036e 0B       		.uleb128 0xb
+ 1700 036f 54010000 		.4byte	.LASF65
+ 1701 0373 01       		.byte	0x1
+ 1702 0374 52       		.byte	0x52
+ 1703 0375 8C000000 		.4byte	0x8c
+ 1704 0379 02       		.uleb128 0x2
+ 1705 037a 91       		.byte	0x91
+ 1706 037b 04       		.sleb128 4
+ 1707 037c 0B       		.uleb128 0xb
+ 1708 037d 5B010000 		.4byte	.LASF66
+ 1709 0381 01       		.byte	0x1
+ 1710 0382 52       		.byte	0x52
+ 1711 0383 8C000000 		.4byte	0x8c
+ 1712 0387 02       		.uleb128 0x2
+ 1713 0388 91       		.byte	0x91
+ 1714 0389 08       		.sleb128 8
+ 1715 038a 0B       		.uleb128 0xb
+ 1716 038b C7020000 		.4byte	.LASF67
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 38
+
+
+ 1717 038f 01       		.byte	0x1
+ 1718 0390 52       		.byte	0x52
+ 1719 0391 8C000000 		.4byte	0x8c
+ 1720 0395 02       		.uleb128 0x2
+ 1721 0396 91       		.byte	0x91
+ 1722 0397 0C       		.sleb128 12
+ 1723 0398 0B       		.uleb128 0xb
+ 1724 0399 6A040000 		.4byte	.LASF68
+ 1725 039d 01       		.byte	0x1
+ 1726 039e 52       		.byte	0x52
+ 1727 039f 8C000000 		.4byte	0x8c
+ 1728 03a3 02       		.uleb128 0x2
+ 1729 03a4 91       		.byte	0x91
+ 1730 03a5 10       		.sleb128 16
+ 1731 03a6 0D       		.uleb128 0xd
+ 1732 03a7 95030000 		.4byte	.LASF69
+ 1733 03ab 01       		.byte	0x1
+ 1734 03ac 54       		.byte	0x54
+ 1735 03ad AD000000 		.4byte	0xad
+ 1736 03b1 02       		.uleb128 0x2
+ 1737 03b2 91       		.byte	0x91
+ 1738 03b3 4C       		.sleb128 -52
+ 1739 03b4 0D       		.uleb128 0xd
+ 1740 03b5 AD020000 		.4byte	.LASF70
+ 1741 03b9 01       		.byte	0x1
+ 1742 03ba 55       		.byte	0x55
+ 1743 03bb AD000000 		.4byte	0xad
+ 1744 03bf 02       		.uleb128 0x2
+ 1745 03c0 91       		.byte	0x91
+ 1746 03c1 48       		.sleb128 -56
+ 1747 03c2 0D       		.uleb128 0xd
+ 1748 03c3 37000000 		.4byte	.LASF71
+ 1749 03c7 01       		.byte	0x1
+ 1750 03c8 56       		.byte	0x56
+ 1751 03c9 AD000000 		.4byte	0xad
+ 1752 03cd 02       		.uleb128 0x2
+ 1753 03ce 91       		.byte	0x91
+ 1754 03cf 5C       		.sleb128 -36
+ 1755 03d0 0D       		.uleb128 0xd
+ 1756 03d1 FF020000 		.4byte	.LASF72
+ 1757 03d5 01       		.byte	0x1
+ 1758 03d6 57       		.byte	0x57
+ 1759 03d7 AD000000 		.4byte	0xad
+ 1760 03db 02       		.uleb128 0x2
+ 1761 03dc 91       		.byte	0x91
+ 1762 03dd 58       		.sleb128 -40
+ 1763 03de 0D       		.uleb128 0xd
+ 1764 03df 6A010000 		.4byte	.LASF73
+ 1765 03e3 01       		.byte	0x1
+ 1766 03e4 58       		.byte	0x58
+ 1767 03e5 AD000000 		.4byte	0xad
+ 1768 03e9 02       		.uleb128 0x2
+ 1769 03ea 91       		.byte	0x91
+ 1770 03eb 44       		.sleb128 -60
+ 1771 03ec 0D       		.uleb128 0xd
+ 1772 03ed 6E020000 		.4byte	.LASF74
+ 1773 03f1 01       		.byte	0x1
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 39
+
+
+ 1774 03f2 59       		.byte	0x59
+ 1775 03f3 AD000000 		.4byte	0xad
+ 1776 03f7 02       		.uleb128 0x2
+ 1777 03f8 91       		.byte	0x91
+ 1778 03f9 40       		.sleb128 -64
+ 1779 03fa 0D       		.uleb128 0xd
+ 1780 03fb 68050000 		.4byte	.LASF75
+ 1781 03ff 01       		.byte	0x1
+ 1782 0400 5C       		.byte	0x5c
+ 1783 0401 AD000000 		.4byte	0xad
+ 1784 0405 02       		.uleb128 0x2
+ 1785 0406 91       		.byte	0x91
+ 1786 0407 54       		.sleb128 -44
+ 1787 0408 0D       		.uleb128 0xd
+ 1788 0409 77050000 		.4byte	.LASF76
+ 1789 040d 01       		.byte	0x1
+ 1790 040e 67       		.byte	0x67
+ 1791 040f 97000000 		.4byte	0x97
+ 1792 0413 03       		.uleb128 0x3
+ 1793 0414 91       		.byte	0x91
+ 1794 0415 BE7F     		.sleb128 -66
+ 1795 0417 0E       		.uleb128 0xe
+ 1796 0418 00000000 		.4byte	.Ldebug_ranges0+0
+ 1797 041c 0D       		.uleb128 0xd
+ 1798 041d AB040000 		.4byte	.LASF77
+ 1799 0421 01       		.byte	0x1
+ 1800 0422 73       		.byte	0x73
+ 1801 0423 AD000000 		.4byte	0xad
+ 1802 0427 03       		.uleb128 0x3
+ 1803 0428 91       		.byte	0x91
+ 1804 0429 B87F     		.sleb128 -72
+ 1805 042b 0D       		.uleb128 0xd
+ 1806 042c C5050000 		.4byte	.LASF78
+ 1807 0430 01       		.byte	0x1
+ 1808 0431 74       		.byte	0x74
+ 1809 0432 AD000000 		.4byte	0xad
+ 1810 0436 03       		.uleb128 0x3
+ 1811 0437 91       		.byte	0x91
+ 1812 0438 B47F     		.sleb128 -76
+ 1813 043a 0D       		.uleb128 0xd
+ 1814 043b 99050000 		.4byte	.LASF79
+ 1815 043f 01       		.byte	0x1
+ 1816 0440 90       		.byte	0x90
+ 1817 0441 AD000000 		.4byte	0xad
+ 1818 0445 03       		.uleb128 0x3
+ 1819 0446 91       		.byte	0x91
+ 1820 0447 B07F     		.sleb128 -80
+ 1821 0449 0D       		.uleb128 0xd
+ 1822 044a 31000000 		.4byte	.LASF80
+ 1823 044e 01       		.byte	0x1
+ 1824 044f 91       		.byte	0x91
+ 1825 0450 AD000000 		.4byte	0xad
+ 1826 0454 03       		.uleb128 0x3
+ 1827 0455 91       		.byte	0x91
+ 1828 0456 AC7F     		.sleb128 -84
+ 1829 0458 0D       		.uleb128 0xd
+ 1830 0459 ED030000 		.4byte	.LASF81
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 40
+
+
+ 1831 045d 01       		.byte	0x1
+ 1832 045e 94       		.byte	0x94
+ 1833 045f AD000000 		.4byte	0xad
+ 1834 0463 03       		.uleb128 0x3
+ 1835 0464 91       		.byte	0x91
+ 1836 0465 A07F     		.sleb128 -96
+ 1837 0467 0D       		.uleb128 0xd
+ 1838 0468 FC030000 		.4byte	.LASF82
+ 1839 046c 01       		.byte	0x1
+ 1840 046d 95       		.byte	0x95
+ 1841 046e AD000000 		.4byte	0xad
+ 1842 0472 03       		.uleb128 0x3
+ 1843 0473 91       		.byte	0x91
+ 1844 0474 A47F     		.sleb128 -92
+ 1845 0476 0D       		.uleb128 0xd
+ 1846 0477 82010000 		.4byte	.LASF83
+ 1847 047b 01       		.byte	0x1
+ 1848 047c 96       		.byte	0x96
+ 1849 047d AD000000 		.4byte	0xad
+ 1850 0481 03       		.uleb128 0x3
+ 1851 0482 91       		.byte	0x91
+ 1852 0483 A87F     		.sleb128 -88
+ 1853 0485 0F       		.uleb128 0xf
+ 1854 0486 6900     		.ascii	"i\000"
+ 1855 0488 01       		.byte	0x1
+ 1856 0489 97       		.byte	0x97
+ 1857 048a 97000000 		.4byte	0x97
+ 1858 048e 02       		.uleb128 0x2
+ 1859 048f 91       		.byte	0x91
+ 1860 0490 52       		.sleb128 -46
+ 1861 0491 0D       		.uleb128 0xd
+ 1862 0492 D0040000 		.4byte	.LASF84
+ 1863 0496 01       		.byte	0x1
+ 1864 0497 98       		.byte	0x98
+ 1865 0498 8C000000 		.4byte	0x8c
+ 1866 049c 02       		.uleb128 0x2
+ 1867 049d 91       		.byte	0x91
+ 1868 049e 51       		.sleb128 -47
+ 1869 049f 00       		.byte	0
+ 1870 04a0 00       		.byte	0
+ 1871 04a1 0A       		.uleb128 0xa
+ 1872 04a2 0A010000 		.4byte	.LASF85
+ 1873 04a6 01       		.byte	0x1
+ 1874 04a7 BD       		.byte	0xbd
+ 1875 04a8 00000000 		.4byte	.LFB66
+ 1876 04ac 2C000000 		.4byte	.LFE66-.LFB66
+ 1877 04b0 01       		.uleb128 0x1
+ 1878 04b1 9C       		.byte	0x9c
+ 1879 04b2 C5040000 		.4byte	0x4c5
+ 1880 04b6 0B       		.uleb128 0xb
+ 1881 04b7 6E030000 		.4byte	.LASF86
+ 1882 04bb 01       		.byte	0x1
+ 1883 04bc BD       		.byte	0xbd
+ 1884 04bd AD000000 		.4byte	0xad
+ 1885 04c1 02       		.uleb128 0x2
+ 1886 04c2 91       		.byte	0x91
+ 1887 04c3 74       		.sleb128 -12
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 41
+
+
+ 1888 04c4 00       		.byte	0
+ 1889 04c5 0A       		.uleb128 0xa
+ 1890 04c6 82040000 		.4byte	.LASF87
+ 1891 04ca 01       		.byte	0x1
+ 1892 04cb C8       		.byte	0xc8
+ 1893 04cc 00000000 		.4byte	.LFB67
+ 1894 04d0 50000000 		.4byte	.LFE67-.LFB67
+ 1895 04d4 01       		.uleb128 0x1
+ 1896 04d5 9C       		.byte	0x9c
+ 1897 04d6 E9040000 		.4byte	0x4e9
+ 1898 04da 0B       		.uleb128 0xb
+ 1899 04db 2C040000 		.4byte	.LASF88
+ 1900 04df 01       		.byte	0x1
+ 1901 04e0 C8       		.byte	0xc8
+ 1902 04e1 8C000000 		.4byte	0x8c
+ 1903 04e5 02       		.uleb128 0x2
+ 1904 04e6 91       		.byte	0x91
+ 1905 04e7 77       		.sleb128 -9
+ 1906 04e8 00       		.byte	0
+ 1907 04e9 10       		.uleb128 0x10
+ 1908 04ea 8C020000 		.4byte	.LASF107
+ 1909 04ee 01       		.byte	0x1
+ 1910 04ef 0601     		.2byte	0x106
+ 1911 04f1 8C000000 		.4byte	0x8c
+ 1912 04f5 00000000 		.4byte	.LFB68
+ 1913 04f9 18010000 		.4byte	.LFE68-.LFB68
+ 1914 04fd 01       		.uleb128 0x1
+ 1915 04fe 9C       		.byte	0x9c
+ 1916 04ff 4F050000 		.4byte	0x54f
+ 1917 0503 11       		.uleb128 0x11
+ 1918 0504 52000000 		.4byte	.LASF58
+ 1919 0508 01       		.byte	0x1
+ 1920 0509 0601     		.2byte	0x106
+ 1921 050b 03030000 		.4byte	0x303
+ 1922 050f 02       		.uleb128 0x2
+ 1923 0510 91       		.byte	0x91
+ 1924 0511 6C       		.sleb128 -20
+ 1925 0512 11       		.uleb128 0x11
+ 1926 0513 88050000 		.4byte	.LASF59
+ 1927 0517 01       		.byte	0x1
+ 1928 0518 0601     		.2byte	0x106
+ 1929 051a 09030000 		.4byte	0x309
+ 1930 051e 02       		.uleb128 0x2
+ 1931 051f 91       		.byte	0x91
+ 1932 0520 68       		.sleb128 -24
+ 1933 0521 11       		.uleb128 0x11
+ 1934 0522 EB010000 		.4byte	.LASF89
+ 1935 0526 01       		.byte	0x1
+ 1936 0527 0601     		.2byte	0x106
+ 1937 0529 8C000000 		.4byte	0x8c
+ 1938 052d 02       		.uleb128 0x2
+ 1939 052e 91       		.byte	0x91
+ 1940 052f 67       		.sleb128 -25
+ 1941 0530 12       		.uleb128 0x12
+ 1942 0531 13010000 		.4byte	.LASF90
+ 1943 0535 01       		.byte	0x1
+ 1944 0536 1001     		.2byte	0x110
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 42
+
+
+ 1945 0538 8C000000 		.4byte	0x8c
+ 1946 053c 02       		.uleb128 0x2
+ 1947 053d 91       		.byte	0x91
+ 1948 053e 77       		.sleb128 -9
+ 1949 053f 12       		.uleb128 0x12
+ 1950 0540 F3040000 		.4byte	.LASF91
+ 1951 0544 01       		.byte	0x1
+ 1952 0545 1101     		.2byte	0x111
+ 1953 0547 8C000000 		.4byte	0x8c
+ 1954 054b 02       		.uleb128 0x2
+ 1955 054c 91       		.byte	0x91
+ 1956 054d 76       		.sleb128 -10
+ 1957 054e 00       		.byte	0
+ 1958 054f 13       		.uleb128 0x13
+ 1959 0550 9F050000 		.4byte	.LASF92
+ 1960 0554 01       		.byte	0x1
+ 1961 0555 4901     		.2byte	0x149
+ 1962 0557 00000000 		.4byte	.LFB69
+ 1963 055b 90000000 		.4byte	.LFE69-.LFB69
+ 1964 055f 01       		.uleb128 0x1
+ 1965 0560 9C       		.byte	0x9c
+ 1966 0561 93050000 		.4byte	0x593
+ 1967 0565 11       		.uleb128 0x11
+ 1968 0566 7D020000 		.4byte	.LASF93
+ 1969 056a 01       		.byte	0x1
+ 1970 056b 4901     		.2byte	0x149
+ 1971 056d 03030000 		.4byte	0x303
+ 1972 0571 02       		.uleb128 0x2
+ 1973 0572 91       		.byte	0x91
+ 1974 0573 6C       		.sleb128 -20
+ 1975 0574 11       		.uleb128 0x11
+ 1976 0575 88050000 		.4byte	.LASF59
+ 1977 0579 01       		.byte	0x1
+ 1978 057a 4901     		.2byte	0x149
+ 1979 057c 09030000 		.4byte	0x309
+ 1980 0580 02       		.uleb128 0x2
+ 1981 0581 91       		.byte	0x91
+ 1982 0582 68       		.sleb128 -24
+ 1983 0583 12       		.uleb128 0x12
+ 1984 0584 BA030000 		.4byte	.LASF94
+ 1985 0588 01       		.byte	0x1
+ 1986 0589 4D01     		.2byte	0x14d
+ 1987 058b 8C000000 		.4byte	0x8c
+ 1988 058f 02       		.uleb128 0x2
+ 1989 0590 91       		.byte	0x91
+ 1990 0591 77       		.sleb128 -9
+ 1991 0592 00       		.byte	0
+ 1992 0593 14       		.uleb128 0x14
+ 1993 0594 3C020000 		.4byte	.LASF108
+ 1994 0598 01       		.byte	0x1
+ 1995 0599 6701     		.2byte	0x167
+ 1996 059b 00000000 		.4byte	.LFB70
+ 1997 059f 6C000000 		.4byte	.LFE70-.LFB70
+ 1998 05a3 01       		.uleb128 0x1
+ 1999 05a4 9C       		.byte	0x9c
+ 2000 05a5 15       		.uleb128 0x15
+ 2001 05a6 B8050000 		.4byte	.LASF95
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 43
+
+
+ 2002 05aa 07       		.byte	0x7
+ 2003 05ab 1207     		.2byte	0x712
+ 2004 05ad B1050000 		.4byte	0x5b1
+ 2005 05b1 05       		.uleb128 0x5
+ 2006 05b2 A2000000 		.4byte	0xa2
+ 2007 05b6 16       		.uleb128 0x16
+ 2008 05b7 90010000 		.4byte	.LASF96
+ 2009 05bb 04       		.byte	0x4
+ 2010 05bc 6A       		.byte	0x6a
+ 2011 05bd D2010000 		.4byte	0x1d2
+ 2012 05c1 17       		.uleb128 0x17
+ 2013 05c2 73797300 		.ascii	"sys\000"
+ 2014 05c6 05       		.byte	0x5
+ 2015 05c7 93       		.byte	0x93
+ 2016 05c8 8E020000 		.4byte	0x28e
+ 2017 05cc 08       		.uleb128 0x8
+ 2018 05cd A2000000 		.4byte	0xa2
+ 2019 05d1 DC050000 		.4byte	0x5dc
+ 2020 05d5 09       		.uleb128 0x9
+ 2021 05d6 C9000000 		.4byte	0xc9
+ 2022 05da 02       		.byte	0x2
+ 2023 05db 00       		.byte	0
+ 2024 05dc 18       		.uleb128 0x18
+ 2025 05dd BE010000 		.4byte	.LASF97
+ 2026 05e1 05       		.byte	0x5
+ 2027 05e2 96       		.byte	0x96
+ 2028 05e3 CC050000 		.4byte	0x5cc
+ 2029 05e7 05       		.uleb128 0x5
+ 2030 05e8 03       		.byte	0x3
+ 2031 05e9 00000000 		.4byte	sys_position
+ 2032 05ed 18       		.uleb128 0x18
+ 2033 05ee BD040000 		.4byte	.LASF98
+ 2034 05f2 05       		.byte	0x5
+ 2035 05f3 97       		.byte	0x97
+ 2036 05f4 CC050000 		.4byte	0x5cc
+ 2037 05f8 05       		.uleb128 0x5
+ 2038 05f9 03       		.byte	0x3
+ 2039 05fa 00000000 		.4byte	sys_probe_position
+ 2040 05fe 18       		.uleb128 0x18
+ 2041 05ff 37040000 		.4byte	.LASF99
+ 2042 0603 05       		.byte	0x5
+ 2043 0604 99       		.byte	0x99
+ 2044 0605 D0000000 		.4byte	0xd0
+ 2045 0609 05       		.uleb128 0x5
+ 2046 060a 03       		.byte	0x3
+ 2047 060b 00000000 		.4byte	sys_probe_state
+ 2048 060f 18       		.uleb128 0x18
+ 2049 0610 E1050000 		.4byte	.LASF100
+ 2050 0614 05       		.byte	0x5
+ 2051 0615 9A       		.byte	0x9a
+ 2052 0616 D0000000 		.4byte	0xd0
+ 2053 061a 05       		.uleb128 0x5
+ 2054 061b 03       		.byte	0x3
+ 2055 061c 00000000 		.4byte	sys_rt_exec_state
+ 2056 0620 18       		.uleb128 0x18
+ 2057 0621 00000000 		.4byte	.LASF101
+ 2058 0625 05       		.byte	0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 44
+
+
+ 2059 0626 9B       		.byte	0x9b
+ 2060 0627 D0000000 		.4byte	0xd0
+ 2061 062b 05       		.uleb128 0x5
+ 2062 062c 03       		.byte	0x3
+ 2063 062d 00000000 		.4byte	sys_rt_exec_alarm
+ 2064 0631 18       		.uleb128 0x18
+ 2065 0632 07030000 		.4byte	.LASF102
+ 2066 0636 05       		.byte	0x5
+ 2067 0637 9C       		.byte	0x9c
+ 2068 0638 D0000000 		.4byte	0xd0
+ 2069 063c 05       		.uleb128 0x5
+ 2070 063d 03       		.byte	0x3
+ 2071 063e 00000000 		.4byte	sys_rt_exec_motion_override
+ 2072 0642 18       		.uleb128 0x18
+ 2073 0643 12000000 		.4byte	.LASF103
+ 2074 0647 05       		.byte	0x5
+ 2075 0648 9D       		.byte	0x9d
+ 2076 0649 D0000000 		.4byte	0xd0
+ 2077 064d 05       		.uleb128 0x5
+ 2078 064e 03       		.byte	0x3
+ 2079 064f 00000000 		.4byte	sys_rt_exec_accessory_override
+ 2080 0653 00       		.byte	0
+ 2081              		.section	.debug_abbrev,"",%progbits
+ 2082              	.Ldebug_abbrev0:
+ 2083 0000 01       		.uleb128 0x1
+ 2084 0001 11       		.uleb128 0x11
+ 2085 0002 01       		.byte	0x1
+ 2086 0003 25       		.uleb128 0x25
+ 2087 0004 0E       		.uleb128 0xe
+ 2088 0005 13       		.uleb128 0x13
+ 2089 0006 0B       		.uleb128 0xb
+ 2090 0007 03       		.uleb128 0x3
+ 2091 0008 0E       		.uleb128 0xe
+ 2092 0009 1B       		.uleb128 0x1b
+ 2093 000a 0E       		.uleb128 0xe
+ 2094 000b 55       		.uleb128 0x55
+ 2095 000c 17       		.uleb128 0x17
+ 2096 000d 11       		.uleb128 0x11
+ 2097 000e 01       		.uleb128 0x1
+ 2098 000f 10       		.uleb128 0x10
+ 2099 0010 17       		.uleb128 0x17
+ 2100 0011 00       		.byte	0
+ 2101 0012 00       		.byte	0
+ 2102 0013 02       		.uleb128 0x2
+ 2103 0014 24       		.uleb128 0x24
+ 2104 0015 00       		.byte	0
+ 2105 0016 0B       		.uleb128 0xb
+ 2106 0017 0B       		.uleb128 0xb
+ 2107 0018 3E       		.uleb128 0x3e
+ 2108 0019 0B       		.uleb128 0xb
+ 2109 001a 03       		.uleb128 0x3
+ 2110 001b 0E       		.uleb128 0xe
+ 2111 001c 00       		.byte	0
+ 2112 001d 00       		.byte	0
+ 2113 001e 03       		.uleb128 0x3
+ 2114 001f 16       		.uleb128 0x16
+ 2115 0020 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 45
+
+
+ 2116 0021 03       		.uleb128 0x3
+ 2117 0022 0E       		.uleb128 0xe
+ 2118 0023 3A       		.uleb128 0x3a
+ 2119 0024 0B       		.uleb128 0xb
+ 2120 0025 3B       		.uleb128 0x3b
+ 2121 0026 0B       		.uleb128 0xb
+ 2122 0027 49       		.uleb128 0x49
+ 2123 0028 13       		.uleb128 0x13
+ 2124 0029 00       		.byte	0
+ 2125 002a 00       		.byte	0
+ 2126 002b 04       		.uleb128 0x4
+ 2127 002c 24       		.uleb128 0x24
+ 2128 002d 00       		.byte	0
+ 2129 002e 0B       		.uleb128 0xb
+ 2130 002f 0B       		.uleb128 0xb
+ 2131 0030 3E       		.uleb128 0x3e
+ 2132 0031 0B       		.uleb128 0xb
+ 2133 0032 03       		.uleb128 0x3
+ 2134 0033 08       		.uleb128 0x8
+ 2135 0034 00       		.byte	0
+ 2136 0035 00       		.byte	0
+ 2137 0036 05       		.uleb128 0x5
+ 2138 0037 35       		.uleb128 0x35
+ 2139 0038 00       		.byte	0
+ 2140 0039 49       		.uleb128 0x49
+ 2141 003a 13       		.uleb128 0x13
+ 2142 003b 00       		.byte	0
+ 2143 003c 00       		.byte	0
+ 2144 003d 06       		.uleb128 0x6
+ 2145 003e 13       		.uleb128 0x13
+ 2146 003f 01       		.byte	0x1
+ 2147 0040 0B       		.uleb128 0xb
+ 2148 0041 0B       		.uleb128 0xb
+ 2149 0042 3A       		.uleb128 0x3a
+ 2150 0043 0B       		.uleb128 0xb
+ 2151 0044 3B       		.uleb128 0x3b
+ 2152 0045 0B       		.uleb128 0xb
+ 2153 0046 01       		.uleb128 0x1
+ 2154 0047 13       		.uleb128 0x13
+ 2155 0048 00       		.byte	0
+ 2156 0049 00       		.byte	0
+ 2157 004a 07       		.uleb128 0x7
+ 2158 004b 0D       		.uleb128 0xd
+ 2159 004c 00       		.byte	0
+ 2160 004d 03       		.uleb128 0x3
+ 2161 004e 0E       		.uleb128 0xe
+ 2162 004f 3A       		.uleb128 0x3a
+ 2163 0050 0B       		.uleb128 0xb
+ 2164 0051 3B       		.uleb128 0x3b
+ 2165 0052 0B       		.uleb128 0xb
+ 2166 0053 49       		.uleb128 0x49
+ 2167 0054 13       		.uleb128 0x13
+ 2168 0055 38       		.uleb128 0x38
+ 2169 0056 0B       		.uleb128 0xb
+ 2170 0057 00       		.byte	0
+ 2171 0058 00       		.byte	0
+ 2172 0059 08       		.uleb128 0x8
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 46
+
+
+ 2173 005a 01       		.uleb128 0x1
+ 2174 005b 01       		.byte	0x1
+ 2175 005c 49       		.uleb128 0x49
+ 2176 005d 13       		.uleb128 0x13
+ 2177 005e 01       		.uleb128 0x1
+ 2178 005f 13       		.uleb128 0x13
+ 2179 0060 00       		.byte	0
+ 2180 0061 00       		.byte	0
+ 2181 0062 09       		.uleb128 0x9
+ 2182 0063 21       		.uleb128 0x21
+ 2183 0064 00       		.byte	0
+ 2184 0065 49       		.uleb128 0x49
+ 2185 0066 13       		.uleb128 0x13
+ 2186 0067 2F       		.uleb128 0x2f
+ 2187 0068 0B       		.uleb128 0xb
+ 2188 0069 00       		.byte	0
+ 2189 006a 00       		.byte	0
+ 2190 006b 0A       		.uleb128 0xa
+ 2191 006c 2E       		.uleb128 0x2e
+ 2192 006d 01       		.byte	0x1
+ 2193 006e 3F       		.uleb128 0x3f
+ 2194 006f 19       		.uleb128 0x19
+ 2195 0070 03       		.uleb128 0x3
+ 2196 0071 0E       		.uleb128 0xe
+ 2197 0072 3A       		.uleb128 0x3a
+ 2198 0073 0B       		.uleb128 0xb
+ 2199 0074 3B       		.uleb128 0x3b
+ 2200 0075 0B       		.uleb128 0xb
+ 2201 0076 27       		.uleb128 0x27
+ 2202 0077 19       		.uleb128 0x19
+ 2203 0078 11       		.uleb128 0x11
+ 2204 0079 01       		.uleb128 0x1
+ 2205 007a 12       		.uleb128 0x12
+ 2206 007b 06       		.uleb128 0x6
+ 2207 007c 40       		.uleb128 0x40
+ 2208 007d 18       		.uleb128 0x18
+ 2209 007e 9642     		.uleb128 0x2116
+ 2210 0080 19       		.uleb128 0x19
+ 2211 0081 01       		.uleb128 0x1
+ 2212 0082 13       		.uleb128 0x13
+ 2213 0083 00       		.byte	0
+ 2214 0084 00       		.byte	0
+ 2215 0085 0B       		.uleb128 0xb
+ 2216 0086 05       		.uleb128 0x5
+ 2217 0087 00       		.byte	0
+ 2218 0088 03       		.uleb128 0x3
+ 2219 0089 0E       		.uleb128 0xe
+ 2220 008a 3A       		.uleb128 0x3a
+ 2221 008b 0B       		.uleb128 0xb
+ 2222 008c 3B       		.uleb128 0x3b
+ 2223 008d 0B       		.uleb128 0xb
+ 2224 008e 49       		.uleb128 0x49
+ 2225 008f 13       		.uleb128 0x13
+ 2226 0090 02       		.uleb128 0x2
+ 2227 0091 18       		.uleb128 0x18
+ 2228 0092 00       		.byte	0
+ 2229 0093 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 47
+
+
+ 2230 0094 0C       		.uleb128 0xc
+ 2231 0095 0F       		.uleb128 0xf
+ 2232 0096 00       		.byte	0
+ 2233 0097 0B       		.uleb128 0xb
+ 2234 0098 0B       		.uleb128 0xb
+ 2235 0099 49       		.uleb128 0x49
+ 2236 009a 13       		.uleb128 0x13
+ 2237 009b 00       		.byte	0
+ 2238 009c 00       		.byte	0
+ 2239 009d 0D       		.uleb128 0xd
+ 2240 009e 34       		.uleb128 0x34
+ 2241 009f 00       		.byte	0
+ 2242 00a0 03       		.uleb128 0x3
+ 2243 00a1 0E       		.uleb128 0xe
+ 2244 00a2 3A       		.uleb128 0x3a
+ 2245 00a3 0B       		.uleb128 0xb
+ 2246 00a4 3B       		.uleb128 0x3b
+ 2247 00a5 0B       		.uleb128 0xb
+ 2248 00a6 49       		.uleb128 0x49
+ 2249 00a7 13       		.uleb128 0x13
+ 2250 00a8 02       		.uleb128 0x2
+ 2251 00a9 18       		.uleb128 0x18
+ 2252 00aa 00       		.byte	0
+ 2253 00ab 00       		.byte	0
+ 2254 00ac 0E       		.uleb128 0xe
+ 2255 00ad 0B       		.uleb128 0xb
+ 2256 00ae 01       		.byte	0x1
+ 2257 00af 55       		.uleb128 0x55
+ 2258 00b0 17       		.uleb128 0x17
+ 2259 00b1 00       		.byte	0
+ 2260 00b2 00       		.byte	0
+ 2261 00b3 0F       		.uleb128 0xf
+ 2262 00b4 34       		.uleb128 0x34
+ 2263 00b5 00       		.byte	0
+ 2264 00b6 03       		.uleb128 0x3
+ 2265 00b7 08       		.uleb128 0x8
+ 2266 00b8 3A       		.uleb128 0x3a
+ 2267 00b9 0B       		.uleb128 0xb
+ 2268 00ba 3B       		.uleb128 0x3b
+ 2269 00bb 0B       		.uleb128 0xb
+ 2270 00bc 49       		.uleb128 0x49
+ 2271 00bd 13       		.uleb128 0x13
+ 2272 00be 02       		.uleb128 0x2
+ 2273 00bf 18       		.uleb128 0x18
+ 2274 00c0 00       		.byte	0
+ 2275 00c1 00       		.byte	0
+ 2276 00c2 10       		.uleb128 0x10
+ 2277 00c3 2E       		.uleb128 0x2e
+ 2278 00c4 01       		.byte	0x1
+ 2279 00c5 3F       		.uleb128 0x3f
+ 2280 00c6 19       		.uleb128 0x19
+ 2281 00c7 03       		.uleb128 0x3
+ 2282 00c8 0E       		.uleb128 0xe
+ 2283 00c9 3A       		.uleb128 0x3a
+ 2284 00ca 0B       		.uleb128 0xb
+ 2285 00cb 3B       		.uleb128 0x3b
+ 2286 00cc 05       		.uleb128 0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 48
+
+
+ 2287 00cd 27       		.uleb128 0x27
+ 2288 00ce 19       		.uleb128 0x19
+ 2289 00cf 49       		.uleb128 0x49
+ 2290 00d0 13       		.uleb128 0x13
+ 2291 00d1 11       		.uleb128 0x11
+ 2292 00d2 01       		.uleb128 0x1
+ 2293 00d3 12       		.uleb128 0x12
+ 2294 00d4 06       		.uleb128 0x6
+ 2295 00d5 40       		.uleb128 0x40
+ 2296 00d6 18       		.uleb128 0x18
+ 2297 00d7 9642     		.uleb128 0x2116
+ 2298 00d9 19       		.uleb128 0x19
+ 2299 00da 01       		.uleb128 0x1
+ 2300 00db 13       		.uleb128 0x13
+ 2301 00dc 00       		.byte	0
+ 2302 00dd 00       		.byte	0
+ 2303 00de 11       		.uleb128 0x11
+ 2304 00df 05       		.uleb128 0x5
+ 2305 00e0 00       		.byte	0
+ 2306 00e1 03       		.uleb128 0x3
+ 2307 00e2 0E       		.uleb128 0xe
+ 2308 00e3 3A       		.uleb128 0x3a
+ 2309 00e4 0B       		.uleb128 0xb
+ 2310 00e5 3B       		.uleb128 0x3b
+ 2311 00e6 05       		.uleb128 0x5
+ 2312 00e7 49       		.uleb128 0x49
+ 2313 00e8 13       		.uleb128 0x13
+ 2314 00e9 02       		.uleb128 0x2
+ 2315 00ea 18       		.uleb128 0x18
+ 2316 00eb 00       		.byte	0
+ 2317 00ec 00       		.byte	0
+ 2318 00ed 12       		.uleb128 0x12
+ 2319 00ee 34       		.uleb128 0x34
+ 2320 00ef 00       		.byte	0
+ 2321 00f0 03       		.uleb128 0x3
+ 2322 00f1 0E       		.uleb128 0xe
+ 2323 00f2 3A       		.uleb128 0x3a
+ 2324 00f3 0B       		.uleb128 0xb
+ 2325 00f4 3B       		.uleb128 0x3b
+ 2326 00f5 05       		.uleb128 0x5
+ 2327 00f6 49       		.uleb128 0x49
+ 2328 00f7 13       		.uleb128 0x13
+ 2329 00f8 02       		.uleb128 0x2
+ 2330 00f9 18       		.uleb128 0x18
+ 2331 00fa 00       		.byte	0
+ 2332 00fb 00       		.byte	0
+ 2333 00fc 13       		.uleb128 0x13
+ 2334 00fd 2E       		.uleb128 0x2e
+ 2335 00fe 01       		.byte	0x1
+ 2336 00ff 3F       		.uleb128 0x3f
+ 2337 0100 19       		.uleb128 0x19
+ 2338 0101 03       		.uleb128 0x3
+ 2339 0102 0E       		.uleb128 0xe
+ 2340 0103 3A       		.uleb128 0x3a
+ 2341 0104 0B       		.uleb128 0xb
+ 2342 0105 3B       		.uleb128 0x3b
+ 2343 0106 05       		.uleb128 0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 49
+
+
+ 2344 0107 27       		.uleb128 0x27
+ 2345 0108 19       		.uleb128 0x19
+ 2346 0109 11       		.uleb128 0x11
+ 2347 010a 01       		.uleb128 0x1
+ 2348 010b 12       		.uleb128 0x12
+ 2349 010c 06       		.uleb128 0x6
+ 2350 010d 40       		.uleb128 0x40
+ 2351 010e 18       		.uleb128 0x18
+ 2352 010f 9642     		.uleb128 0x2116
+ 2353 0111 19       		.uleb128 0x19
+ 2354 0112 01       		.uleb128 0x1
+ 2355 0113 13       		.uleb128 0x13
+ 2356 0114 00       		.byte	0
+ 2357 0115 00       		.byte	0
+ 2358 0116 14       		.uleb128 0x14
+ 2359 0117 2E       		.uleb128 0x2e
+ 2360 0118 00       		.byte	0
+ 2361 0119 3F       		.uleb128 0x3f
+ 2362 011a 19       		.uleb128 0x19
+ 2363 011b 03       		.uleb128 0x3
+ 2364 011c 0E       		.uleb128 0xe
+ 2365 011d 3A       		.uleb128 0x3a
+ 2366 011e 0B       		.uleb128 0xb
+ 2367 011f 3B       		.uleb128 0x3b
+ 2368 0120 05       		.uleb128 0x5
+ 2369 0121 11       		.uleb128 0x11
+ 2370 0122 01       		.uleb128 0x1
+ 2371 0123 12       		.uleb128 0x12
+ 2372 0124 06       		.uleb128 0x6
+ 2373 0125 40       		.uleb128 0x40
+ 2374 0126 18       		.uleb128 0x18
+ 2375 0127 9642     		.uleb128 0x2116
+ 2376 0129 19       		.uleb128 0x19
+ 2377 012a 00       		.byte	0
+ 2378 012b 00       		.byte	0
+ 2379 012c 15       		.uleb128 0x15
+ 2380 012d 34       		.uleb128 0x34
+ 2381 012e 00       		.byte	0
+ 2382 012f 03       		.uleb128 0x3
+ 2383 0130 0E       		.uleb128 0xe
+ 2384 0131 3A       		.uleb128 0x3a
+ 2385 0132 0B       		.uleb128 0xb
+ 2386 0133 3B       		.uleb128 0x3b
+ 2387 0134 05       		.uleb128 0x5
+ 2388 0135 49       		.uleb128 0x49
+ 2389 0136 13       		.uleb128 0x13
+ 2390 0137 3F       		.uleb128 0x3f
+ 2391 0138 19       		.uleb128 0x19
+ 2392 0139 3C       		.uleb128 0x3c
+ 2393 013a 19       		.uleb128 0x19
+ 2394 013b 00       		.byte	0
+ 2395 013c 00       		.byte	0
+ 2396 013d 16       		.uleb128 0x16
+ 2397 013e 34       		.uleb128 0x34
+ 2398 013f 00       		.byte	0
+ 2399 0140 03       		.uleb128 0x3
+ 2400 0141 0E       		.uleb128 0xe
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 50
+
+
+ 2401 0142 3A       		.uleb128 0x3a
+ 2402 0143 0B       		.uleb128 0xb
+ 2403 0144 3B       		.uleb128 0x3b
+ 2404 0145 0B       		.uleb128 0xb
+ 2405 0146 49       		.uleb128 0x49
+ 2406 0147 13       		.uleb128 0x13
+ 2407 0148 3F       		.uleb128 0x3f
+ 2408 0149 19       		.uleb128 0x19
+ 2409 014a 3C       		.uleb128 0x3c
+ 2410 014b 19       		.uleb128 0x19
+ 2411 014c 00       		.byte	0
+ 2412 014d 00       		.byte	0
+ 2413 014e 17       		.uleb128 0x17
+ 2414 014f 34       		.uleb128 0x34
+ 2415 0150 00       		.byte	0
+ 2416 0151 03       		.uleb128 0x3
+ 2417 0152 08       		.uleb128 0x8
+ 2418 0153 3A       		.uleb128 0x3a
+ 2419 0154 0B       		.uleb128 0xb
+ 2420 0155 3B       		.uleb128 0x3b
+ 2421 0156 0B       		.uleb128 0xb
+ 2422 0157 49       		.uleb128 0x49
+ 2423 0158 13       		.uleb128 0x13
+ 2424 0159 3F       		.uleb128 0x3f
+ 2425 015a 19       		.uleb128 0x19
+ 2426 015b 3C       		.uleb128 0x3c
+ 2427 015c 19       		.uleb128 0x19
+ 2428 015d 00       		.byte	0
+ 2429 015e 00       		.byte	0
+ 2430 015f 18       		.uleb128 0x18
+ 2431 0160 34       		.uleb128 0x34
+ 2432 0161 00       		.byte	0
+ 2433 0162 03       		.uleb128 0x3
+ 2434 0163 0E       		.uleb128 0xe
+ 2435 0164 3A       		.uleb128 0x3a
+ 2436 0165 0B       		.uleb128 0xb
+ 2437 0166 3B       		.uleb128 0x3b
+ 2438 0167 0B       		.uleb128 0xb
+ 2439 0168 49       		.uleb128 0x49
+ 2440 0169 13       		.uleb128 0x13
+ 2441 016a 3F       		.uleb128 0x3f
+ 2442 016b 19       		.uleb128 0x19
+ 2443 016c 02       		.uleb128 0x2
+ 2444 016d 18       		.uleb128 0x18
+ 2445 016e 00       		.byte	0
+ 2446 016f 00       		.byte	0
+ 2447 0170 00       		.byte	0
+ 2448              		.section	.debug_aranges,"",%progbits
+ 2449 0000 4C000000 		.4byte	0x4c
+ 2450 0004 0200     		.2byte	0x2
+ 2451 0006 00000000 		.4byte	.Ldebug_info0
+ 2452 000a 04       		.byte	0x4
+ 2453 000b 00       		.byte	0
+ 2454 000c 0000     		.2byte	0
+ 2455 000e 0000     		.2byte	0
+ 2456 0010 00000000 		.4byte	.LFB64
+ 2457 0014 6C000000 		.4byte	.LFE64-.LFB64
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 51
+
+
+ 2458 0018 00000000 		.4byte	.LFB65
+ 2459 001c 34050000 		.4byte	.LFE65-.LFB65
+ 2460 0020 00000000 		.4byte	.LFB66
+ 2461 0024 2C000000 		.4byte	.LFE66-.LFB66
+ 2462 0028 00000000 		.4byte	.LFB67
+ 2463 002c 50000000 		.4byte	.LFE67-.LFB67
+ 2464 0030 00000000 		.4byte	.LFB68
+ 2465 0034 18010000 		.4byte	.LFE68-.LFB68
+ 2466 0038 00000000 		.4byte	.LFB69
+ 2467 003c 90000000 		.4byte	.LFE69-.LFB69
+ 2468 0040 00000000 		.4byte	.LFB70
+ 2469 0044 6C000000 		.4byte	.LFE70-.LFB70
+ 2470 0048 00000000 		.4byte	0
+ 2471 004c 00000000 		.4byte	0
+ 2472              		.section	.debug_ranges,"",%progbits
+ 2473              	.Ldebug_ranges0:
+ 2474 0000 2A020000 		.4byte	.LBB2
+ 2475 0004 1A050000 		.4byte	.LBE2
+ 2476 0008 24050000 		.4byte	.LBB3
+ 2477 000c 26050000 		.4byte	.LBE3
+ 2478 0010 00000000 		.4byte	0
+ 2479 0014 00000000 		.4byte	0
+ 2480 0018 00000000 		.4byte	.LFB64
+ 2481 001c 6C000000 		.4byte	.LFE64
+ 2482 0020 00000000 		.4byte	.LFB65
+ 2483 0024 34050000 		.4byte	.LFE65
+ 2484 0028 00000000 		.4byte	.LFB66
+ 2485 002c 2C000000 		.4byte	.LFE66
+ 2486 0030 00000000 		.4byte	.LFB67
+ 2487 0034 50000000 		.4byte	.LFE67
+ 2488 0038 00000000 		.4byte	.LFB68
+ 2489 003c 18010000 		.4byte	.LFE68
+ 2490 0040 00000000 		.4byte	.LFB69
+ 2491 0044 90000000 		.4byte	.LFE69
+ 2492 0048 00000000 		.4byte	.LFB70
+ 2493 004c 6C000000 		.4byte	.LFE70
+ 2494 0050 00000000 		.4byte	0
+ 2495 0054 00000000 		.4byte	0
+ 2496              		.section	.debug_line,"",%progbits
+ 2497              	.Ldebug_line0:
+ 2498 0000 F8020000 		.section	.debug_str,"MS",%progbits,1
+ 2498      02007001 
+ 2498      00000201 
+ 2498      FB0E0D00 
+ 2498      01010101 
+ 2499              	.LASF101:
+ 2500 0000 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 2500      72745F65 
+ 2500      7865635F 
+ 2500      616C6172 
+ 2500      6D00
+ 2501              	.LASF103:
+ 2502 0012 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 2502      72745F65 
+ 2502      7865635F 
+ 2502      61636365 
+ 2502      73736F72 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 52
+
+
+ 2503              	.LASF80:
+ 2504 0031 73696E5F 		.ascii	"sin_T\000"
+ 2504      5400
+ 2505              	.LASF71:
+ 2506 0037 725F6178 		.ascii	"r_axis0\000"
+ 2506      69733000 
+ 2507              	.LASF22:
+ 2508 003f 61636365 		.ascii	"acceleration\000"
+ 2508      6C657261 
+ 2508      74696F6E 
+ 2508      00
+ 2509              	.LASF40:
+ 2510 004c 73746174 		.ascii	"state\000"
+ 2510      6500
+ 2511              	.LASF58:
+ 2512 0052 74617267 		.ascii	"target\000"
+ 2512      657400
+ 2513              	.LASF2:
+ 2514 0059 73686F72 		.ascii	"short int\000"
+ 2514      7420696E 
+ 2514      7400
+ 2515              	.LASF19:
+ 2516 0063 73697A65 		.ascii	"sizetype\000"
+ 2516      74797065 
+ 2516      00
+ 2517              	.LASF54:
+ 2518 006c 73797374 		.ascii	"system_t\000"
+ 2518      656D5F74 
+ 2518      00
+ 2519              	.LASF104:
+ 2520 0075 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 2520      43313120 
+ 2520      352E342E 
+ 2520      31203230 
+ 2520      31363036 
+ 2521 00a8 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 2521      20726576 
+ 2521      6973696F 
+ 2521      6E203233 
+ 2521      37373135 
+ 2522 00db 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 2522      66756E63 
+ 2522      74696F6E 
+ 2522      2D736563 
+ 2522      74696F6E 
+ 2523              	.LASF61:
+ 2524 0103 6D635F61 		.ascii	"mc_arc\000"
+ 2524      726300
+ 2525              	.LASF85:
+ 2526 010a 6D635F64 		.ascii	"mc_dwell\000"
+ 2526      77656C6C 
+ 2526      00
+ 2527              	.LASF90:
+ 2528 0113 69735F70 		.ascii	"is_probe_away\000"
+ 2528      726F6265 
+ 2528      5F617761 
+ 2528      7900
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 53
+
+
+ 2529              	.LASF4:
+ 2530 0121 5F5F7569 		.ascii	"__uint16_t\000"
+ 2530      6E743136 
+ 2530      5F7400
+ 2531              	.LASF105:
+ 2532 012c 6D6F7469 		.ascii	"motion_control.c\000"
+ 2532      6F6E5F63 
+ 2532      6F6E7472 
+ 2532      6F6C2E63 
+ 2532      00
+ 2533              	.LASF27:
+ 2534 013d 73746570 		.ascii	"stepper_idle_lock_time\000"
+ 2534      7065725F 
+ 2534      69646C65 
+ 2534      5F6C6F63 
+ 2534      6B5F7469 
+ 2535              	.LASF65:
+ 2536 0154 61786973 		.ascii	"axis_0\000"
+ 2536      5F3000
+ 2537              	.LASF66:
+ 2538 015b 61786973 		.ascii	"axis_1\000"
+ 2538      5F3100
+ 2539              	.LASF12:
+ 2540 0162 75696E74 		.ascii	"uint8_t\000"
+ 2540      385F7400 
+ 2541              	.LASF73:
+ 2542 016a 72745F61 		.ascii	"rt_axis0\000"
+ 2542      78697330 
+ 2542      00
+ 2543              	.LASF38:
+ 2544 0173 686F6D69 		.ascii	"homing_pulloff\000"
+ 2544      6E675F70 
+ 2544      756C6C6F 
+ 2544      666600
+ 2545              	.LASF83:
+ 2546 0182 725F6178 		.ascii	"r_axisi\000"
+ 2546      69736900 
+ 2547              	.LASF15:
+ 2548 018a 666C6F61 		.ascii	"float\000"
+ 2548      7400
+ 2549              	.LASF96:
+ 2550 0190 73657474 		.ascii	"settings\000"
+ 2550      696E6773 
+ 2550      00
+ 2551              	.LASF9:
+ 2552 0199 6C6F6E67 		.ascii	"long long int\000"
+ 2552      206C6F6E 
+ 2552      6720696E 
+ 2552      7400
+ 2553              	.LASF10:
+ 2554 01a7 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 2554      206C6F6E 
+ 2554      6720756E 
+ 2554      7369676E 
+ 2554      65642069 
+ 2555              	.LASF97:
+ 2556 01be 7379735F 		.ascii	"sys_position\000"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 54
+
+
+ 2556      706F7369 
+ 2556      74696F6E 
+ 2556      00
+ 2557              	.LASF45:
+ 2558 01cb 70726F62 		.ascii	"probe_succeeded\000"
+ 2558      655F7375 
+ 2558      63636565 
+ 2558      64656400 
+ 2559              	.LASF7:
+ 2560 01db 6C6F6E67 		.ascii	"long int\000"
+ 2560      20696E74 
+ 2560      00
+ 2561              	.LASF63:
+ 2562 01e4 6F666673 		.ascii	"offset\000"
+ 2562      657400
+ 2563              	.LASF89:
+ 2564 01eb 70617273 		.ascii	"parser_flags\000"
+ 2564      65725F66 
+ 2564      6C616773 
+ 2564      00
+ 2565              	.LASF20:
+ 2566 01f8 73746570 		.ascii	"steps_per_mm\000"
+ 2566      735F7065 
+ 2566      725F6D6D 
+ 2566      00
+ 2567              	.LASF3:
+ 2568 0205 5F5F7569 		.ascii	"__uint8_t\000"
+ 2568      6E74385F 
+ 2568      7400
+ 2569              	.LASF51:
+ 2570 020f 7265706F 		.ascii	"report_ovr_counter\000"
+ 2570      72745F6F 
+ 2570      76725F63 
+ 2570      6F756E74 
+ 2570      657200
+ 2571              	.LASF30:
+ 2572 0222 6172635F 		.ascii	"arc_tolerance\000"
+ 2572      746F6C65 
+ 2572      72616E63 
+ 2572      6500
+ 2573              	.LASF18:
+ 2574 0230 6C6F6E67 		.ascii	"long double\000"
+ 2574      20646F75 
+ 2574      626C6500 
+ 2575              	.LASF108:
+ 2576 023c 6D635F72 		.ascii	"mc_reset\000"
+ 2576      65736574 
+ 2576      00
+ 2577              	.LASF34:
+ 2578 0245 686F6D69 		.ascii	"homing_dir_mask\000"
+ 2578      6E675F64 
+ 2578      69725F6D 
+ 2578      61736B00 
+ 2579              	.LASF1:
+ 2580 0255 756E7369 		.ascii	"unsigned char\000"
+ 2580      676E6564 
+ 2580      20636861 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 55
+
+
+ 2580      7200
+ 2581              	.LASF43:
+ 2582 0263 736F6674 		.ascii	"soft_limit\000"
+ 2582      5F6C696D 
+ 2582      697400
+ 2583              	.LASF74:
+ 2584 026e 72745F61 		.ascii	"rt_axis1\000"
+ 2584      78697331 
+ 2584      00
+ 2585              	.LASF41:
+ 2586 0277 61626F72 		.ascii	"abort\000"
+ 2586      7400
+ 2587              	.LASF93:
+ 2588 027d 7061726B 		.ascii	"parking_target\000"
+ 2588      696E675F 
+ 2588      74617267 
+ 2588      657400
+ 2589              	.LASF107:
+ 2590 028c 6D635F70 		.ascii	"mc_probe_cycle\000"
+ 2590      726F6265 
+ 2590      5F637963 
+ 2590      6C6500
+ 2591              	.LASF0:
+ 2592 029b 7369676E 		.ascii	"signed char\000"
+ 2592      65642063 
+ 2592      68617200 
+ 2593              	.LASF33:
+ 2594 02a7 666C6167 		.ascii	"flags\000"
+ 2594      7300
+ 2595              	.LASF70:
+ 2596 02ad 63656E74 		.ascii	"center_axis1\000"
+ 2596      65725F61 
+ 2596      78697331 
+ 2596      00
+ 2597              	.LASF11:
+ 2598 02ba 756E7369 		.ascii	"unsigned int\000"
+ 2598      676E6564 
+ 2598      20696E74 
+ 2598      00
+ 2599              	.LASF67:
+ 2600 02c7 61786973 		.ascii	"axis_linear\000"
+ 2600      5F6C696E 
+ 2600      65617200 
+ 2601              	.LASF47:
+ 2602 02d3 665F6F76 		.ascii	"f_override\000"
+ 2602      65727269 
+ 2602      646500
+ 2603              	.LASF53:
+ 2604 02de 7370696E 		.ascii	"spindle_speed\000"
+ 2604      646C655F 
+ 2604      73706565 
+ 2604      6400
+ 2605              	.LASF52:
+ 2606 02ec 7265706F 		.ascii	"report_wco_counter\000"
+ 2606      72745F77 
+ 2606      636F5F63 
+ 2606      6F756E74 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 56
+
+
+ 2606      657200
+ 2607              	.LASF72:
+ 2608 02ff 725F6178 		.ascii	"r_axis1\000"
+ 2608      69733100 
+ 2609              	.LASF102:
+ 2610 0307 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 2610      72745F65 
+ 2610      7865635F 
+ 2610      6D6F7469 
+ 2610      6F6E5F6F 
+ 2611              	.LASF28:
+ 2612 0323 73746174 		.ascii	"status_report_mask\000"
+ 2612      75735F72 
+ 2612      65706F72 
+ 2612      745F6D61 
+ 2612      736B00
+ 2613              	.LASF46:
+ 2614 0336 686F6D69 		.ascii	"homing_axis_lock\000"
+ 2614      6E675F61 
+ 2614      7869735F 
+ 2614      6C6F636B 
+ 2614      00
+ 2615              	.LASF55:
+ 2616 0347 66656564 		.ascii	"feed_rate\000"
+ 2616      5F726174 
+ 2616      6500
+ 2617              	.LASF5:
+ 2618 0351 73686F72 		.ascii	"short unsigned int\000"
+ 2618      7420756E 
+ 2618      7369676E 
+ 2618      65642069 
+ 2618      6E7400
+ 2619              	.LASF56:
+ 2620 0364 636F6E64 		.ascii	"condition\000"
+ 2620      6974696F 
+ 2620      6E00
+ 2621              	.LASF86:
+ 2622 036e 7365636F 		.ascii	"seconds\000"
+ 2622      6E647300 
+ 2623              	.LASF57:
+ 2624 0376 706C616E 		.ascii	"plan_line_data_t\000"
+ 2624      5F6C696E 
+ 2624      655F6461 
+ 2624      74615F74 
+ 2624      00
+ 2625              	.LASF17:
+ 2626 0387 63686172 		.ascii	"char\000"
+ 2626      00
+ 2627              	.LASF13:
+ 2628 038c 75696E74 		.ascii	"uint16_t\000"
+ 2628      31365F74 
+ 2628      00
+ 2629              	.LASF69:
+ 2630 0395 63656E74 		.ascii	"center_axis0\000"
+ 2630      65725F61 
+ 2630      78697330 
+ 2630      00
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 57
+
+
+ 2631              	.LASF26:
+ 2632 03a2 6469725F 		.ascii	"dir_invert_mask\000"
+ 2632      696E7665 
+ 2632      72745F6D 
+ 2632      61736B00 
+ 2633              	.LASF14:
+ 2634 03b2 696E7433 		.ascii	"int32_t\000"
+ 2634      325F7400 
+ 2635              	.LASF94:
+ 2636 03ba 706C616E 		.ascii	"plan_status\000"
+ 2636      5F737461 
+ 2636      74757300 
+ 2637              	.LASF49:
+ 2638 03c6 7370696E 		.ascii	"spindle_speed_ovr\000"
+ 2638      646C655F 
+ 2638      73706565 
+ 2638      645F6F76 
+ 2638      7200
+ 2639              	.LASF31:
+ 2640 03d8 72706D5F 		.ascii	"rpm_max\000"
+ 2640      6D617800 
+ 2641              	.LASF44:
+ 2642 03e0 73746570 		.ascii	"step_control\000"
+ 2642      5F636F6E 
+ 2642      74726F6C 
+ 2642      00
+ 2643              	.LASF81:
+ 2644 03ed 73696E5F 		.ascii	"sin_Ti\000"
+ 2644      546900
+ 2645              	.LASF42:
+ 2646 03f4 73757370 		.ascii	"suspend\000"
+ 2646      656E6400 
+ 2647              	.LASF82:
+ 2648 03fc 636F735F 		.ascii	"cos_Ti\000"
+ 2648      546900
+ 2649              	.LASF37:
+ 2650 0403 686F6D69 		.ascii	"homing_debounce_delay\000"
+ 2650      6E675F64 
+ 2650      65626F75 
+ 2650      6E63655F 
+ 2650      64656C61 
+ 2651              	.LASF24:
+ 2652 0419 70756C73 		.ascii	"pulse_microseconds\000"
+ 2652      655F6D69 
+ 2652      63726F73 
+ 2652      65636F6E 
+ 2652      647300
+ 2653              	.LASF88:
+ 2654 042c 6379636C 		.ascii	"cycle_mask\000"
+ 2654      655F6D61 
+ 2654      736B00
+ 2655              	.LASF99:
+ 2656 0437 7379735F 		.ascii	"sys_probe_state\000"
+ 2656      70726F62 
+ 2656      655F7374 
+ 2656      61746500 
+ 2657              	.LASF50:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 58
+
+
+ 2658 0447 7370696E 		.ascii	"spindle_stop_ovr\000"
+ 2658      646C655F 
+ 2658      73746F70 
+ 2658      5F6F7672 
+ 2658      00
+ 2659              	.LASF8:
+ 2660 0458 6C6F6E67 		.ascii	"long unsigned int\000"
+ 2660      20756E73 
+ 2660      69676E65 
+ 2660      6420696E 
+ 2660      7400
+ 2661              	.LASF68:
+ 2662 046a 69735F63 		.ascii	"is_clockwise_arc\000"
+ 2662      6C6F636B 
+ 2662      77697365 
+ 2662      5F617263 
+ 2662      00
+ 2663              	.LASF16:
+ 2664 047b 646F7562 		.ascii	"double\000"
+ 2664      6C6500
+ 2665              	.LASF87:
+ 2666 0482 6D635F68 		.ascii	"mc_homing_cycle\000"
+ 2666      6F6D696E 
+ 2666      675F6379 
+ 2666      636C6500 
+ 2667              	.LASF36:
+ 2668 0492 686F6D69 		.ascii	"homing_seek_rate\000"
+ 2668      6E675F73 
+ 2668      65656B5F 
+ 2668      72617465 
+ 2668      00
+ 2669              	.LASF32:
+ 2670 04a3 72706D5F 		.ascii	"rpm_min\000"
+ 2670      6D696E00 
+ 2671              	.LASF77:
+ 2672 04ab 74686574 		.ascii	"theta_per_segment\000"
+ 2672      615F7065 
+ 2672      725F7365 
+ 2672      676D656E 
+ 2672      7400
+ 2673              	.LASF98:
+ 2674 04bd 7379735F 		.ascii	"sys_probe_position\000"
+ 2674      70726F62 
+ 2674      655F706F 
+ 2674      73697469 
+ 2674      6F6E00
+ 2675              	.LASF84:
+ 2676 04d0 636F756E 		.ascii	"count\000"
+ 2676      7400
+ 2677              	.LASF6:
+ 2678 04d6 5F5F696E 		.ascii	"__int32_t\000"
+ 2678      7433325F 
+ 2678      7400
+ 2679              	.LASF29:
+ 2680 04e0 6A756E63 		.ascii	"junction_deviation\000"
+ 2680      74696F6E 
+ 2680      5F646576 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 59
+
+
+ 2680      69617469 
+ 2680      6F6E00
+ 2681              	.LASF91:
+ 2682 04f3 69735F6E 		.ascii	"is_no_error\000"
+ 2682      6F5F6572 
+ 2682      726F7200 
+ 2683              	.LASF23:
+ 2684 04ff 6D61785F 		.ascii	"max_travel\000"
+ 2684      74726176 
+ 2684      656C00
+ 2685              	.LASF106:
+ 2686 050a 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 2686      73657273 
+ 2686      5C626172 
+ 2686      746F5C44 
+ 2686      726F7062 
+ 2687 0537 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 2687      5553425F 
+ 2687      4E617469 
+ 2687      76652E63 
+ 2687      7964736E 
+ 2688              	.LASF35:
+ 2689 054c 686F6D69 		.ascii	"homing_feed_rate\000"
+ 2689      6E675F66 
+ 2689      6565645F 
+ 2689      72617465 
+ 2689      00
+ 2690              	.LASF48:
+ 2691 055d 725F6F76 		.ascii	"r_override\000"
+ 2691      65727269 
+ 2691      646500
+ 2692              	.LASF75:
+ 2693 0568 616E6775 		.ascii	"angular_travel\000"
+ 2693      6C61725F 
+ 2693      74726176 
+ 2693      656C00
+ 2694              	.LASF76:
+ 2695 0577 7365676D 		.ascii	"segments\000"
+ 2695      656E7473 
+ 2695      00
+ 2696              	.LASF60:
+ 2697 0580 6D635F6C 		.ascii	"mc_line\000"
+ 2697      696E6500 
+ 2698              	.LASF59:
+ 2699 0588 706C5F64 		.ascii	"pl_data\000"
+ 2699      61746100 
+ 2700              	.LASF62:
+ 2701 0590 706F7369 		.ascii	"position\000"
+ 2701      74696F6E 
+ 2701      00
+ 2702              	.LASF79:
+ 2703 0599 636F735F 		.ascii	"cos_T\000"
+ 2703      5400
+ 2704              	.LASF92:
+ 2705 059f 6D635F70 		.ascii	"mc_parking_motion\000"
+ 2705      61726B69 
+ 2705      6E675F6D 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccaeNhec.s 			page 60
+
+
+ 2705      6F74696F 
+ 2705      6E00
+ 2706              	.LASF64:
+ 2707 05b1 72616469 		.ascii	"radius\000"
+ 2707      757300
+ 2708              	.LASF95:
+ 2709 05b8 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 2709      52784275 
+ 2709      66666572 
+ 2709      00
+ 2710              	.LASF78:
+ 2711 05c5 6C696E65 		.ascii	"linear_per_segment\000"
+ 2711      61725F70 
+ 2711      65725F73 
+ 2711      65676D65 
+ 2711      6E7400
+ 2712              	.LASF21:
+ 2713 05d8 6D61785F 		.ascii	"max_rate\000"
+ 2713      72617465 
+ 2713      00
+ 2714              	.LASF100:
+ 2715 05e1 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 2715      72745F65 
+ 2715      7865635F 
+ 2715      73746174 
+ 2715      6500
+ 2716              	.LASF25:
+ 2717 05f3 73746570 		.ascii	"step_invert_mask\000"
+ 2717      5F696E76 
+ 2717      6572745F 
+ 2717      6D61736B 
+ 2717      00
+ 2718              	.LASF39:
+ 2719 0604 73657474 		.ascii	"settings_t\000"
+ 2719      696E6773 
+ 2719      5F7400
+ 2720              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

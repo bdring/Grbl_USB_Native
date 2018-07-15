@@ -1,0 +1,948 @@
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"probe.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.comm	sys_position,12,4
+  20              		.comm	sys_probe_position,12,4
+  21              		.comm	sys_probe_state,1,1
+  22              		.comm	sys_rt_exec_state,1,1
+  23              		.comm	sys_rt_exec_alarm,1,1
+  24              		.comm	sys_rt_exec_motion_override,1,1
+  25              		.comm	sys_rt_exec_accessory_override,1,1
+  26              		.comm	probe_invert_mask,1,1
+  27              		.section	.text.probe_init,"ax",%progbits
+  28              		.align	2
+  29              		.global	probe_init
+  30              		.thumb
+  31              		.thumb_func
+  32              		.type	probe_init, %function
+  33              	probe_init:
+  34              	.LFB64:
+  35              		.file 1 "probe.c"
+   1:probe.c       **** /*
+   2:probe.c       ****   probe.c - code pertaining to probing methods
+   3:probe.c       ****   Part of Grbl
+   4:probe.c       **** 
+   5:probe.c       ****   Copyright (c) 2014-2016 Sungeun K. Jeon for Gnea Research LLC
+   6:probe.c       ****       Updated For PSOC BJD 2017
+   7:probe.c       **** 
+   8:probe.c       ****   Grbl is free software: you can redistribute it and/or modify
+   9:probe.c       ****   it under the terms of the GNU General Public License as published by
+  10:probe.c       ****   the Free Software Foundation, either version 3 of the License, or
+  11:probe.c       ****   (at your option) any later version.
+  12:probe.c       **** 
+  13:probe.c       ****   Grbl is distributed in the hope that it will be useful,
+  14:probe.c       ****   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  15:probe.c       ****   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  16:probe.c       ****   GNU General Public License for more details.
+  17:probe.c       **** 
+  18:probe.c       ****   You should have received a copy of the GNU General Public License
+  19:probe.c       ****   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  20:probe.c       **** */
+  21:probe.c       **** 
+  22:probe.c       **** #include "grbl.h"
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 2
+
+
+  23:probe.c       **** 
+  24:probe.c       **** 
+  25:probe.c       **** // Inverts the probe pin state depending on user settings and probing cycle mode.
+  26:probe.c       **** uint8_t probe_invert_mask;
+  27:probe.c       **** 
+  28:probe.c       **** 
+  29:probe.c       **** // Probe pin initialization routine.
+  30:probe.c       **** // PSoC not required, but leave in for compatibility.
+  31:probe.c       **** void probe_init()
+  32:probe.c       **** {
+  36              		.loc 1 32 0
+  37              		.cfi_startproc
+  38              		@ args = 0, pretend = 0, frame = 0
+  39              		@ frame_needed = 1, uses_anonymous_args = 0
+  40              		@ link register save eliminated.
+  41 0000 80B4     		push	{r7}
+  42              		.cfi_def_cfa_offset 4
+  43              		.cfi_offset 7, -4
+  44 0002 00AF     		add	r7, sp, #0
+  45              		.cfi_def_cfa_register 7
+  33:probe.c       ****  
+  34:probe.c       **** }
+  46              		.loc 1 34 0
+  47 0004 00BF     		nop
+  48 0006 BD46     		mov	sp, r7
+  49              		.cfi_def_cfa_register 13
+  50              		@ sp needed
+  51 0008 80BC     		pop	{r7}
+  52              		.cfi_restore 7
+  53              		.cfi_def_cfa_offset 0
+  54 000a 7047     		bx	lr
+  55              		.cfi_endproc
+  56              	.LFE64:
+  57              		.size	probe_init, .-probe_init
+  58              		.section	.text.probe_configure_invert_mask,"ax",%progbits
+  59              		.align	2
+  60              		.global	probe_configure_invert_mask
+  61              		.thumb
+  62              		.thumb_func
+  63              		.type	probe_configure_invert_mask, %function
+  64              	probe_configure_invert_mask:
+  65              	.LFB65:
+  35:probe.c       **** 
+  36:probe.c       **** 
+  37:probe.c       **** // Called by probe_init() and the mc_probe() routines. Sets up the probe pin invert mask to
+  38:probe.c       **** // appropriately set the pin logic according to setting for normal-high/normal-low operation
+  39:probe.c       **** // and the probing cycle modes for toward-workpiece/away-from-workpiece.
+  40:probe.c       **** void probe_configure_invert_mask(uint8_t is_probe_away)
+  41:probe.c       **** {
+  66              		.loc 1 41 0
+  67              		.cfi_startproc
+  68              		@ args = 0, pretend = 0, frame = 8
+  69              		@ frame_needed = 1, uses_anonymous_args = 0
+  70              		@ link register save eliminated.
+  71 0000 80B4     		push	{r7}
+  72              		.cfi_def_cfa_offset 4
+  73              		.cfi_offset 7, -4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 3
+
+
+  74 0002 83B0     		sub	sp, sp, #12
+  75              		.cfi_def_cfa_offset 16
+  76 0004 00AF     		add	r7, sp, #0
+  77              		.cfi_def_cfa_register 7
+  78 0006 0346     		mov	r3, r0
+  79 0008 FB71     		strb	r3, [r7, #7]
+  42:probe.c       ****  // PSoC Not required
+  43:probe.c       **** }
+  80              		.loc 1 43 0
+  81 000a 00BF     		nop
+  82 000c 0C37     		adds	r7, r7, #12
+  83              		.cfi_def_cfa_offset 4
+  84 000e BD46     		mov	sp, r7
+  85              		.cfi_def_cfa_register 13
+  86              		@ sp needed
+  87 0010 80BC     		pop	{r7}
+  88              		.cfi_restore 7
+  89              		.cfi_def_cfa_offset 0
+  90 0012 7047     		bx	lr
+  91              		.cfi_endproc
+  92              	.LFE65:
+  93              		.size	probe_configure_invert_mask, .-probe_configure_invert_mask
+  94              		.section	.text.probe_get_state,"ax",%progbits
+  95              		.align	2
+  96              		.global	probe_get_state
+  97              		.thumb
+  98              		.thumb_func
+  99              		.type	probe_get_state, %function
+ 100              	probe_get_state:
+ 101              	.LFB66:
+  44:probe.c       **** 
+  45:probe.c       **** 
+  46:probe.c       **** // Returns the probe pin state. Triggered = true. Called by gcode parser and probe state monitor.
+  47:probe.c       **** // PSoC Rewrite
+  48:probe.c       **** uint8_t probe_get_state() { return Status_Probe_Read(); }
+ 102              		.loc 1 48 0
+ 103              		.cfi_startproc
+ 104              		@ args = 0, pretend = 0, frame = 0
+ 105              		@ frame_needed = 1, uses_anonymous_args = 0
+ 106 0000 80B5     		push	{r7, lr}
+ 107              		.cfi_def_cfa_offset 8
+ 108              		.cfi_offset 7, -8
+ 109              		.cfi_offset 14, -4
+ 110 0002 00AF     		add	r7, sp, #0
+ 111              		.cfi_def_cfa_register 7
+ 112              		.loc 1 48 0
+ 113 0004 FFF7FEFF 		bl	Status_Probe_Read
+ 114 0008 0346     		mov	r3, r0
+ 115 000a 1846     		mov	r0, r3
+ 116 000c 80BD     		pop	{r7, pc}
+ 117              		.cfi_endproc
+ 118              	.LFE66:
+ 119              		.size	probe_get_state, .-probe_get_state
+ 120 000e 00BF     		.section	.text.probe_state_monitor,"ax",%progbits
+ 121              		.align	2
+ 122              		.global	probe_state_monitor
+ 123              		.thumb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 4
+
+
+ 124              		.thumb_func
+ 125              		.type	probe_state_monitor, %function
+ 126              	probe_state_monitor:
+ 127              	.LFB67:
+  49:probe.c       **** 
+  50:probe.c       **** 
+  51:probe.c       **** // Monitors probe pin state and records the system position when detected. Called by the
+  52:probe.c       **** // stepper ISR per ISR tick.
+  53:probe.c       **** // NOTE: This function must be extremely efficient as to not bog down the stepper ISR.
+  54:probe.c       **** void probe_state_monitor()
+  55:probe.c       **** {
+ 128              		.loc 1 55 0
+ 129              		.cfi_startproc
+ 130              		@ args = 0, pretend = 0, frame = 0
+ 131              		@ frame_needed = 1, uses_anonymous_args = 0
+ 132 0000 80B5     		push	{r7, lr}
+ 133              		.cfi_def_cfa_offset 8
+ 134              		.cfi_offset 7, -8
+ 135              		.cfi_offset 14, -4
+ 136 0002 00AF     		add	r7, sp, #0
+ 137              		.cfi_def_cfa_register 7
+  56:probe.c       ****   if (probe_get_state()) {
+ 138              		.loc 1 56 0
+ 139 0004 FFF7FEFF 		bl	probe_get_state
+ 140 0008 0346     		mov	r3, r0
+ 141 000a 002B     		cmp	r3, #0
+ 142 000c 0FD0     		beq	.L7
+  57:probe.c       ****     sys_probe_state = PROBE_OFF;
+ 143              		.loc 1 57 0
+ 144 000e 094B     		ldr	r3, .L8
+ 145 0010 0022     		movs	r2, #0
+ 146 0012 1A70     		strb	r2, [r3]
+  58:probe.c       ****     memcpy(sys_probe_position, sys_position, sizeof(sys_position));
+ 147              		.loc 1 58 0
+ 148 0014 084B     		ldr	r3, .L8+4
+ 149 0016 094A     		ldr	r2, .L8+8
+ 150 0018 07CA     		ldmia	r2, {r0, r1, r2}
+ 151 001a 83E80700 		stmia	r3, {r0, r1, r2}
+  59:probe.c       ****     bit_true(sys_rt_exec_state, EXEC_MOTION_CANCEL);
+ 152              		.loc 1 59 0
+ 153 001e 084B     		ldr	r3, .L8+12
+ 154 0020 1B78     		ldrb	r3, [r3]
+ 155 0022 DBB2     		uxtb	r3, r3
+ 156 0024 43F04003 		orr	r3, r3, #64
+ 157 0028 DAB2     		uxtb	r2, r3
+ 158 002a 054B     		ldr	r3, .L8+12
+ 159 002c 1A70     		strb	r2, [r3]
+ 160              	.L7:
+  60:probe.c       ****   }
+  61:probe.c       **** }
+ 161              		.loc 1 61 0
+ 162 002e 00BF     		nop
+ 163 0030 80BD     		pop	{r7, pc}
+ 164              	.L9:
+ 165 0032 00BF     		.align	2
+ 166              	.L8:
+ 167 0034 00000000 		.word	sys_probe_state
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 5
+
+
+ 168 0038 00000000 		.word	sys_probe_position
+ 169 003c 00000000 		.word	sys_position
+ 170 0040 00000000 		.word	sys_rt_exec_state
+ 171              		.cfi_endproc
+ 172              	.LFE67:
+ 173              		.size	probe_state_monitor, .-probe_state_monitor
+ 174              		.text
+ 175              	.Letext0:
+ 176              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 177              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.2\\psoc creator\\import\\gnu\\arm\\5.4.
+ 178              		.file 4 "Generated_Source\\PSoC5/core_cm3.h"
+ 179              		.file 5 "system.h"
+ 180              		.section	.debug_info,"",%progbits
+ 181              	.Ldebug_info0:
+ 182 0000 C0010000 		.4byte	0x1c0
+ 183 0004 0400     		.2byte	0x4
+ 184 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 185 000a 04       		.byte	0x4
+ 186 000b 01       		.uleb128 0x1
+ 187 000c 0A000000 		.4byte	.LASF29
+ 188 0010 0C       		.byte	0xc
+ 189 0011 A6020000 		.4byte	.LASF30
+ 190 0015 E0010000 		.4byte	.LASF31
+ 191 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 192 001d 00000000 		.4byte	0
+ 193 0021 00000000 		.4byte	.Ldebug_line0
+ 194 0025 02       		.uleb128 0x2
+ 195 0026 01       		.byte	0x1
+ 196 0027 06       		.byte	0x6
+ 197 0028 88020000 		.4byte	.LASF0
+ 198 002c 03       		.uleb128 0x3
+ 199 002d 00000000 		.4byte	.LASF4
+ 200 0031 02       		.byte	0x2
+ 201 0032 1D       		.byte	0x1d
+ 202 0033 37000000 		.4byte	0x37
+ 203 0037 02       		.uleb128 0x2
+ 204 0038 01       		.byte	0x1
+ 205 0039 08       		.byte	0x8
+ 206 003a 22010000 		.4byte	.LASF1
+ 207 003e 02       		.uleb128 0x2
+ 208 003f 02       		.byte	0x2
+ 209 0040 05       		.byte	0x5
+ 210 0041 42020000 		.4byte	.LASF2
+ 211 0045 02       		.uleb128 0x2
+ 212 0046 02       		.byte	0x2
+ 213 0047 07       		.byte	0x7
+ 214 0048 DA000000 		.4byte	.LASF3
+ 215 004c 03       		.uleb128 0x3
+ 216 004d B4000000 		.4byte	.LASF5
+ 217 0051 02       		.byte	0x2
+ 218 0052 3F       		.byte	0x3f
+ 219 0053 57000000 		.4byte	0x57
+ 220 0057 02       		.uleb128 0x2
+ 221 0058 04       		.byte	0x4
+ 222 0059 05       		.byte	0x5
+ 223 005a 6E020000 		.4byte	.LASF6
+ 224 005e 02       		.uleb128 0x2
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 6
+
+
+ 225 005f 04       		.byte	0x4
+ 226 0060 07       		.byte	0x7
+ 227 0061 30010000 		.4byte	.LASF7
+ 228 0065 02       		.uleb128 0x2
+ 229 0066 08       		.byte	0x8
+ 230 0067 05       		.byte	0x5
+ 231 0068 D2010000 		.4byte	.LASF8
+ 232 006c 02       		.uleb128 0x2
+ 233 006d 08       		.byte	0x8
+ 234 006e 07       		.byte	0x7
+ 235 006f A2010000 		.4byte	.LASF9
+ 236 0073 04       		.uleb128 0x4
+ 237 0074 04       		.byte	0x4
+ 238 0075 05       		.byte	0x5
+ 239 0076 696E7400 		.ascii	"int\000"
+ 240 007a 02       		.uleb128 0x2
+ 241 007b 04       		.byte	0x4
+ 242 007c 07       		.byte	0x7
+ 243 007d 95010000 		.4byte	.LASF10
+ 244 0081 03       		.uleb128 0x3
+ 245 0082 B9010000 		.4byte	.LASF11
+ 246 0086 03       		.byte	0x3
+ 247 0087 18       		.byte	0x18
+ 248 0088 2C000000 		.4byte	0x2c
+ 249 008c 03       		.uleb128 0x3
+ 250 008d C1010000 		.4byte	.LASF12
+ 251 0091 03       		.byte	0x3
+ 252 0092 2C       		.byte	0x2c
+ 253 0093 4C000000 		.4byte	0x4c
+ 254 0097 02       		.uleb128 0x2
+ 255 0098 04       		.byte	0x4
+ 256 0099 04       		.byte	0x4
+ 257 009a 01010000 		.4byte	.LASF13
+ 258 009e 02       		.uleb128 0x2
+ 259 009f 08       		.byte	0x8
+ 260 00a0 04       		.byte	0x4
+ 261 00a1 5C010000 		.4byte	.LASF14
+ 262 00a5 02       		.uleb128 0x2
+ 263 00a6 01       		.byte	0x1
+ 264 00a7 08       		.byte	0x8
+ 265 00a8 77020000 		.4byte	.LASF15
+ 266 00ac 02       		.uleb128 0x2
+ 267 00ad 08       		.byte	0x8
+ 268 00ae 04       		.byte	0x4
+ 269 00af 7C020000 		.4byte	.LASF16
+ 270 00b3 02       		.uleb128 0x2
+ 271 00b4 04       		.byte	0x4
+ 272 00b5 07       		.byte	0x7
+ 273 00b6 C9010000 		.4byte	.LASF17
+ 274 00ba 05       		.uleb128 0x5
+ 275 00bb 81000000 		.4byte	0x81
+ 276 00bf 06       		.uleb128 0x6
+ 277 00c0 17010000 		.4byte	.LASF18
+ 278 00c4 01       		.byte	0x1
+ 279 00c5 1F       		.byte	0x1f
+ 280 00c6 00000000 		.4byte	.LFB64
+ 281 00ca 0C000000 		.4byte	.LFE64-.LFB64
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 7
+
+
+ 282 00ce 01       		.uleb128 0x1
+ 283 00cf 9C       		.byte	0x9c
+ 284 00d0 07       		.uleb128 0x7
+ 285 00d1 BE000000 		.4byte	.LASF32
+ 286 00d5 01       		.byte	0x1
+ 287 00d6 28       		.byte	0x28
+ 288 00d7 00000000 		.4byte	.LFB65
+ 289 00db 14000000 		.4byte	.LFE65-.LFB65
+ 290 00df 01       		.uleb128 0x1
+ 291 00e0 9C       		.byte	0x9c
+ 292 00e1 F4000000 		.4byte	0xf4
+ 293 00e5 08       		.uleb128 0x8
+ 294 00e6 22020000 		.4byte	.LASF33
+ 295 00ea 01       		.byte	0x1
+ 296 00eb 28       		.byte	0x28
+ 297 00ec 81000000 		.4byte	0x81
+ 298 00f0 02       		.uleb128 0x2
+ 299 00f1 91       		.byte	0x91
+ 300 00f2 77       		.sleb128 -9
+ 301 00f3 00       		.byte	0
+ 302 00f4 09       		.uleb128 0x9
+ 303 00f5 4C020000 		.4byte	.LASF34
+ 304 00f9 01       		.byte	0x1
+ 305 00fa 30       		.byte	0x30
+ 306 00fb 81000000 		.4byte	0x81
+ 307 00ff 00000000 		.4byte	.LFB66
+ 308 0103 0E000000 		.4byte	.LFE66-.LFB66
+ 309 0107 01       		.uleb128 0x1
+ 310 0108 9C       		.byte	0x9c
+ 311 0109 0A       		.uleb128 0xa
+ 312 010a ED000000 		.4byte	.LASF19
+ 313 010e 01       		.byte	0x1
+ 314 010f 36       		.byte	0x36
+ 315 0110 00000000 		.4byte	.LFB67
+ 316 0114 44000000 		.4byte	.LFE67-.LFB67
+ 317 0118 01       		.uleb128 0x1
+ 318 0119 9C       		.byte	0x9c
+ 319 011a 0B       		.uleb128 0xb
+ 320 011b 4F010000 		.4byte	.LASF20
+ 321 011f 04       		.byte	0x4
+ 322 0120 1207     		.2byte	0x712
+ 323 0122 26010000 		.4byte	0x126
+ 324 0126 05       		.uleb128 0x5
+ 325 0127 8C000000 		.4byte	0x8c
+ 326 012b 0C       		.uleb128 0xc
+ 327 012c 8C000000 		.4byte	0x8c
+ 328 0130 3B010000 		.4byte	0x13b
+ 329 0134 0D       		.uleb128 0xd
+ 330 0135 B3000000 		.4byte	0xb3
+ 331 0139 02       		.byte	0x2
+ 332 013a 00       		.byte	0
+ 333 013b 0E       		.uleb128 0xe
+ 334 013c 42010000 		.4byte	.LASF21
+ 335 0140 05       		.byte	0x5
+ 336 0141 96       		.byte	0x96
+ 337 0142 2B010000 		.4byte	0x12b
+ 338 0146 05       		.uleb128 0x5
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 8
+
+
+ 339 0147 03       		.byte	0x3
+ 340 0148 00000000 		.4byte	sys_position
+ 341 014c 0E       		.uleb128 0xe
+ 342 014d 82010000 		.4byte	.LASF22
+ 343 0151 05       		.byte	0x5
+ 344 0152 97       		.byte	0x97
+ 345 0153 2B010000 		.4byte	0x12b
+ 346 0157 05       		.uleb128 0x5
+ 347 0158 03       		.byte	0x3
+ 348 0159 00000000 		.4byte	sys_probe_position
+ 349 015d 0E       		.uleb128 0xe
+ 350 015e 07010000 		.4byte	.LASF23
+ 351 0162 05       		.byte	0x5
+ 352 0163 99       		.byte	0x99
+ 353 0164 BA000000 		.4byte	0xba
+ 354 0168 05       		.uleb128 0x5
+ 355 0169 03       		.byte	0x3
+ 356 016a 00000000 		.4byte	sys_probe_state
+ 357 016e 0E       		.uleb128 0xe
+ 358 016f 94020000 		.4byte	.LASF24
+ 359 0173 05       		.byte	0x5
+ 360 0174 9A       		.byte	0x9a
+ 361 0175 BA000000 		.4byte	0xba
+ 362 0179 05       		.uleb128 0x5
+ 363 017a 03       		.byte	0x3
+ 364 017b 00000000 		.4byte	sys_rt_exec_state
+ 365 017f 0E       		.uleb128 0xe
+ 366 0180 5C020000 		.4byte	.LASF25
+ 367 0184 05       		.byte	0x5
+ 368 0185 9B       		.byte	0x9b
+ 369 0186 BA000000 		.4byte	0xba
+ 370 018a 05       		.uleb128 0x5
+ 371 018b 03       		.byte	0x3
+ 372 018c 00000000 		.4byte	sys_rt_exec_alarm
+ 373 0190 0E       		.uleb128 0xe
+ 374 0191 98000000 		.4byte	.LASF26
+ 375 0195 05       		.byte	0x5
+ 376 0196 9C       		.byte	0x9c
+ 377 0197 BA000000 		.4byte	0xba
+ 378 019b 05       		.uleb128 0x5
+ 379 019c 03       		.byte	0x3
+ 380 019d 00000000 		.4byte	sys_rt_exec_motion_override
+ 381 01a1 0E       		.uleb128 0xe
+ 382 01a2 63010000 		.4byte	.LASF27
+ 383 01a6 05       		.byte	0x5
+ 384 01a7 9D       		.byte	0x9d
+ 385 01a8 BA000000 		.4byte	0xba
+ 386 01ac 05       		.uleb128 0x5
+ 387 01ad 03       		.byte	0x3
+ 388 01ae 00000000 		.4byte	sys_rt_exec_accessory_override
+ 389 01b2 0E       		.uleb128 0xe
+ 390 01b3 30020000 		.4byte	.LASF28
+ 391 01b7 01       		.byte	0x1
+ 392 01b8 1A       		.byte	0x1a
+ 393 01b9 81000000 		.4byte	0x81
+ 394 01bd 05       		.uleb128 0x5
+ 395 01be 03       		.byte	0x3
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 9
+
+
+ 396 01bf 00000000 		.4byte	probe_invert_mask
+ 397 01c3 00       		.byte	0
+ 398              		.section	.debug_abbrev,"",%progbits
+ 399              	.Ldebug_abbrev0:
+ 400 0000 01       		.uleb128 0x1
+ 401 0001 11       		.uleb128 0x11
+ 402 0002 01       		.byte	0x1
+ 403 0003 25       		.uleb128 0x25
+ 404 0004 0E       		.uleb128 0xe
+ 405 0005 13       		.uleb128 0x13
+ 406 0006 0B       		.uleb128 0xb
+ 407 0007 03       		.uleb128 0x3
+ 408 0008 0E       		.uleb128 0xe
+ 409 0009 1B       		.uleb128 0x1b
+ 410 000a 0E       		.uleb128 0xe
+ 411 000b 55       		.uleb128 0x55
+ 412 000c 17       		.uleb128 0x17
+ 413 000d 11       		.uleb128 0x11
+ 414 000e 01       		.uleb128 0x1
+ 415 000f 10       		.uleb128 0x10
+ 416 0010 17       		.uleb128 0x17
+ 417 0011 00       		.byte	0
+ 418 0012 00       		.byte	0
+ 419 0013 02       		.uleb128 0x2
+ 420 0014 24       		.uleb128 0x24
+ 421 0015 00       		.byte	0
+ 422 0016 0B       		.uleb128 0xb
+ 423 0017 0B       		.uleb128 0xb
+ 424 0018 3E       		.uleb128 0x3e
+ 425 0019 0B       		.uleb128 0xb
+ 426 001a 03       		.uleb128 0x3
+ 427 001b 0E       		.uleb128 0xe
+ 428 001c 00       		.byte	0
+ 429 001d 00       		.byte	0
+ 430 001e 03       		.uleb128 0x3
+ 431 001f 16       		.uleb128 0x16
+ 432 0020 00       		.byte	0
+ 433 0021 03       		.uleb128 0x3
+ 434 0022 0E       		.uleb128 0xe
+ 435 0023 3A       		.uleb128 0x3a
+ 436 0024 0B       		.uleb128 0xb
+ 437 0025 3B       		.uleb128 0x3b
+ 438 0026 0B       		.uleb128 0xb
+ 439 0027 49       		.uleb128 0x49
+ 440 0028 13       		.uleb128 0x13
+ 441 0029 00       		.byte	0
+ 442 002a 00       		.byte	0
+ 443 002b 04       		.uleb128 0x4
+ 444 002c 24       		.uleb128 0x24
+ 445 002d 00       		.byte	0
+ 446 002e 0B       		.uleb128 0xb
+ 447 002f 0B       		.uleb128 0xb
+ 448 0030 3E       		.uleb128 0x3e
+ 449 0031 0B       		.uleb128 0xb
+ 450 0032 03       		.uleb128 0x3
+ 451 0033 08       		.uleb128 0x8
+ 452 0034 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 10
+
+
+ 453 0035 00       		.byte	0
+ 454 0036 05       		.uleb128 0x5
+ 455 0037 35       		.uleb128 0x35
+ 456 0038 00       		.byte	0
+ 457 0039 49       		.uleb128 0x49
+ 458 003a 13       		.uleb128 0x13
+ 459 003b 00       		.byte	0
+ 460 003c 00       		.byte	0
+ 461 003d 06       		.uleb128 0x6
+ 462 003e 2E       		.uleb128 0x2e
+ 463 003f 00       		.byte	0
+ 464 0040 3F       		.uleb128 0x3f
+ 465 0041 19       		.uleb128 0x19
+ 466 0042 03       		.uleb128 0x3
+ 467 0043 0E       		.uleb128 0xe
+ 468 0044 3A       		.uleb128 0x3a
+ 469 0045 0B       		.uleb128 0xb
+ 470 0046 3B       		.uleb128 0x3b
+ 471 0047 0B       		.uleb128 0xb
+ 472 0048 11       		.uleb128 0x11
+ 473 0049 01       		.uleb128 0x1
+ 474 004a 12       		.uleb128 0x12
+ 475 004b 06       		.uleb128 0x6
+ 476 004c 40       		.uleb128 0x40
+ 477 004d 18       		.uleb128 0x18
+ 478 004e 9742     		.uleb128 0x2117
+ 479 0050 19       		.uleb128 0x19
+ 480 0051 00       		.byte	0
+ 481 0052 00       		.byte	0
+ 482 0053 07       		.uleb128 0x7
+ 483 0054 2E       		.uleb128 0x2e
+ 484 0055 01       		.byte	0x1
+ 485 0056 3F       		.uleb128 0x3f
+ 486 0057 19       		.uleb128 0x19
+ 487 0058 03       		.uleb128 0x3
+ 488 0059 0E       		.uleb128 0xe
+ 489 005a 3A       		.uleb128 0x3a
+ 490 005b 0B       		.uleb128 0xb
+ 491 005c 3B       		.uleb128 0x3b
+ 492 005d 0B       		.uleb128 0xb
+ 493 005e 27       		.uleb128 0x27
+ 494 005f 19       		.uleb128 0x19
+ 495 0060 11       		.uleb128 0x11
+ 496 0061 01       		.uleb128 0x1
+ 497 0062 12       		.uleb128 0x12
+ 498 0063 06       		.uleb128 0x6
+ 499 0064 40       		.uleb128 0x40
+ 500 0065 18       		.uleb128 0x18
+ 501 0066 9742     		.uleb128 0x2117
+ 502 0068 19       		.uleb128 0x19
+ 503 0069 01       		.uleb128 0x1
+ 504 006a 13       		.uleb128 0x13
+ 505 006b 00       		.byte	0
+ 506 006c 00       		.byte	0
+ 507 006d 08       		.uleb128 0x8
+ 508 006e 05       		.uleb128 0x5
+ 509 006f 00       		.byte	0
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 11
+
+
+ 510 0070 03       		.uleb128 0x3
+ 511 0071 0E       		.uleb128 0xe
+ 512 0072 3A       		.uleb128 0x3a
+ 513 0073 0B       		.uleb128 0xb
+ 514 0074 3B       		.uleb128 0x3b
+ 515 0075 0B       		.uleb128 0xb
+ 516 0076 49       		.uleb128 0x49
+ 517 0077 13       		.uleb128 0x13
+ 518 0078 02       		.uleb128 0x2
+ 519 0079 18       		.uleb128 0x18
+ 520 007a 00       		.byte	0
+ 521 007b 00       		.byte	0
+ 522 007c 09       		.uleb128 0x9
+ 523 007d 2E       		.uleb128 0x2e
+ 524 007e 00       		.byte	0
+ 525 007f 3F       		.uleb128 0x3f
+ 526 0080 19       		.uleb128 0x19
+ 527 0081 03       		.uleb128 0x3
+ 528 0082 0E       		.uleb128 0xe
+ 529 0083 3A       		.uleb128 0x3a
+ 530 0084 0B       		.uleb128 0xb
+ 531 0085 3B       		.uleb128 0x3b
+ 532 0086 0B       		.uleb128 0xb
+ 533 0087 49       		.uleb128 0x49
+ 534 0088 13       		.uleb128 0x13
+ 535 0089 11       		.uleb128 0x11
+ 536 008a 01       		.uleb128 0x1
+ 537 008b 12       		.uleb128 0x12
+ 538 008c 06       		.uleb128 0x6
+ 539 008d 40       		.uleb128 0x40
+ 540 008e 18       		.uleb128 0x18
+ 541 008f 9642     		.uleb128 0x2116
+ 542 0091 19       		.uleb128 0x19
+ 543 0092 00       		.byte	0
+ 544 0093 00       		.byte	0
+ 545 0094 0A       		.uleb128 0xa
+ 546 0095 2E       		.uleb128 0x2e
+ 547 0096 00       		.byte	0
+ 548 0097 3F       		.uleb128 0x3f
+ 549 0098 19       		.uleb128 0x19
+ 550 0099 03       		.uleb128 0x3
+ 551 009a 0E       		.uleb128 0xe
+ 552 009b 3A       		.uleb128 0x3a
+ 553 009c 0B       		.uleb128 0xb
+ 554 009d 3B       		.uleb128 0x3b
+ 555 009e 0B       		.uleb128 0xb
+ 556 009f 11       		.uleb128 0x11
+ 557 00a0 01       		.uleb128 0x1
+ 558 00a1 12       		.uleb128 0x12
+ 559 00a2 06       		.uleb128 0x6
+ 560 00a3 40       		.uleb128 0x40
+ 561 00a4 18       		.uleb128 0x18
+ 562 00a5 9642     		.uleb128 0x2116
+ 563 00a7 19       		.uleb128 0x19
+ 564 00a8 00       		.byte	0
+ 565 00a9 00       		.byte	0
+ 566 00aa 0B       		.uleb128 0xb
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 12
+
+
+ 567 00ab 34       		.uleb128 0x34
+ 568 00ac 00       		.byte	0
+ 569 00ad 03       		.uleb128 0x3
+ 570 00ae 0E       		.uleb128 0xe
+ 571 00af 3A       		.uleb128 0x3a
+ 572 00b0 0B       		.uleb128 0xb
+ 573 00b1 3B       		.uleb128 0x3b
+ 574 00b2 05       		.uleb128 0x5
+ 575 00b3 49       		.uleb128 0x49
+ 576 00b4 13       		.uleb128 0x13
+ 577 00b5 3F       		.uleb128 0x3f
+ 578 00b6 19       		.uleb128 0x19
+ 579 00b7 3C       		.uleb128 0x3c
+ 580 00b8 19       		.uleb128 0x19
+ 581 00b9 00       		.byte	0
+ 582 00ba 00       		.byte	0
+ 583 00bb 0C       		.uleb128 0xc
+ 584 00bc 01       		.uleb128 0x1
+ 585 00bd 01       		.byte	0x1
+ 586 00be 49       		.uleb128 0x49
+ 587 00bf 13       		.uleb128 0x13
+ 588 00c0 01       		.uleb128 0x1
+ 589 00c1 13       		.uleb128 0x13
+ 590 00c2 00       		.byte	0
+ 591 00c3 00       		.byte	0
+ 592 00c4 0D       		.uleb128 0xd
+ 593 00c5 21       		.uleb128 0x21
+ 594 00c6 00       		.byte	0
+ 595 00c7 49       		.uleb128 0x49
+ 596 00c8 13       		.uleb128 0x13
+ 597 00c9 2F       		.uleb128 0x2f
+ 598 00ca 0B       		.uleb128 0xb
+ 599 00cb 00       		.byte	0
+ 600 00cc 00       		.byte	0
+ 601 00cd 0E       		.uleb128 0xe
+ 602 00ce 34       		.uleb128 0x34
+ 603 00cf 00       		.byte	0
+ 604 00d0 03       		.uleb128 0x3
+ 605 00d1 0E       		.uleb128 0xe
+ 606 00d2 3A       		.uleb128 0x3a
+ 607 00d3 0B       		.uleb128 0xb
+ 608 00d4 3B       		.uleb128 0x3b
+ 609 00d5 0B       		.uleb128 0xb
+ 610 00d6 49       		.uleb128 0x49
+ 611 00d7 13       		.uleb128 0x13
+ 612 00d8 3F       		.uleb128 0x3f
+ 613 00d9 19       		.uleb128 0x19
+ 614 00da 02       		.uleb128 0x2
+ 615 00db 18       		.uleb128 0x18
+ 616 00dc 00       		.byte	0
+ 617 00dd 00       		.byte	0
+ 618 00de 00       		.byte	0
+ 619              		.section	.debug_aranges,"",%progbits
+ 620 0000 34000000 		.4byte	0x34
+ 621 0004 0200     		.2byte	0x2
+ 622 0006 00000000 		.4byte	.Ldebug_info0
+ 623 000a 04       		.byte	0x4
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 13
+
+
+ 624 000b 00       		.byte	0
+ 625 000c 0000     		.2byte	0
+ 626 000e 0000     		.2byte	0
+ 627 0010 00000000 		.4byte	.LFB64
+ 628 0014 0C000000 		.4byte	.LFE64-.LFB64
+ 629 0018 00000000 		.4byte	.LFB65
+ 630 001c 14000000 		.4byte	.LFE65-.LFB65
+ 631 0020 00000000 		.4byte	.LFB66
+ 632 0024 0E000000 		.4byte	.LFE66-.LFB66
+ 633 0028 00000000 		.4byte	.LFB67
+ 634 002c 44000000 		.4byte	.LFE67-.LFB67
+ 635 0030 00000000 		.4byte	0
+ 636 0034 00000000 		.4byte	0
+ 637              		.section	.debug_ranges,"",%progbits
+ 638              	.Ldebug_ranges0:
+ 639 0000 00000000 		.4byte	.LFB64
+ 640 0004 0C000000 		.4byte	.LFE64
+ 641 0008 00000000 		.4byte	.LFB65
+ 642 000c 14000000 		.4byte	.LFE65
+ 643 0010 00000000 		.4byte	.LFB66
+ 644 0014 0E000000 		.4byte	.LFE66
+ 645 0018 00000000 		.4byte	.LFB67
+ 646 001c 44000000 		.4byte	.LFE67
+ 647 0020 00000000 		.4byte	0
+ 648 0024 00000000 		.4byte	0
+ 649              		.section	.debug_line,"",%progbits
+ 650              	.Ldebug_line0:
+ 651 0000 96010000 		.section	.debug_str,"MS",%progbits,1
+ 651      02004C01 
+ 651      00000201 
+ 651      FB0E0D00 
+ 651      01010101 
+ 652              	.LASF4:
+ 653 0000 5F5F7569 		.ascii	"__uint8_t\000"
+ 653      6E74385F 
+ 653      7400
+ 654              	.LASF29:
+ 655 000a 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 655      43313120 
+ 655      352E342E 
+ 655      31203230 
+ 655      31363036 
+ 656 003d 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 656      20726576 
+ 656      6973696F 
+ 656      6E203233 
+ 656      37373135 
+ 657 0070 30202D66 		.ascii	"0 -ffunction-sections -ffat-lto-objects\000"
+ 657      66756E63 
+ 657      74696F6E 
+ 657      2D736563 
+ 657      74696F6E 
+ 658              	.LASF26:
+ 659 0098 7379735F 		.ascii	"sys_rt_exec_motion_override\000"
+ 659      72745F65 
+ 659      7865635F 
+ 659      6D6F7469 
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 14
+
+
+ 659      6F6E5F6F 
+ 660              	.LASF5:
+ 661 00b4 5F5F696E 		.ascii	"__int32_t\000"
+ 661      7433325F 
+ 661      7400
+ 662              	.LASF32:
+ 663 00be 70726F62 		.ascii	"probe_configure_invert_mask\000"
+ 663      655F636F 
+ 663      6E666967 
+ 663      7572655F 
+ 663      696E7665 
+ 664              	.LASF3:
+ 665 00da 73686F72 		.ascii	"short unsigned int\000"
+ 665      7420756E 
+ 665      7369676E 
+ 665      65642069 
+ 665      6E7400
+ 666              	.LASF19:
+ 667 00ed 70726F62 		.ascii	"probe_state_monitor\000"
+ 667      655F7374 
+ 667      6174655F 
+ 667      6D6F6E69 
+ 667      746F7200 
+ 668              	.LASF13:
+ 669 0101 666C6F61 		.ascii	"float\000"
+ 669      7400
+ 670              	.LASF23:
+ 671 0107 7379735F 		.ascii	"sys_probe_state\000"
+ 671      70726F62 
+ 671      655F7374 
+ 671      61746500 
+ 672              	.LASF18:
+ 673 0117 70726F62 		.ascii	"probe_init\000"
+ 673      655F696E 
+ 673      697400
+ 674              	.LASF1:
+ 675 0122 756E7369 		.ascii	"unsigned char\000"
+ 675      676E6564 
+ 675      20636861 
+ 675      7200
+ 676              	.LASF7:
+ 677 0130 6C6F6E67 		.ascii	"long unsigned int\000"
+ 677      20756E73 
+ 677      69676E65 
+ 677      6420696E 
+ 677      7400
+ 678              	.LASF21:
+ 679 0142 7379735F 		.ascii	"sys_position\000"
+ 679      706F7369 
+ 679      74696F6E 
+ 679      00
+ 680              	.LASF20:
+ 681 014f 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 681      52784275 
+ 681      66666572 
+ 681      00
+ 682              	.LASF14:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 15
+
+
+ 683 015c 646F7562 		.ascii	"double\000"
+ 683      6C6500
+ 684              	.LASF27:
+ 685 0163 7379735F 		.ascii	"sys_rt_exec_accessory_override\000"
+ 685      72745F65 
+ 685      7865635F 
+ 685      61636365 
+ 685      73736F72 
+ 686              	.LASF22:
+ 687 0182 7379735F 		.ascii	"sys_probe_position\000"
+ 687      70726F62 
+ 687      655F706F 
+ 687      73697469 
+ 687      6F6E00
+ 688              	.LASF10:
+ 689 0195 756E7369 		.ascii	"unsigned int\000"
+ 689      676E6564 
+ 689      20696E74 
+ 689      00
+ 690              	.LASF9:
+ 691 01a2 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 691      206C6F6E 
+ 691      6720756E 
+ 691      7369676E 
+ 691      65642069 
+ 692              	.LASF11:
+ 693 01b9 75696E74 		.ascii	"uint8_t\000"
+ 693      385F7400 
+ 694              	.LASF12:
+ 695 01c1 696E7433 		.ascii	"int32_t\000"
+ 695      325F7400 
+ 696              	.LASF17:
+ 697 01c9 73697A65 		.ascii	"sizetype\000"
+ 697      74797065 
+ 697      00
+ 698              	.LASF8:
+ 699 01d2 6C6F6E67 		.ascii	"long long int\000"
+ 699      206C6F6E 
+ 699      6720696E 
+ 699      7400
+ 700              	.LASF31:
+ 701 01e0 433A5C55 		.ascii	"C:\\Users\\barto\\Dropbox\\PSoC\\Grbl_USB_Native\\G"
+ 701      73657273 
+ 701      5C626172 
+ 701      746F5C44 
+ 701      726F7062 
+ 702 020d 72626C5F 		.ascii	"rbl_USB_Native.cydsn\000"
+ 702      5553425F 
+ 702      4E617469 
+ 702      76652E63 
+ 702      7964736E 
+ 703              	.LASF33:
+ 704 0222 69735F70 		.ascii	"is_probe_away\000"
+ 704      726F6265 
+ 704      5F617761 
+ 704      7900
+ 705              	.LASF28:
+ARM GAS  C:\Users\barto\AppData\Local\Temp\ccJlQmpS.s 			page 16
+
+
+ 706 0230 70726F62 		.ascii	"probe_invert_mask\000"
+ 706      655F696E 
+ 706      76657274 
+ 706      5F6D6173 
+ 706      6B00
+ 707              	.LASF2:
+ 708 0242 73686F72 		.ascii	"short int\000"
+ 708      7420696E 
+ 708      7400
+ 709              	.LASF34:
+ 710 024c 70726F62 		.ascii	"probe_get_state\000"
+ 710      655F6765 
+ 710      745F7374 
+ 710      61746500 
+ 711              	.LASF25:
+ 712 025c 7379735F 		.ascii	"sys_rt_exec_alarm\000"
+ 712      72745F65 
+ 712      7865635F 
+ 712      616C6172 
+ 712      6D00
+ 713              	.LASF6:
+ 714 026e 6C6F6E67 		.ascii	"long int\000"
+ 714      20696E74 
+ 714      00
+ 715              	.LASF15:
+ 716 0277 63686172 		.ascii	"char\000"
+ 716      00
+ 717              	.LASF16:
+ 718 027c 6C6F6E67 		.ascii	"long double\000"
+ 718      20646F75 
+ 718      626C6500 
+ 719              	.LASF0:
+ 720 0288 7369676E 		.ascii	"signed char\000"
+ 720      65642063 
+ 720      68617200 
+ 721              	.LASF24:
+ 722 0294 7379735F 		.ascii	"sys_rt_exec_state\000"
+ 722      72745F65 
+ 722      7865635F 
+ 722      73746174 
+ 722      6500
+ 723              	.LASF30:
+ 724 02a6 70726F62 		.ascii	"probe.c\000"
+ 724      652E6300 
+ 725              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

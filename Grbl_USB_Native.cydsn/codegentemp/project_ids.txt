@@ -1,0 +1,8 @@
+C:\Users\barto\Dropbox\PSoC\Grbl_USB_Native\Grbl_USB_Native.cydsn\Grbl_USB_Native.cyprj|29b9222b-2d14-4836-8f78-46aee4194e1c
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|c8bd335f-8181-4f25-a654-f376158966a0
+C:\Users\barto\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|1e5e3954-3de8-495a-af4d-6e9fa44dde1b
+C:\Users\barto\Documents\PSoC Creator\4.1\Downloads ( 4.1).cylib\Downloads ( 4.1).cyprj|e55dec16-0d6f-4ab1-83ed-a36ea1cb9d25
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|5d706554-a6a4-43ed-be4d-8bed1ab6e3ea
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|fcdb305d-56d3-4780-bbc7-99e76622f3e7
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|d7866d8f-0744-426b-a5fd-f561308feeb0
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|c1ec885d-d5f7-464c-b2da-0f81aa6378e3
